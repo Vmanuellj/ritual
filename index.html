@@ -324,14 +324,14 @@ const TABS = [
   {id:'home',   label:'Inicio',   icon:'home'},
   {id:'habits', label:'Hábitos',  icon:'habit'},
   {id:'tasks',  label:'Tareas',   icon:'task'},
-  {id:'food',   label:'Comidas',  icon:'food'},
-  {id:'gym',    label:'Gym',      icon:'gym'},
   {id:'finance',label:'Finanzas', icon:'finance'},
   {id:'goals',  label:'Metas',    icon:'goal'},
+  {id:'food',   label:'Comidas',  icon:'food'},
+  {id:'gym',    label:'Gym',      icon:'gym'},
   {id:'stats',  label:'Stats',    icon:'stats'},
 ];
-const BNAV = ['home','habits','tasks','food','gym'];
-const SEC  = ['finance','goals','stats'];
+const BNAV = ['home','habits','tasks','finance','goals'];
+const SEC  = ['food','gym','stats'];
 
 // ══════════════════════════════════════════════════════════════════════════
 // PAGE: HOME
@@ -417,76 +417,125 @@ const PageHome = ({setTab}) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: HABITS
+// PAGE: HABITS  (categories, frequency, schedule, presets)
 // ══════════════════════════════════════════════════════════════════════════
+const HABIT_CATS = ['Salud','Conocimiento','Productividad','Mental','Fitness','Social','Finanzas','Creatividad'];
+const CAT_CLR  = {Salud:'#4CAF50',Conocimiento:'#2196F3',Productividad:'#FF9800',Mental:'#9C27B0',Fitness:'#F44336',Social:'#00BCD4',Finanzas:'#8BC34A',Creatividad:'#E91E63'};
+const FREQ_DAYS  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const PRESET_HABITS = [
+  {name:'Beber 2L de agua',icon:'💧',category:'Salud',freq:'daily'},
+  {name:'Meditar 10 min',icon:'🧘',category:'Mental',freq:'daily'},
+  {name:'Leer 30 min',icon:'📚',category:'Conocimiento',freq:'daily'},
+  {name:'Ejercicio 30 min',icon:'💪',category:'Fitness',freq:'daily'},
+  {name:'Dormir 8h',icon:'🛏️',category:'Salud',freq:'daily'},
+  {name:'Journaling',icon:'✍️',category:'Mental',freq:'daily'},
+  {name:'Vitaminas',icon:'💊',category:'Salud',freq:'daily'},
+  {name:'Sin redes 1h',icon:'📵',category:'Mental',freq:'daily'},
+  {name:'Llamar a familia',icon:'📞',category:'Social',freq:'custom',days:['Dom']},
+  {name:'Revisar finanzas',icon:'💰',category:'Finanzas',freq:'custom',days:['Lun']},
+  {name:'Curso online',icon:'💻',category:'Conocimiento',freq:'custom',days:['Lun','Mié','Vie']},
+  {name:'Limpieza hogar',icon:'🧹',category:'Productividad',freq:'custom',days:['Sáb']},
+];
 const PageHabits = () => {
   const today = todayKey();
+  const todayDayName = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date().getDay()];
   const [habits,setHabits] = useState(()=>load('habits',[]));
   const [showAdd,setShowAdd] = useState(false);
-  const [form,setForm] = useState({name:'',icon:'✦'});
+  const [showPresets,setShowPresets] = useState(false);
+  const [filterCat,setFilterCat] = useState('Todas');
+  const [form,setForm] = useState({name:'',icon:'✦',category:'Salud',freq:'daily',days:[],time:''});
   const sync = h => { setHabits(h); save('habits',h); };
+  const isDueToday = h => h.freq==='daily' || (h.days||[]).includes(todayDayName);
   const toggle = id => sync(habits.map(h=>{if(h.id!==id)return h;const done=h.done||[];return{...h,done:done.includes(today)?done.filter(d=>d!==today):[...done,today]};}));
   const remove = id => sync(habits.filter(h=>h.id!==id));
-  const add = () => { if(!form.name.trim())return; sync([...habits,{...form,id:uid(),done:[]}]); setForm({name:'',icon:'✦'}); setShowAdd(false); };
-  const streak = h => { let s=0;const d=new Date();while(true){const k=d.toISOString().split('T')[0];if(!(h.done||[]).includes(k))break;s++;d.setDate(d.getDate()-1);}return s; };
-  const done = habits.filter(h=>(h.done||[]).includes(today)).length;
-  const pct  = habits.length?Math.round(done/habits.length*100):0;
-  const ICONS = ['✦','💧','📚','🏃','🧘','🍎','💊','✍️','🌞','🎯','💪','🎵','🛏️','🧹','💻'];
-
+  const add = () => {
+    if(!form.name.trim())return;
+    const newH={...form,id:uid(),done:[]};
+    if(form.time){const tasks=load('tasks',[]);save('tasks',[...tasks,{id:uid(),title:form.icon+' '+form.name,category:'Personal',priority:'media',due:today,note:'Hábito '+form.time,done:false}]);}
+    sync([...habits,newH]);setForm({name:'',icon:'✦',category:'Salud',freq:'daily',days:[],time:''});setShowAdd(false);
+  };
+  const addPreset = p => {if(!habits.find(h=>h.name===p.name))sync([...habits,{...p,id:uid(),done:[]}]);};
+  const streak = h => {let s=0;const d=new Date();while(true){const k=d.toISOString().split('T')[0];if(!(h.done||[]).includes(k))break;s++;d.setDate(d.getDate()-1);}return s;};
+  const toggleDay = d => setForm({...form,days:form.days.includes(d)?form.days.filter(x=>x!==d):[...form.days,d]});
+  const dueToday=habits.filter(isDueToday);
+  const done=dueToday.filter(h=>(h.done||[]).includes(today)).length;
+  const pct=dueToday.length?Math.round(done/dueToday.length*100):0;
+  const filtered=habits.filter(h=>filterCat==='Todas'||h.category===filterCat);
+  const byCat={};filtered.forEach(h=>{if(!byCat[h.category])byCat[h.category]=[];byCat[h.category].push(h);});
+  const ICONS=['✦','💧','📚','🏃','🧘','🍎','💊','✍️','🌞','🎯','💪','🎵','🛏️','🧹','💻','📵','📞','💰','🎨','🧠'];
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col">
-          <h2 style="font-size:20px;font-weight:700;color:#E8F5E8">Hábitos</h2>
-          <p style="font-size:12px;color:rgba(200,240,200,0.55)">${done}/${habits.length} hoy · ${pct}%</p>
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#E8F5E8">Hábitos</h2><p style="font-size:12px;color:rgba(200,240,200,0.55)">${done}/${dueToday.length} hoy · ${pct}%</p></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-g" style="padding:10px 12px" onClick=${()=>setShowPresets(true)}><${Ic} n="spark" s=${15} c="rgba(200,240,200,0.7)"/></button>
+          <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
         </div>
-        <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
       </div>
-
-      <div class="card" style="margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:12px;color:rgba(200,240,200,0.55)">Progreso del día</span>
-          <span style="font-size:18px;font-weight:700;color:#80EE90">${pct}%</span>
-        </div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:12px;color:rgba(200,240,200,0.55)">Progreso hoy</span><span style="font-size:20px;font-weight:700;color:#A8EFB8">${pct}%</span></div>
         <div class="prog-track"><div class="prog-fill" style=${{width:`${pct}%`}}/></div>
       </div>
-
-      ${habits.length===0&&html`<div class="card empty-state"><div class="emo">✦</div><p style="color:rgba(200,240,200,0.45);font-size:13px">Crea tu primer hábito</p></div>`}
-
-      <div style="display:flex;flex-direction:column;gap:10px">
-        ${habits.map(h=>{
-          const isDone=(h.done||[]).includes(today);
-          const s=streak(h);
-          return html`
-            <div class="card" style=${{display:'flex',alignItems:'center',gap:12,opacity:isDone?.7:1}}>
-              <div class=${'check-box'+(isDone?' done':'')} onClick=${()=>toggle(h.id)}>
-                ${isDone&&html`<${Ic} n="check" s=${13} c="#fff"/>`}
-              </div>
-              <span style="font-size:18px">${h.icon}</span>
-              <div style="flex:1">
-                <p style=${{fontSize:'13px',fontWeight:500,color:isDone?'rgba(200,240,200,0.35)':'#E8F5E8',textDecoration:isDone?'line-through':'none'}}>${h.name}</p>
-                ${s>0&&html`<p class="streak">🔥 ${s} días</p>`}
-              </div>
-              <button onClick=${()=>remove(h.id)} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
-            </div>
-          `;
-        })}
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;scrollbar-width:none">
+        ${['Todas',...HABIT_CATS].map(c=>html`<button class=${'tab-pill'+(filterCat===c?' active':'')} onClick=${()=>setFilterCat(c)} style="white-space:nowrap;flex-shrink:0">${c}</button>`)}
       </div>
-
+      ${Object.entries(byCat).map(([cat,hs])=>html`
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <div style=${{width:8,height:8,borderRadius:'50%',background:CAT_CLR[cat]||'#fff',flexShrink:0}}/>
+            <span style="font-size:11px;font-weight:600;color:rgba(200,240,200,0.6);text-transform:uppercase;letter-spacing:0.8px">${cat}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${hs.map(h=>{const isDone=(h.done||[]).includes(today);const due=isDueToday(h);const s=streak(h);return html`
+              <div class="card" style=${{display:'flex',alignItems:'center',gap:12,opacity:!due?0.45:isDone?0.7:1}}>
+                <div class=${'check-box'+(isDone?' done':'')} onClick=${()=>due&&toggle(h.id)}>${isDone&&html`<${Ic} n="check" s=${13} c="#fff"/>`}</div>
+                <span style="font-size:18px">${h.icon}</span>
+                <div style="flex:1;min-width:0">
+                  <p style=${{fontSize:'13px',fontWeight:500,color:isDone?'rgba(200,240,200,0.4)':'#E8F5E8',textDecoration:isDone?'line-through':'none'}}>${h.name}</p>
+                  <div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap">
+                    <span style="font-size:10px;color:rgba(200,240,200,0.4)">${h.freq==='daily'?'Diario':(h.days||[]).join('·')}</span>
+                    ${h.time&&html`<span style="font-size:10px;color:rgba(200,240,200,0.4)">⏰ ${h.time}</span>`}
+                    ${s>0&&html`<span class="streak">🔥 ${s}</span>`}
+                    ${!due&&html`<span style="font-size:10px;color:rgba(200,240,200,0.3)">No toca hoy</span>`}
+                  </div>
+                </div>
+                <button onClick=${()=>remove(h.id)} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.2);padding:4px"><${Ic} n="trash" s=${14}/></button>
+              </div>
+            `;})}
+          </div>
+        </div>
+      `)}
+      ${habits.length===0&&html`<div class="card empty-state"><div class="emo">✦</div><p style="color:rgba(200,240,200,0.4);font-size:13px">Crea un hábito o elige de los predefinidos ✨</p></div>`}
       <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nuevo hábito">
         <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${form.name} onInput=${e=>setForm({...form,name:e.target.value})} placeholder="Ej: Meditar 10 minutos" autoFocus onKeyDown=${e=>e.key==='Enter'&&add()}/>
-          <div>
-            <label class="lbl">Ícono</label>
-            <div style="display:flex;flex-wrap:wrap;gap:8px">
-              ${ICONS.map(ic=>html`
-                <button onClick=${()=>setForm({...form,icon:ic})} style=${{width:36,height:36,borderRadius:8,border:`1.5px solid ${form.icon===ic?'#3D7A52':'rgba(255,255,255,0.5)'}`,background:form.icon===ic?'rgba(61,122,82,0.12)':'rgba(255,255,255,0.3)',cursor:'pointer',fontSize:18,fontFamily:'serif'}}>
-                  ${ic}
-                </button>
+          <input value=${form.name} onInput=${e=>setForm({...form,name:e.target.value})} placeholder="Nombre del hábito" autoFocus/>
+          <div><label class="lbl">Ícono</label><div style="display:flex;flex-wrap:wrap;gap:6px">${ICONS.map(ic=>html`<button onClick=${()=>setForm({...form,icon:ic})} style=${{width:34,height:34,borderRadius:8,border:`1.5px solid ${form.icon===ic?'#52B466':'rgba(255,255,255,0.15)'}`,background:form.icon===ic?'rgba(52,180,72,0.2)':'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:17}}>${ic}</button>`)}</div></div>
+          <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${HABIT_CATS.map(c=>html`<option>${c}</option>`)}</select></div>
+          <div><label class="lbl">Frecuencia</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              ${[['daily','Diario'],['custom','Días específicos']].map(([v,l])=>html`
+                <button onClick=${()=>setForm({...form,freq:v,days:v==='daily'?[]:form.days})} style=${{padding:'8px 4px',borderRadius:10,border:`1px solid ${form.freq===v?'#52B466':'rgba(255,255,255,0.13)'}`,background:form.freq===v?'rgba(52,180,72,0.2)':'rgba(255,255,255,0.05)',color:form.freq===v?'#A8EFB8':'rgba(200,240,200,0.6)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${l}</button>
               `)}
             </div>
           </div>
+          ${form.freq==='custom'&&html`
+            <div><label class="lbl">Días</label><div style="display:flex;gap:5px;flex-wrap:wrap">
+              ${FREQ_DAYS.map(d=>html`<button onClick=${()=>toggleDay(d)} style=${{padding:'6px 10px',borderRadius:8,border:`1px solid ${form.days.includes(d)?'#52B466':'rgba(255,255,255,0.12)'}`,background:form.days.includes(d)?'rgba(52,180,72,0.2)':'rgba(255,255,255,0.05)',color:form.days.includes(d)?'#A8EFB8':'rgba(200,240,200,0.5)',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
+            </div></div>
+          `}
+          <div><label class="lbl">Horario (opcional — se agrega a tareas)</label><input type="time" value=${form.time} onInput=${e=>setForm({...form,time:e.target.value})} style="color:#E8F5E8"/></div>
           <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Crear hábito</button>
+        </div>
+      <//>
+      <${Modal} open=${showPresets} onClose=${()=>setShowPresets(false)} title="Hábitos recomendados">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${PRESET_HABITS.map(p=>{const already=habits.find(h=>h.name===p.name);return html`
+            <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+              <span style="font-size:18px">${p.icon}</span>
+              <div style="flex:1"><p style="font-size:13px;font-weight:500;color:#E8F5E8">${p.name}</p><p style="font-size:11px;color:rgba(200,240,200,0.4);margin-top:2px">${p.category} · ${p.freq==='daily'?'Diario':(p.days||[]).join(', ')}</p></div>
+              <button onClick=${()=>addPreset(p)} disabled=${!!already} class="btn-p" style="padding:6px 12px;font-size:12px;opacity:${already?0.4:1}">${already?'✓':'+'}</button>
+            </div>
+          `;})}
         </div>
       <//>
     </div>
@@ -665,107 +714,138 @@ Responde SOLO con JSON válido sin texto adicional:
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: GYM
+// PAGE: GYM  (scientific preset routines by category)
 // ══════════════════════════════════════════════════════════════════════════
+const GYM_PRESETS = {
+  Running:[
+    {name:'5K Base',desc:'Calentamiento 5 min · Trote constante 25 min · Enfriamiento 5 min',dur:'35 min',lvl:'Principiante'},
+    {name:'Intervalos HIIT',desc:'1 min sprint + 2 min trote × 8 series · Enfriamiento 5 min',dur:'30 min',lvl:'Intermedio'},
+    {name:'Tempo Run',desc:'Calentamiento 10 min · 20 min al 85% FCmax · Enfriamiento 10 min',dur:'40 min',lvl:'Intermedio'},
+    {name:'Long Run',desc:'Trote suave 70 min manteniendo conversación posible',dur:'70 min',lvl:'Avanzado'},
+    {name:'Fartlek',desc:'30 min variando ritmo libremente: sprint, trote y caminata',dur:'30 min',lvl:'Todos'},
+  ],
+  Calistenia:[
+    {name:'Full Body Básico',desc:'Push-ups 3×10 · Sentadillas 3×15 · Plancha 3×30s · Dips 3×8',dur:'30 min',lvl:'Principiante'},
+    {name:'Upper Pull',desc:'Dominadas 4×6 · Remo invertido 3×10 · Curl bíceps 3×12',dur:'35 min',lvl:'Intermedio'},
+    {name:'Core & Glutes',desc:'Plancha 4×45s · Elevación piernas 3×15 · Glute bridge 3×20 · Dead bug 3×10',dur:'25 min',lvl:'Todos'},
+    {name:'Push Day',desc:'Push-ups declinadas 4×10 · Fondos 4×8 · Pike push-up 3×10 · Diamond 3×8',dur:'35 min',lvl:'Intermedio'},
+    {name:'Muscle-up Prog.',desc:'Dominadas explosivas 5×3 · Transición negativa 4×3 · Ring rows 3×10',dur:'40 min',lvl:'Avanzado'},
+  ],
+  Pesas:[
+    {name:'Push (Pecho/Hombro/Trícep)',desc:'Press banca 4×8 · Press militar 3×10 · Aperturas 3×12 · Ext. tríceps 3×12',dur:'50 min',lvl:'Intermedio'},
+    {name:'Pull (Espalda/Bíceps)',desc:'Jalón polea 4×8 · Remo barra 4×8 · Curl bíceps 3×12 · Face pull 3×15',dur:'50 min',lvl:'Intermedio'},
+    {name:'Leg Day',desc:'Sentadilla 4×8 · Prensa 3×12 · Ext. cuádriceps 3×15 · Curl femoral 3×12 · Pantorrillas 4×20',dur:'55 min',lvl:'Intermedio'},
+    {name:'Fuerza 5×5',desc:'Sentadilla 5×5 · Peso muerto 1×5 · Press banca 5×5 · Remo Pendlay 5×5',dur:'60 min',lvl:'Avanzado'},
+    {name:'Full Body Novato',desc:'Sentadilla goblet 3×12 · Press mancuernas 3×12 · Remo inclinado 3×12 · RDL 3×10',dur:'45 min',lvl:'Principiante'},
+  ],
+};
 const PageGym = () => {
   const today = todayKey();
-  const [plans,setPlans] = useState(()=>load('gym-plans',[]));
-  const [logs,setLogs]   = useState(()=>load('workout-logs',[]));
+  const [plans,setPlans]   = useState(()=>load('gym-plans',[]));
+  const [logs,setLogs]     = useState(()=>load('workout-logs',[]));
   const [showPlan,setShowPlan] = useState(false);
   const [showLog,setShowLog]   = useState(false);
-  const [selPlan,setSelPlan]   = useState(null);
-  const [pf,setPf] = useState({name:'',days:[],exercises:''});
+  const [showPresets,setShowPresets] = useState(false);
+  const [selPlan,setSelPlan] = useState(null);
+  const [pf,setPf] = useState({name:'',days:[],exercises:'',category:'Pesas'});
   const [view,setView] = useState('hoy');
-  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  const todayDay = () => { const d=new Date().getDay(); return DAYS[d===0?6:d-1]; };
-  const syncP = p => { setPlans(p); save('gym-plans',p); };
-  const syncL = l => { setLogs(l);  save('workout-logs',l); };
-  const addPlan = () => { if(!pf.name.trim())return; syncP([...plans,{...pf,id:uid()}]); setPf({name:'',days:[],exercises:''}); setShowPlan(false); };
-  const logW = (plan,done) => { syncL([...logs.filter(l=>l.date!==today),{date:today,planId:plan.id,name:plan.name,done,id:uid()}]); setShowLog(false); };
-  const toggleDay = d => setPf({...pf,days:pf.days.includes(d)?pf.days.filter(x=>x!==d):[...pf.days,d]});
-  const todayPlans = plans.filter(p=>(p.days||[]).includes(todayDay()));
-  const todayLog   = logs.find(l=>l.date===today);
-  const week = Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-d.getDay()+1+i);const k=d.toISOString().split('T')[0];const ld=logs.find(l=>l.date===k);return{k,day:DAYS[i],done:ld?.done,isToday:k===today};});
-
+  const [presetCat,setPresetCat] = useState('Running');
+  const DAYS=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const todayDay=()=>{const d=new Date().getDay();return DAYS[d===0?6:d-1];};
+  const syncP=p=>{setPlans(p);save('gym-plans',p);};
+  const syncL=l=>{setLogs(l);save('workout-logs',l);};
+  const addPlan=()=>{if(!pf.name.trim())return;syncP([...plans,{...pf,id:uid()}]);setPf({name:'',days:[],exercises:'',category:'Pesas'});setShowPlan(false);};
+  const addPreset=r=>{syncP([...plans,{id:uid(),name:r.name,days:[todayDay()],exercises:r.desc,category:presetCat}]);};
+  const logW=(plan,done)=>{syncL([...logs.filter(l=>l.date!==today),{date:today,planId:plan.id,name:plan.name,done,id:uid()}]);setShowLog(false);};
+  const toggleDay=d=>setPf({...pf,days:pf.days.includes(d)?pf.days.filter(x=>x!==d):[...pf.days,d]});
+  const todayPlans=plans.filter(p=>(p.days||[]).includes(todayDay()));
+  const todayLog=logs.find(l=>l.date===today);
+  const CAT_ICON={Running:'🏃',Calistenia:'💪',Pesas:'🏋️'};
+  const LVL_CLR={Principiante:'rgba(52,180,72,0.2)',Intermedio:'rgba(255,152,0,0.2)',Avanzado:'rgba(255,69,58,0.2)',Todos:'rgba(100,150,255,0.2)'};
+  const LVL_TXT={Principiante:'#6EE78A',Intermedio:'#FFB74D',Avanzado:'#FF8A80',Todos:'#90CAF9'};
+  const week=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-d.getDay()+1+i);const k=d.toISOString().split('T')[0];const ld=logs.find(l=>l.date===k);return{k,day:DAYS[i],done:ld?.done,isToday:k===today};});
   return html`
     <div class="page fade-up">
       <div class="page-header">
         <div class="col"><h2 style="font-size:20px;font-weight:700;color:#E8F5E8">Gym</h2><p style="font-size:12px;color:rgba(200,240,200,0.55)">${logs.filter(l=>l.done).length} entrenos totales</p></div>
-        <button class="btn-p" onClick=${()=>setShowPlan(true)}><${Ic} n="plus" s=${15} c="#fff"/>Rutina</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-g" style="padding:10px 12px" onClick=${()=>setShowPresets(true)}><${Ic} n="spark" s=${15} c="rgba(200,240,200,0.7)"/></button>
+          <button class="btn-p" onClick=${()=>setShowPlan(true)}><${Ic} n="plus" s=${15} c="#fff"/>Rutina</button>
+        </div>
       </div>
-
-      <div class="card" style="margin-bottom:20px">
+      <div class="card" style="margin-bottom:16px">
         <p style="font-size:12px;font-weight:500;color:rgba(200,240,200,0.55);margin-bottom:12px">Esta semana</p>
         <div style="display:flex;gap:6px">
           ${week.map(d=>html`
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-              <span style=${{fontSize:10,color:d.isToday?'#80EE90':'rgba(200,240,200,0.4)',fontWeight:d.isToday?600:400}}>${d.day}</span>
-              <div style=${{width:32,height:32,borderRadius:8,background:d.done===true?'rgba(61,122,82,0.7)':d.done===false?'rgba(181,97,74,0.3)':'rgba(255,255,255,0.3)',border:`1.5px solid ${d.isToday?'#3D7A52':'rgba(255,255,255,0.4)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
+              <span style=${{fontSize:10,color:d.isToday?'#A8EFB8':'rgba(200,240,200,0.4)',fontWeight:d.isToday?600:400}}>${d.day}</span>
+              <div style=${{width:32,height:32,borderRadius:8,background:d.done===true?'rgba(52,180,72,0.65)':d.done===false?'rgba(255,69,58,0.3)':'rgba(255,255,255,0.07)',border:`1.5px solid ${d.isToday?'#52B466':'rgba(255,255,255,0.1)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:d.done===true?'#fff':d.done===false?'#FF8A80':''}}>
                 ${d.done===true?'✓':d.done===false?'×':''}
               </div>
             </div>
           `)}
         </div>
       </div>
-
       <div style="display:flex;gap:8px;margin-bottom:16px">
         ${['hoy','planes'].map(v=>html`<button class=${'tab-pill'+(view===v?' active':'')} onClick=${()=>setView(v)} style="text-transform:capitalize">${v}</button>`)}
       </div>
-
-      ${view==='hoy'&&html`
-        <div>
-          ${todayLog&&html`<div class="card" style=${{marginBottom:12,borderLeft:`3px solid ${todayLog.done?'#3D7A52':'#B5614A'}`}}>
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:20px">${todayLog.done?'💪':'😴'}</span>
-              <div><p style="font-size:13px;font-weight:500;color:#E8F5E8">${todayLog.name}</p><p style=${{fontSize:11,color:todayLog.done?'#3D7A52':'#B5614A'}}>${todayLog.done?'Completado':'Saltado'}</p></div>
-            </div>
-          </div>`}
-          ${todayPlans.length===0&&!todayLog&&html`<div class="card empty-state"><div class="emo">🏖</div><p style="font-size:13px;color:rgba(200,240,200,0.45)">Día de descanso</p></div>`}
-          ${todayPlans.map(p=>html`
-            <div class="card glass-hover" style="margin-bottom:12px;cursor:pointer" onClick=${()=>{setSelPlan(p);setShowLog(true);}}>
-              <div style="display:flex;align-items:flex-start;justify-content:space-between">
-                <div><p style="font-size:14px;font-weight:600;color:#E8F5E8;margin-bottom:4px">${p.name}</p><p style="font-size:11px;color:rgba(200,240,200,0.5);line-height:1.5">${p.exercises}</p></div>
-                <span class="badge badge-g">Hoy</span>
-              </div>
-            </div>
-          `)}
-        </div>
-      `}
-      ${view==='planes'&&html`
-        <div>
-          ${plans.length===0&&html`<p style="font-size:12px;color:rgba(200,240,200,0.35)">Sin rutinas aún</p>`}
-          ${plans.map(p=>html`
-            <div class="card" style="margin-bottom:10px">
-              <div style="display:flex;align-items:flex-start;justify-content:space-between">
-                <div style="flex:1">
-                  <p style="font-size:13px;font-weight:600;color:#E8F5E8">${p.name}</p>
-                  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${(p.days||[]).map(d=>html`<span class="badge badge-g" style="font-size:10px">${d}</span>`)}</div>
-                  ${p.exercises&&html`<p style="font-size:11px;color:rgba(200,240,200,0.5);margin-top:6px;line-height:1.5">${p.exercises}</p>`}
-                </div>
-                <button onClick=${()=>syncP(plans.filter(x=>x.id!==p.id))} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
-              </div>
-            </div>
-          `)}
-        </div>
-      `}
-
-      <${Modal} open=${showLog&&!!selPlan} onClose=${()=>setShowLog(false)} title=${`Registrar: ${selPlan?.name||''}`}>
-        <p style="font-size:13px;color:rgba(200,240,200,0.65);margin-bottom:16px">${selPlan?.exercises}</p>
-        <div class="grid2">
-          <button class="btn-p" style="justify-content:center;padding:14px" onClick=${()=>logW(selPlan,true)}>💪 Completado</button>
-          <button class="btn-d" style="padding:14px;width:100%" onClick=${()=>logW(selPlan,false)}>😴 Saltarlo</button>
-        </div>
-      <//>
-      <${Modal} open=${showPlan} onClose=${()=>setShowPlan(false)} title="Nueva rutina">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${pf.name} onInput=${e=>setPf({...pf,name:e.target.value})} placeholder="Nombre (ej: Push Day, Legs...)" autoFocus/>
-          <div>
-            <label class="lbl">Días</label>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              ${DAYS.map(d=>html`<button onClick=${()=>toggleDay(d)} style=${{padding:'6px 12px',borderRadius:20,border:`1.5px solid ${pf.days.includes(d)?'#3D7A52':'rgba(255,255,255,0.5)'}`,background:pf.days.includes(d)?'rgba(61,122,82,0.15)':'rgba(255,255,255,0.3)',color:pf.days.includes(d)?'#2D6040':'rgba(210,240,210,0.85)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
+      ${view==='hoy'&&html`<div>
+        ${todayLog&&html`<div class="card" style=${{marginBottom:12,borderLeft:`3px solid ${todayLog.done?'#6EE78A':'#FF8A80'}`}}><div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">${todayLog.done?'💪':'😴'}</span><div><p style="font-size:13px;font-weight:500;color:#E8F5E8">${todayLog.name}</p><p style=${{fontSize:11,color:todayLog.done?'#6EE78A':'#FF8A80'}}>${todayLog.done?'Completado':'Saltado'}</p></div></div></div>`}
+        ${todayPlans.length===0&&!todayLog&&html`<div class="card empty-state"><div class="emo">🏖</div><p style="font-size:13px;color:rgba(200,240,200,0.4)">Día de descanso</p><button class="btn-g" style="margin-top:12px" onClick=${()=>setShowPresets(true)}>Ver rutinas ✨</button></div>`}
+        ${todayPlans.map(p=>html`
+          <div class="card glass-hover" style="margin-bottom:10px;cursor:pointer" onClick=${()=>{setSelPlan(p);setShowLog(true);}}>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between">
+              <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span>${CAT_ICON[p.category]||'🏋️'}</span><p style="font-size:14px;font-weight:600;color:#E8F5E8">${p.name}</p></div><p style="font-size:11px;color:rgba(200,240,200,0.5);line-height:1.5">${p.exercises}</p></div>
+              <span class="badge badge-g">Hoy</span>
             </div>
           </div>
-          <div><label class="lbl">Ejercicios</label><textarea value=${pf.exercises} onInput=${e=>setPf({...pf,exercises:e.target.value})} placeholder="Ej: Sentadillas 4x10, Press banca 3x8..." rows="4" style="resize:none"/></div>
+        `)}
+      </div>`}
+      ${view==='planes'&&html`<div>
+        ${plans.length===0&&html`<div class="card empty-state"><div class="emo">📋</div><p style="color:rgba(200,240,200,0.4);font-size:13px">Sin rutinas aún</p><button class="btn-g" style="margin-top:12px" onClick=${()=>setShowPresets(true)}>Rutinas científicas ✨</button></div>`}
+        ${plans.map(p=>html`
+          <div class="card" style="margin-bottom:10px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between">
+              <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span>${CAT_ICON[p.category]||'🏋️'}</span><p style="font-size:13px;font-weight:600;color:#E8F5E8">${p.name}</p></div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">${(p.days||[]).map(d=>html`<span class="badge badge-g" style="font-size:10px">${d}</span>`)}</div>${p.exercises&&html`<p style="font-size:11px;color:rgba(200,240,200,0.45);line-height:1.5">${p.exercises}</p>`}</div>
+              <button onClick=${()=>syncP(plans.filter(x=>x.id!==p.id))} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.25);padding:4px;flex-shrink:0"><${Ic} n="trash" s=${14}/></button>
+            </div>
+          </div>
+        `)}
+      </div>`}
+      <${Modal} open=${showLog&&!!selPlan} onClose=${()=>setShowLog(false)} title=${`Registrar: ${selPlan?.name||''}`}>
+        <p style="font-size:12px;color:rgba(200,240,200,0.5);margin-bottom:16px;line-height:1.6">${selPlan?.exercises}</p>
+        <div class="grid2"><button class="btn-p" style="justify-content:center;padding:14px" onClick=${()=>logW(selPlan,true)}>💪 Completado</button><button class="btn-d" style="padding:14px;width:100%" onClick=${()=>logW(selPlan,false)}>😴 Saltar</button></div>
+      <//>
+      <${Modal} open=${showPresets} onClose=${()=>setShowPresets(false)} title="Rutinas científicas">
+        <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none">
+          ${Object.keys(GYM_PRESETS).map(cat=>html`<button class=${'tab-pill'+(presetCat===cat?' active':'')} onClick=${()=>setPresetCat(cat)} style="white-space:nowrap;flex-shrink:0">${CAT_ICON[cat]} ${cat}</button>`)}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${(GYM_PRESETS[presetCat]||[]).map(r=>html`
+            <div class="card" style="padding:14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                <p style="font-size:13px;font-weight:600;color:#E8F5E8">${r.name}</p>
+                <div style="display:flex;gap:5px;flex-shrink:0;margin-left:8px">
+                  <span class="badge badge-s" style="font-size:10px">${r.dur}</span>
+                  <span class="badge" style=${{background:LVL_CLR[r.lvl]||'rgba(255,255,255,0.08)',color:LVL_TXT[r.lvl]||'#E8F5E8',fontSize:10}}>${r.lvl}</span>
+                </div>
+              </div>
+              <p style="font-size:11px;color:rgba(200,240,200,0.5);line-height:1.6;margin-bottom:10px">${r.desc}</p>
+              <button class="btn-p" style="width:100%;justify-content:center;padding:8px;font-size:12px" onClick=${()=>{addPreset(r);setShowPresets(false);}}>+ Agregar a mis rutinas</button>
+            </div>
+          `)}
+        </div>
+      <//>
+      <${Modal} open=${showPlan} onClose=${()=>setShowPlan(false)} title="Nueva rutina propia">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${pf.name} onInput=${e=>setPf({...pf,name:e.target.value})} placeholder="Nombre (ej: Push Day)" autoFocus/>
+          <div><label class="lbl">Categoría</label><div style="display:flex;gap:6px">
+            ${Object.keys(GYM_PRESETS).map(cat=>html`<button onClick=${()=>setPf({...pf,category:cat})} style=${{padding:'8px 12px',borderRadius:10,border:`1px solid ${pf.category===cat?'#52B466':'rgba(255,255,255,0.12)'}`,background:pf.category===cat?'rgba(52,180,72,0.2)':'rgba(255,255,255,0.05)',color:pf.category===cat?'#A8EFB8':'rgba(200,240,200,0.5)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${CAT_ICON[cat]} ${cat}</button>`)}
+          </div></div>
+          <div><label class="lbl">Días</label><div style="display:flex;gap:5px;flex-wrap:wrap">
+            ${DAYS.map(d=>html`<button onClick=${()=>toggleDay(d)} style=${{padding:'6px 10px',borderRadius:8,border:`1px solid ${pf.days.includes(d)?'#52B466':'rgba(255,255,255,0.12)'}`,background:pf.days.includes(d)?'rgba(52,180,72,0.2)':'rgba(255,255,255,0.05)',color:pf.days.includes(d)?'#A8EFB8':'rgba(200,240,200,0.5)',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
+          </div></div>
+          <div><label class="lbl">Ejercicios</label><textarea value=${pf.exercises} onInput=${e=>setPf({...pf,exercises:e.target.value})} placeholder="Ej: Sentadillas 4×10..." rows="4" style="resize:none"/></div>
           <button class="btn-p" style="width:100%;justify-content:center" onClick=${addPlan}>Crear rutina</button>
         </div>
       <//>
@@ -774,7 +854,7 @@ const PageGym = () => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: FINANCE
+// PAGE: FINANCE  (balance hero + grouped by day)
 // ══════════════════════════════════════════════════════════════════════════
 const PageFinance = () => {
   const today = todayKey();
@@ -784,17 +864,18 @@ const PageFinance = () => {
   const [showAdd,setShowAdd] = useState(false);
   const [form,setForm] = useState({type:'expense',amount:'',category:'Comida',note:'',date:today});
   const FCATS = {income:['Salario','Freelance','Negocio','Inversión','Otro'],expense:['Comida','Transporte','Entretenimiento','Salud','Ropa','Educación','Hogar','Suscripciones','Otro']};
-  const FCCOL = {'Salario':'#3D7A52','Freelance':'#4A9C8C','Negocio':'#7A6BB5','Inversión':'#B5834A','Otro':'#9A7A6B','Comida':'#B5614A','Transporte':'#4A7CB5','Entretenimiento':'#B5834A','Salud':'#4A9C8C','Ropa':'#D4537E','Educación':'#7A6BB5','Hogar':'#6B9C7A','Suscripciones':'#9A6BB5'};
+  const FCCOL = {'Salario':'#4CAF50','Freelance':'#8BC34A','Comida':'#FF7043','Transporte':'#42A5F5','Entretenimiento':'#AB47BC','Salud':'#26C6DA','Ropa':'#EC407A','Educación':'#7E57C2','Hogar':'#66BB6A','Suscripciones':'#FFA726','Inversión':'#FFD700','Negocio':'#CDDC39','Otro':'#78909C'};
   const sync = t => { setTxns(t); save('txns',t); };
   const add = () => { if(!form.amount)return; sync([{...form,id:uid(),amount:Number(form.amount)},...txns]); setForm({type:'expense',amount:'',category:'Comida',note:'',date:today}); setShowAdd(false); };
   const pfx = view==='mes'?mo:today.slice(0,4);
-  const inP  = txns.filter(t=>t.date.startsWith(pfx));
-  const inc  = inP.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const exp  = inP.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const byCat = {};
-  inP.filter(t=>t.type==='expense').forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
-  const catList = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,6);
-
+  const inP = txns.filter(t=>t.date.startsWith(pfx));
+  const inc = inP.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp = inP.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const bal = inc-exp;
+  const sorted=[...inP].sort((a,b)=>b.date.localeCompare(a.date));
+  const byDay={};sorted.forEach(t=>{if(!byDay[t.date])byDay[t.date]=[];byDay[t.date].push(t);});
+  const byCat={};inP.filter(t=>t.type==='expense').forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
+  const catList=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
   return html`
     <div class="page fade-up">
       <div class="page-header">
@@ -802,52 +883,70 @@ const PageFinance = () => {
         <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Movimiento</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        ${['mes','año'].map(v=>html`<button class=${'tab-pill'+(view===v?' active':'')} onClick=${()=>setView(v)} style="text-transform:capitalize">${v}</button>`)}
+        ${['mes','año'].map(v=>html`<button class=${'tab-pill'+(view===v?' active':'')} onClick=${()=>setView(v)}>${v==='mes'?'Este mes':'Este año'}</button>`)}
       </div>
-      <div class="grid3" style="margin-bottom:20px">
-        ${[{l:'Ingresos',v:inc,c:'#3D7A52',i:'up'},{l:'Gastos',v:exp,c:'#B5614A',i:'down'},{l:'Balance',v:inc-exp,c:inc-exp>=0?'#3D7A52':'#B5614A',i:'finance'}].map(s=>html`
+      <div class="card" style=${{marginBottom:14,textAlign:'center',padding:'24px 18px',background:bal>=0?'rgba(52,180,72,0.18)':'rgba(255,69,58,0.15)',borderColor:bal>=0?'rgba(52,180,72,0.35)':'rgba(255,69,58,0.3)'}}>
+        <p style="font-size:11px;font-weight:500;color:rgba(200,240,200,0.55);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Balance ${view==='mes'?'del mes':'del año'}</p>
+        <p style=${{fontSize:38,fontWeight:700,color:bal>=0?'#6EE78A':'#FF8A80',letterSpacing:'-1px'}}>${fmtMoney(bal)}</p>
+        <p style="font-size:12px;color:rgba(200,240,200,0.4);margin-top:6px">${bal>=0?'✓ En positivo':'⚠ En negativo'}</p>
+      </div>
+      <div class="grid2" style="margin-bottom:14px">
+        ${[{l:'Ingresos',v:inc,c:'#6EE78A',i:'up'},{l:'Gastos',v:exp,c:'#FF8A80',i:'down'}].map(s=>html`
           <div class="card" style="text-align:center;padding:14px 10px">
             <div style="display:flex;justify-content:center;margin-bottom:6px"><${Ic} n=${s.i} s=${14} c=${s.c}/></div>
-            <p style="font-size:10px;color:rgba(200,240,200,0.55);margin-bottom:4px">${s.l}</p>
-            <p style=${{fontSize:13,fontWeight:700,color:s.c}}>${fmtMoney(s.v)}</p>
+            <p style="font-size:10px;color:rgba(200,240,200,0.5);margin-bottom:4px">${s.l}</p>
+            <p style=${{fontSize:15,fontWeight:700,color:s.c}}>${fmtMoney(s.v)}</p>
           </div>
         `)}
       </div>
       ${catList.length>0&&html`
-        <div class="card" style="margin-bottom:20px">
-          <p style="font-size:12px;font-weight:500;color:rgba(200,240,200,0.55);margin-bottom:12px">Gastos por categoría</p>
+        <div class="card" style="margin-bottom:16px">
+          <p style="font-size:12px;font-weight:500;color:rgba(200,240,200,0.55);margin-bottom:12px">Top gastos</p>
           ${catList.map(([cat,amt])=>html`
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-              <span style="font-size:11px;color:rgba(210,240,210,0.85);width:90px;flex-shrink:0">${cat}</span>
-              <div class="prog-track" style="flex:1"><div style=${{height:'100%',borderRadius:3,background:FCCOL[cat]||'#9A7A6B',width:`${Math.min(100,amt/exp*100)}%`,transition:'width .5s'}}/></div>
-              <span style="font-size:11px;font-weight:600;color:#E8F5E8;width:72px;text-align:right;flex-shrink:0">${fmtMoney(amt)}</span>
+              <div style=${{width:8,height:8,borderRadius:'50%',background:FCCOL[cat]||'#78909C',flexShrink:0}}/>
+              <span style="font-size:12px;color:rgba(200,240,200,0.7);flex:1">${cat}</span>
+              <div class="prog-track" style="width:70px"><div style=${{height:'100%',borderRadius:3,background:FCCOL[cat]||'#78909C',width:`${Math.min(100,amt/exp*100)}%`}}/></div>
+              <span style="font-size:12px;font-weight:600;color:#E8F5E8;min-width:68px;text-align:right">${fmtMoney(amt)}</span>
             </div>
           `)}
         </div>
       `}
       <p style="font-size:13px;font-weight:600;color:#E8F5E8;margin-bottom:10px">Movimientos</p>
-      ${inP.length===0&&html`<div class="card empty-state"><div class="emo">💸</div><p style="color:rgba(200,240,200,0.35);font-size:13px">Sin movimientos</p></div>`}
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${[...txns].filter(t=>t.date.startsWith(pfx)).sort((a,b)=>b.date.localeCompare(a.date)).map(t=>html`
-          <div class="card" style="display:flex;align-items:center;gap:12px">
-            <div style=${{width:36,height:36,borderRadius:10,background:(FCCOL[t.category]||'#9A7A6B')+'20',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <${Ic} n=${t.type==='income'?'up':'down'} s=${16} c=${t.type==='income'?'#3D7A52':'#B5614A'}/>
+      ${Object.keys(byDay).length===0&&html`<div class="card empty-state"><div class="emo">💸</div><p style="color:rgba(200,240,200,0.4);font-size:13px">Sin movimientos</p></div>`}
+      ${Object.entries(byDay).map(([day,ts])=>{
+        const dInc=ts.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+        const dExp=ts.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+        return html`
+          <div style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 4px">
+              <span style="font-size:12px;font-weight:600;color:rgba(200,240,200,0.6)">${day===today?'Hoy':fmtDate(day)}</span>
+              <span style=${{fontSize:11,color:dInc-dExp>=0?'#6EE78A':'#FF8A80',fontWeight:500}}>${dInc>0?'+'+fmtMoney(dInc)+' ':''}${dExp>0?'- '+fmtMoney(dExp):''}</span>
             </div>
-            <div style="flex:1;min-width:0">
-              <p style="font-size:13px;font-weight:500;color:#E8F5E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||t.category}</p>
-              <p style="font-size:11px;color:rgba(200,240,200,0.45);margin-top:1px">${fmtDate(t.date)} · ${t.category}</p>
-            </div>
-            <div style="flex-shrink:0;text-align:right">
-              <p style=${{fontSize:13,fontWeight:600,color:t.type==='income'?'#3D7A52':'#B5614A'}}>${t.type==='income'?'+':'-'}${fmtMoney(t.amount)}</p>
-              <button onClick=${()=>sync(txns.filter(x=>x.id!==t.id))} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.2);margin-top:2px"><${Ic} n="trash" s=${12}/></button>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              ${ts.map(t=>html`
+                <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+                  <div style=${{width:34,height:34,borderRadius:10,background:(FCCOL[t.category]||'#78909C')+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <${Ic} n=${t.type==='income'?'up':'down'} s=${15} c=${t.type==='income'?'#6EE78A':'#FF8A80'}/>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <p style="font-size:13px;font-weight:500;color:#E8F5E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||t.category}</p>
+                    <p style="font-size:11px;color:rgba(200,240,200,0.4);margin-top:1px">${t.category}</p>
+                  </div>
+                  <div style="flex-shrink:0;text-align:right">
+                    <p style=${{fontSize:14,fontWeight:700,color:t.type==='income'?'#6EE78A':'#FF8A80'}}>${t.type==='income'?'+':'-'}${fmtMoney(t.amount)}</p>
+                    <button onClick=${()=>sync(txns.filter(x=>x.id!==t.id))} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.2);margin-top:2px"><${Ic} n="trash" s=${12}/></button>
+                  </div>
+                </div>
+              `)}
             </div>
           </div>
-        `)}
-      </div>
+        `;
+      })}
       <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nuevo movimiento">
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.5)">
-            ${['income','expense'].map(tp=>html`<button onClick=${()=>setForm({...form,type:tp,category:tp==='income'?'Salario':'Comida'})} style=${{padding:10,border:'none',cursor:'pointer',fontWeight:500,fontSize:13,background:form.type===tp?(tp==='income'?'rgba(61,122,82,0.7)':'rgba(181,97,74,0.7)'):'rgba(255,255,255,0.3)',color:form.type===tp?'#fff':'rgba(210,240,210,0.85)',fontFamily:'Inter,sans-serif'}}>${tp==='income'?'💰 Ingreso':'💸 Gasto'}</button>`)}
+          <div style="display:grid;grid-template-columns:1fr 1fr;border-radius:12px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.15)">
+            ${['income','expense'].map(tp=>html`<button onClick=${()=>setForm({...form,type:tp,category:tp==='income'?'Salario':'Comida'})} style=${{padding:10,border:'none',cursor:'pointer',fontWeight:600,fontSize:13,background:form.type===tp?(tp==='income'?'rgba(52,180,72,0.6)':'rgba(255,69,58,0.5)'):'rgba(255,255,255,0.06)',color:form.type===tp?'#fff':'rgba(200,240,200,0.6)',fontFamily:'Inter,sans-serif'}}>${tp==='income'?'💰 Ingreso':'💸 Gasto'}</button>`)}
           </div>
           <input type="number" value=${form.amount} onInput=${e=>setForm({...form,amount:e.target.value})} placeholder="Monto" autoFocus/>
           <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${(FCATS[form.type]||[]).map(c=>html`<option>${c}</option>`)}</select></div>
@@ -861,49 +960,69 @@ const PageFinance = () => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: GOALS
+// PAGE: GOALS  (subtasks drive % progress)
 // ══════════════════════════════════════════════════════════════════════════
 const PageGoals = () => {
   const today = todayKey();
   const [goals,setGoals] = useState(()=>load('goals',[]));
   const [showAdd,setShowAdd] = useState(false);
-  const [form,setForm] = useState({title:'',category:'Personal',target:100,current:0,unit:'%',due:'',note:''});
+  const [addSubFor,setAddSubFor] = useState(null);
+  const [subForm,setSubForm] = useState({title:'',due:''});
+  const [form,setForm] = useState({title:'',category:'Personal',due:'',note:''});
   const sync = g => { setGoals(g); save('goals',g); };
-  const add = () => { if(!form.title.trim())return; sync([...goals,{...form,id:uid(),target:Number(form.target),current:Number(form.current)}]); setForm({title:'',category:'Personal',target:100,current:0,unit:'%',due:'',note:''}); setShowAdd(false); };
-  const upd = (id,d) => sync(goals.map(g=>g.id===id?{...g,current:Math.min(g.target,Math.max(0,g.current+d))}:g));
-
+  const addGoal = () => { if(!form.title.trim())return; sync([...goals,{...form,id:uid(),subtasks:[]}]); setForm({title:'',category:'Personal',due:'',note:''}); setShowAdd(false); };
+  const addSub = gid => { if(!subForm.title.trim())return; sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:[...(g.subtasks||[]),{id:uid(),title:subForm.title,due:subForm.due,done:false}]})); setSubForm({title:'',due:''}); setAddSubFor(null); };
+  const toggleSub = (gid,sid) => sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:(g.subtasks||[]).map(s=>s.id===sid?{...s,done:!s.done}:s)}));
+  const delSub = (gid,sid) => sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:(g.subtasks||[]).filter(s=>s.id!==sid)}));
+  const pct = g => { const s=g.subtasks||[]; return s.length?Math.round(s.filter(x=>x.done).length/s.length*100):0; };
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#E8F5E8">Metas</h2><p style="font-size:12px;color:rgba(200,240,200,0.55)">${goals.filter(g=>g.current>=g.target).length}/${goals.length} completadas</p></div>
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#E8F5E8">Metas</h2><p style="font-size:12px;color:rgba(200,240,200,0.55)">${goals.filter(g=>pct(g)>=100).length}/${goals.length} completadas</p></div>
         <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nueva</button>
       </div>
-      ${goals.length===0&&html`<div class="card empty-state"><div class="emo">🎯</div><p style="font-size:14px;font-weight:500;color:#E8F5E8;margin-bottom:6px">Define tu primera meta</p><p style="font-size:12px;color:rgba(200,240,200,0.45)">Establece objetivos y sigue tu progreso</p></div>`}
+      ${goals.length===0&&html`<div class="card empty-state"><div class="emo">🎯</div><p style="font-size:14px;font-weight:500;color:#E8F5E8;margin-bottom:6px">Define tu primera meta</p><p style="font-size:12px;color:rgba(200,240,200,0.4)">Agrega pasos para medir tu avance</p></div>`}
       <div style="display:flex;flex-direction:column;gap:14px">
         ${goals.map(g=>{
-          const pct=Math.min(100,Math.round(g.current/g.target*100));
-          const done=pct>=100;
+          const p=pct(g); const done=p>=100; const subs=g.subtasks||[]; const cc=CAT_COLORS[g.category]||'#9A7A6B';
           return html`
-            <div class="card" style=${{borderLeft:`3px solid ${done?'#3D7A52':CAT_COLORS[g.category]||'#9A7A6B'}`}}>
+            <div class="card" style=${{borderLeft:`3px solid ${done?'#6EE78A':cc}`}}>
               <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
-                <div style="flex:1">
+                <div style="flex:1;min-width:0">
                   <div style="display:flex;align-items:center;gap:8px">${done&&html`<span>⭐</span>`}<p style="font-size:14px;font-weight:600;color:#E8F5E8">${g.title}</p></div>
                   <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-                    <span class="badge" style=${{background:CAT_COLORS[g.category]+'20',color:CAT_COLORS[g.category],fontSize:10}}>${g.category}</span>
-                    ${g.due&&html`<span style="font-size:11px;color:rgba(200,240,200,0.45)">📅 ${fmtDate(g.due)}</span>`}
+                    <span class="badge" style=${{background:cc+'22',color:cc,fontSize:10}}>${g.category}</span>
+                    ${g.due&&html`<span style="font-size:11px;color:rgba(200,240,200,0.4)">📅 ${fmtDate(g.due)}</span>`}
                   </div>
                 </div>
-                <button onClick=${()=>sync(goals.filter(x=>x.id!==g.id))} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
+                <button onClick=${()=>sync(goals.filter(x=>x.id!==g.id))} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.2);padding:4px;flex-shrink:0"><${Ic} n="trash" s=${14}/></button>
               </div>
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${pct}%`,background:`linear-gradient(90deg,${CAT_COLORS[g.category]||'#9A7A6B'}99,${CAT_COLORS[g.category]||'#9A7A6B'})`}}/></div>
-                <span style="font-size:14px;font-weight:700;color:#80EE90;min-width:40px;text-align:right">${pct}%</span>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${p}%`,background:`linear-gradient(90deg,${cc}99,${cc})`}}/></div>
+                <span style=${{fontSize:18,fontWeight:700,color:done?'#6EE78A':cc,minWidth:44,textAlign:'right'}}>${p}%</span>
               </div>
-              <div style="display:flex;align-items:center;justify-content:space-between">
-                <p style="font-size:12px;color:rgba(200,240,200,0.55)">${g.current} / ${g.target} ${g.unit}</p>
-                ${!done?html`<div style="display:flex;gap:6px"><button onClick=${()=>upd(g.id,-1)} style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.3);cursor:pointer;font-size:16px;color:rgba(210,240,210,0.85);display:flex;align-items:center;justify-content:center">−</button><button onClick=${()=>upd(g.id,1)} style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(61,122,82,0.35);background:rgba(61,122,82,0.12);cursor:pointer;font-size:16px;color:#A8EFB8;display:flex;align-items:center;justify-content:center">+</button></div>`:html`<span style="font-size:12px;font-weight:500;color:#80EE90">¡Completada! 🎉</span>`}
+              <div style="display:flex;flex-direction:column;gap:6px">
+                ${subs.map(s=>html`
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.05);border-radius:10px;border:0.5px solid rgba(255,255,255,0.08)">
+                    <div class=${'check-box'+(s.done?' done':'')} style="width:18px;height:18px;border-radius:5px" onClick=${()=>toggleSub(g.id,s.id)}>${s.done&&html`<${Ic} n="check" s=${11} c="#fff"/>`}</div>
+                    <p style=${{fontSize:12,flex:1,color:s.done?'rgba(200,240,200,0.35)':'rgba(200,240,200,0.85)',textDecoration:s.done?'line-through':'none'}}>${s.title}</p>
+                    ${s.due&&html`<span style="font-size:10px;color:rgba(200,240,200,0.35)">📅 ${fmtDate(s.due)}</span>`}
+                    <button onClick=${()=>delSub(g.id,s.id)} style="background:none;border:none;cursor:pointer;color:rgba(200,240,200,0.18)"><${Ic} n="trash" s=${12}/></button>
+                  </div>
+                `)}
+                ${addSubFor===g.id?html`
+                  <div style="display:flex;gap:6px;margin-top:4px">
+                    <input value=${subForm.title} onInput=${e=>setSubForm({...subForm,title:e.target.value})} placeholder="Nuevo paso..." autoFocus style="flex:1;font-size:12px;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addSub(g.id);if(e.key==='Escape')setAddSubFor(null);}}/>
+                    <input type="date" value=${subForm.due} onInput=${e=>setSubForm({...subForm,due:e.target.value})} style="width:120px;font-size:11px;padding:8px 6px"/>
+                    <button class="btn-p" style="padding:8px 12px;font-size:12px" onClick=${()=>addSub(g.id)}>+</button>
+                  </div>
+                `:html`
+                  <button onClick=${()=>setAddSubFor(g.id)} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed rgba(200,240,200,0.2);background:none;color:rgba(200,240,200,0.4);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif;margin-top:2px">
+                    <${Ic} n="plus" s=${12} c="rgba(200,240,200,0.4)"/> Agregar paso
+                  </button>
+                `}
               </div>
-              ${g.note&&html`<p style="font-size:11px;color:rgba(200,240,200,0.45);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.4)">${g.note}</p>`}
+              ${g.note&&html`<p style="font-size:11px;color:rgba(200,240,200,0.4);margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(255,255,255,0.08)">${g.note}</p>`}
             </div>
           `;
         })}
@@ -912,13 +1031,10 @@ const PageGoals = () => {
         <div style="display:flex;flex-direction:column;gap:12px">
           <input value=${form.title} onInput=${e=>setForm({...form,title:e.target.value})} placeholder="¿Cuál es tu meta?" autoFocus/>
           <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
-          <div class="grid2">
-            <div><label class="lbl">Objetivo</label><input type="number" value=${form.target} onInput=${e=>setForm({...form,target:e.target.value})}/></div>
-            <div><label class="lbl">Unidad</label><input value=${form.unit} onInput=${e=>setForm({...form,unit:e.target.value})} placeholder="km, libros, %"/></div>
-          </div>
           <div><label class="lbl">Fecha límite</label><input type="date" value=${form.due} onInput=${e=>setForm({...form,due:e.target.value})}/></div>
-          <textarea value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Nota o descripción" rows="2" style="resize:none"/>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Crear meta</button>
+          <textarea value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Descripción o motivación" rows="2" style="resize:none"/>
+          <p style="font-size:11px;color:rgba(200,240,200,0.4)">💡 Después podrás agregar pasos que calculan el % automáticamente.</p>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${addGoal}>Crear meta</button>
         </div>
       <//>
     </div>
