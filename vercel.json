@@ -1,9 +1,17 @@
 {
+  "version": 2,
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "installCommand": "",
+  "framework": null,
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com https://api.anthropic.com" }
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' 'unsafe-inline' https://esm.sh https://fonts.googleapis.com https://fonts.gstatic.com https://api.anthropic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://esm.sh"
+        }
       ]
     }
   ]
