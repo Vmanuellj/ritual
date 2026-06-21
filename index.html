@@ -1,96 +1,71 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ritual.</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Inter',sans-serif;background:#DDD8CF;overflow-x:hidden;min-height:100vh;}
-
-    /* ── BACKGROUND ── */
     .bg-scene{position:fixed;inset:0;z-index:0;overflow:hidden;}
     .blob{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;}
     .blob-1{width:600px;height:600px;top:-150px;left:-100px;background:rgba(110,160,100,0.38);}
     .blob-2{width:500px;height:500px;top:30%;right:-150px;background:rgba(196,170,118,0.35);}
     .blob-3{width:400px;height:400px;bottom:-100px;left:30%;background:rgba(140,190,155,0.3);}
     .blob-4{width:350px;height:350px;top:10%;right:25%;background:rgba(210,200,175,0.25);}
-
-    /* ── GLASS ── */
     .glass{background:rgba(255,255,255,0.28);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid rgba(255,255,255,0.52);box-shadow:0 8px 32px rgba(90,70,45,0.1),inset 0 1px 0 rgba(255,255,255,0.65);}
-    .glass-sm{background:rgba(255,255,255,0.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.4);}
-    .glass-dark{background:rgba(30,26,20,0.12);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.2);}
     .glass-hover:hover{background:rgba(255,255,255,0.38);box-shadow:0 12px 40px rgba(90,70,45,0.14),inset 0 1px 0 rgba(255,255,255,0.75);transform:translateY(-1px);transition:all .2s ease;}
-
-    /* ── SIDEBAR ── */
-    .sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;z-index:30;background:rgba(255,255,255,0.32);backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border-right:1px solid rgba(255,255,255,0.5);display:flex;flex-direction:column;}
-    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:500;color:rgba(92,82,68,0.75);cursor:pointer;transition:all .15s ease;border:1px solid transparent;}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;z-index:30;background:rgba(255,255,255,0.32);backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border-right:1px solid rgba(255,255,255,0.5);display:flex;flex-direction:column;padding:24px 14px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:500;color:rgba(92,82,68,0.75);cursor:pointer;transition:all .15s ease;border:1px solid transparent;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;}
     .nav-item:hover{background:rgba(255,255,255,0.45);color:#1E1A14;}
     .nav-item.active{background:rgba(61,122,82,0.13);color:#2D6040;border-color:rgba(61,122,82,0.2);}
-    .nav-item svg{flex-shrink:0;opacity:.7;}
-    .nav-item.active svg{opacity:1;}
-
-    /* ── BOTTOM NAV ── */
     .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:30;padding:8px 12px 20px;background:rgba(255,255,255,0.4);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,0.5);}
-    .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:10px;font-size:10px;font-weight:500;color:rgba(92,82,68,0.6);cursor:pointer;transition:all .15s ease;border:1px solid transparent;}
+    .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:10px;font-size:10px;font-weight:500;color:rgba(92,82,68,0.6);cursor:pointer;transition:all .15s ease;border:1px solid transparent;background:none;font-family:'Inter',sans-serif;}
     .bnav-item.active{background:rgba(61,122,82,0.12);color:#2D6040;border-color:rgba(61,122,82,0.18);}
-
-    /* ── RESPONSIVE ── */
     @media(min-width:768px){.main-content{margin-left:220px;}.bottom-nav{display:none!important;}.sidebar{display:flex;}}
     @media(max-width:767px){.sidebar{display:none;}.bottom-nav{display:flex;}.main-content{margin-left:0;padding-bottom:90px;}}
-
-    /* ── INPUTS ── */
     input,textarea,select{background:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.6);color:#1E1A14;border-radius:10px;padding:10px 13px;width:100%;outline:none;font-family:'Inter',sans-serif;font-size:13px;transition:border-color .2s,background .2s;}
     input:focus,textarea:focus,select:focus{border-color:rgba(61,122,82,0.5);background:rgba(255,255,255,0.6);box-shadow:0 0 0 3px rgba(61,122,82,0.08);}
     input::placeholder,textarea::placeholder{color:rgba(92,82,68,0.4);}
     select option{background:#f5f0e8;color:#1E1A14;}
-    input[type="date"]::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;}
-
-    /* ── BUTTONS ── */
-    .btn-primary{background:rgba(61,122,82,0.85);color:#fff;border:1px solid rgba(61,122,82,0.4);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
-    .btn-primary:hover{background:rgba(61,122,82,1);box-shadow:0 4px 16px rgba(61,122,82,0.3);transform:translateY(-1px);}
-    .btn-ghost{background:rgba(255,255,255,0.4);color:#5C5244;border:1px solid rgba(255,255,255,0.6);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;}
-    .btn-ghost:hover{background:rgba(255,255,255,0.6);}
-    .btn-danger{background:rgba(181,97,74,0.1);color:#B5614A;border:1px solid rgba(181,97,74,0.25);border-radius:10px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;}
-
-    /* ── CHECK ── */
+    .btn-p{background:rgba(61,122,82,0.85);color:#fff;border:1px solid rgba(61,122,82,0.4);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;font-family:'Inter',sans-serif;}
+    .btn-p:hover{background:rgba(61,122,82,1);box-shadow:0 4px 16px rgba(61,122,82,0.3);transform:translateY(-1px);}
+    .btn-p:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+    .btn-g{background:rgba(255,255,255,0.4);color:#5C5244;border:1px solid rgba(255,255,255,0.6);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:6px;}
+    .btn-g:hover{background:rgba(255,255,255,0.6);}
+    .btn-d{background:rgba(181,97,74,0.1);color:#B5614A;border:1px solid rgba(181,97,74,0.25);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;}
     .check-box{width:22px;height:22px;border-radius:7px;border:1.5px solid rgba(61,122,82,0.35);background:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;}
     .check-box.done{background:rgba(61,122,82,0.82);border-color:transparent;box-shadow:0 2px 8px rgba(61,122,82,0.28);}
-
-    /* ── PROGRESS ── */
     .prog-track{height:6px;background:rgba(255,255,255,0.4);border-radius:3px;overflow:hidden;}
     .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,rgba(61,122,82,0.7),rgba(90,154,88,0.9));transition:width .5s ease;}
-
-    /* ── MODAL ── */
     .modal-bg{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(30,26,20,0.45);backdrop-filter:blur(5px);}
     .modal-box{background:rgba(245,241,235,0.94);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,0.72);box-shadow:0 24px 60px rgba(90,70,45,0.22);border-radius:20px;padding:22px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
-
-    /* ── BADGES ── */
-    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
-    .badge-green{background:rgba(61,122,82,0.13);color:#2D6040;}
-    .badge-sand{background:rgba(181,131,74,0.15);color:#7A5C30;}
-    .badge-red{background:rgba(181,97,74,0.13);color:#924A32;}
-    .badge-blue{background:rgba(74,124,181,0.13);color:#2D5A8C;}
-    .badge-purple{background:rgba(124,74,181,0.13);color:#5D3080;}
-
-    /* ── MISC ── */
-    .text-p{color:#1E1A14;} .text-s{color:#5C5244;} .text-m{color:rgba(92,82,68,0.55);}
     .card{background:rgba(255,255,255,0.28);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid rgba(255,255,255,0.52);border-radius:16px;padding:18px;}
-    .divider{border:none;border-top:1px solid rgba(255,255,255,0.45);margin:12px 0;}
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+    .badge-g{background:rgba(61,122,82,0.13);color:#2D6040;}
+    .badge-s{background:rgba(181,131,74,0.15);color:#7A5C30;}
+    .badge-r{background:rgba(181,97,74,0.13);color:#924A32;}
+    .tab-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.2);color:rgba(92,82,68,0.7);transition:all .15s;font-family:'Inter',sans-serif;}
+    .tab-pill.active{background:rgba(61,122,82,0.15);color:#2D6040;border-color:rgba(61,122,82,0.25);}
+    .mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1px solid rgba(255,255,255,0.4);cursor:pointer;transition:all .2s;background:rgba(255,255,255,0.2);font-family:'Inter',sans-serif;}
+    .mood-btn.sel{background:rgba(61,122,82,0.15);border-color:rgba(61,122,82,0.3);}
     ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.4);border-radius:3px;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
     .fade-up{animation:fadeUp .28s ease forwards;}
-    @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite;display:inline-block;}
-    .mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1px solid rgba(255,255,255,0.4);cursor:pointer;transition:all .2s;background:rgba(255,255,255,0.2);}
-    .mood-btn.sel{background:rgba(61,122,82,0.15);border-color:rgba(61,122,82,0.3);}
-    .tab-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.2);color:rgba(92,82,68,0.7);transition:all .15s;}
-    .tab-pill.active{background:rgba(61,122,82,0.15);color:#2D6040;border-color:rgba(61,122,82,0.25);}
-    .streak-fire{color:#e07030;font-size:13px;}
+    @keyframes spin-anim{to{transform:rotate(360deg)}}
+    .spin{animation:spin-anim 1s linear infinite;display:inline-block;}
+    .page{padding:28px 24px 0;}
+    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+    .row{display:flex;align-items:center;gap:8px;}
+    .col{display:flex;flex-direction:column;gap:4px;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+    label.lbl{font-size:11px;color:rgba(92,82,68,0.6);display:block;margin-bottom:5px;}
+    .empty-state{text-align:center;padding:48px 20px;}
+    .empty-state .emo{font-size:44px;margin-bottom:12px;}
+    .streak{color:#e07030;font-size:11px;}
+    .info-box{background:rgba(181,131,74,0.08);border:1px solid rgba(181,131,74,0.25);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;}
   </style>
 </head>
 <body>
@@ -100,68 +75,81 @@
   <div class="blob blob-3"></div>
   <div class="blob blob-4"></div>
 </div>
-<div id="root" style="position:relative;z-index:1;"></div>
-<script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
+<div id="root" style="position:relative;z-index:1;min-height:100vh;"></div>
+
+<script type="module">
+import { h, render } from 'https://esm.sh/preact@10.23.1';
+import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.23.1/hooks';
+import htm from 'https://esm.sh/htm@3.1.1';
+const html = htm.bind(h);
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
 const todayKey = () => new Date().toISOString().split('T')[0];
-const load = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
-const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-const fmtDate = (d) => new Date(d+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});
-const fmtMoney = (n) => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:0}).format(n||0);
-const uid = () => Date.now() + Math.random().toString(36).slice(2,6);
-
+const load = (k,fb) => { try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;} };
+const save = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+const uid  = () => Date.now()+Math.random().toString(36).slice(2,6);
+const fmtDate = d => new Date(d+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+const fmtMoney = n => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:0}).format(n||0);
 const CAT_COLORS = {Trabajo:'#6B9C7A',Personal:'#B5834A',Salud:'#4A9C8C',Aprendizaje:'#7A6BB5',Hogar:'#B58A4A',Otro:'#9A7A6B'};
-const CATEGORIES = Object.keys(CAT_COLORS);
+const CATS = Object.keys(CAT_COLORS);
 const MOODS = [{e:'😴',n:'Cansado',v:1},{e:'😐',n:'Normal',v:2},{e:'🙂',n:'Bien',v:3},{e:'😊',n:'Genial',v:4},{e:'🔥',n:'Imparable',v:5}];
 
-// ── ICONS ──────────────────────────────────────────────────────────────────
-const I = ({p,s=18,c='currentColor',sw=1.8}) => (
-  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{p}</svg>
-);
-const icons = {
-  home: <><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
-  habit: <><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></>,
-  task: <><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>,
-  food: <><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></>,
-  gym: <><path d="M6 4v16M10 4v16M6 12h4M14 4v16M18 4v16M14 12h4"/></>,
-  finance: <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></>,
-  goal: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>,
-  stats: <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>,
-  plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
-  trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></>,
-  x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
-  check: <polyline points="20 6 9 17 4 12"/>,
-  spark: <><path d="M12 3l1.09 3.26L17 7l-2.5 2.43.59 3.51L12 11.25 9.91 12.94l.59-3.51L8 7l3.91-.74z"/><path d="M5 3v4M3 5h4M19 17v4M17 19h4"/></>,
-  ai: <><path d="M12 2a10 10 0 110 20A10 10 0 0112 2"/><path d="M12 8v4l3 3"/></>,
-  edit: <><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/></>,
-  info: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
-  arrow_up: <><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></>,
-  arrow_down: <><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></>,
-  settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></>,
-  key: <><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></>,
-  more: <><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></>,
+// ── ICONS (SVG innerHTML strings) ─────────────────────────────────────────
+const ICON = {
+  home: '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  habit:'<path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+  task: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+  food: '<path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>',
+  gym:  '<path d="M6 4v16M10 4v16M6 12h4M14 4v16M18 4v16M14 12h4"/>',
+  finance:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',
+  goal: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  stats:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/>',
+  x:    '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  spark:'<path d="M12 3l1.09 3.26L17 7l-2.5 2.43.59 3.51L12 11.25 9.91 12.94l.59-3.51L8 7l3.91-.74z"/><path d="M5 3v4M3 5h4M19 17v4M17 19h4"/>',
+  info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  up:   '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
+  down: '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>',
+  key:  '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>',
+  more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
 };
-const Ic = ({n,s=18,c='currentColor',sw=1.8}) => <I p={icons[n]} s={s} c={c} sw={sw}/>;
+const Ic = ({n,s=18,c='currentColor',sw=1.8}) => html`
+  <svg width=${s} height=${s} viewBox="0 0 24 24" fill="none" stroke=${c} stroke-width=${sw} stroke-linecap="round" stroke-linejoin="round" dangerouslySetInnerHTML=${{__html:ICON[n]||''}}/>
+`;
 
 // ── MODAL ──────────────────────────────────────────────────────────────────
-const Modal = ({open, onClose, title, children}) => {
-  if (!open) return null;
-  return (
-    <div className="modal-bg" onClick={onClose}>
-      <div className="modal-box fade-up" onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
-          <h3 style={{fontSize:16,fontWeight:600,color:'#1E1A14'}}>{title}</h3>
-          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(92,82,68,0.5)',padding:4}}><Ic n="x" s={18}/></button>
+const Modal = ({open,onClose,title,children}) => {
+  if(!open) return null;
+  return html`
+    <div class="modal-bg" onClick=${onClose}>
+      <div class="modal-box fade-up" onClick=${e=>e.stopPropagation()}>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <h3 style="font-size:16px;font-weight:600;color:#1E1A14">${title}</h3>
+          <button onClick=${onClose} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.5);padding:4px"><${Ic} n="x" s=${18}/></button>
         </div>
-        {children}
+        ${children}
       </div>
     </div>
-  );
+  `;
 };
 
-// ── NAV CONFIG ─────────────────────────────────────────────────────────────
+// ── AI HELPER ─────────────────────────────────────────────────────────────
+const askAI = async (prompt, apiKey) => {
+  if(!apiKey) throw new Error('Sin API key. Configúrala en Ajustes.');
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,messages:[{role:'user',content:prompt}]})
+  });
+  if(!res.ok) throw new Error(`Error ${res.status}`);
+  const d = await res.json();
+  return d.content[0].text;
+};
+
+// ── NAV ────────────────────────────────────────────────────────────────────
 const TABS = [
   {id:'home',   label:'Inicio',   icon:'home'},
   {id:'habits', label:'Hábitos',  icon:'habit'},
@@ -172,126 +160,90 @@ const TABS = [
   {id:'goals',  label:'Metas',    icon:'goal'},
   {id:'stats',  label:'Stats',    icon:'stats'},
 ];
-const BNAV_PRIMARY = ['home','habits','tasks','food','gym'];
-
-// ── AI HELPER ─────────────────────────────────────────────────────────────
-const askAI = async (prompt, apiKey) => {
-  if (!apiKey) throw new Error('Sin API key. Configúrala en Ajustes.');
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{
-      'x-api-key': apiKey,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true',
-      'content-type':'application/json',
-    },
-    body: JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:1200,
-      messages:[{role:'user',content:prompt}]
-    })
-  });
-  if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
-  const data = await res.json();
-  return data.content[0].text;
-};
+const BNAV = ['home','habits','tasks','food','gym'];
+const SEC  = ['finance','goals','stats'];
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: HOME (Dashboard)
+// PAGE: HOME
 // ══════════════════════════════════════════════════════════════════════════
 const PageHome = ({setTab}) => {
   const today = todayKey();
-  const habits   = load('habits', []);
-  const tasks    = load('tasks', []);
-  const goals    = load('goals', []);
-  const txns     = load('txns', []);
-  const workouts = load('workout-logs', []);
-  const meals    = load('meals', {});
+  const habits = load('habits',[]);
+  const tasks  = load('tasks',[]);
+  const txns   = load('txns',[]);
+  const meals  = load('meals',{});
+  const logs   = load('workout-logs',[]);
+  const [mood,setMoodS] = useState(()=>load(`mood-${today}`,null));
+  const setMood = v => { setMoodS(v); save(`mood-${today}`,v); };
 
-  const [mood, setMoodState] = useState(() => load(`mood-${today}`, null));
-  const setMood = (v) => { setMoodState(v); save(`mood-${today}`, v); };
-
-  const doneHabits = habits.filter(h=>(h.done||[]).includes(today)).length;
-  const doneTasks  = tasks.filter(t=>t.done && t.due===today).length;
-  const totalTasks = tasks.filter(t=>t.due===today).length;
-  const todayMeals = (meals[today]||[]).length;
-  const todayWod   = workouts.find(w=>w.date===today);
-
-  const thisMonth = new Date().toISOString().slice(0,7);
-  const income    = txns.filter(t=>t.type==='income'&&t.date.startsWith(thisMonth)).reduce((s,t)=>s+t.amount,0);
-  const expense   = txns.filter(t=>t.type==='expense'&&t.date.startsWith(thisMonth)).reduce((s,t)=>s+t.amount,0);
-
-  const greet = () => { const h=new Date().getHours(); if(h<12)return'Buenos días'; if(h<18)return'Buenas tardes'; return'Buenas noches'; };
-  const name = load('ritual-name','');
+  const doneH  = habits.filter(h=>(h.done||[]).includes(today)).length;
+  const doneT  = tasks.filter(t=>t.done&&t.due===today).length;
+  const totT   = tasks.filter(t=>t.due===today).length;
+  const mealN  = (meals[today]||[]).length;
+  const wod    = logs.find(l=>l.date===today);
+  const mo     = today.slice(0,7);
+  const inc    = txns.filter(t=>t.type==='income'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0);
+  const exp    = txns.filter(t=>t.type==='expense'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0);
+  const name   = load('ritual-name','');
+  const greet  = () => { const h=new Date().getHours(); return h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches'; };
 
   const widgets = [
-    {label:'Hábitos hoy', val:`${doneHabits}/${habits.length}`, pct:habits.length?doneHabits/habits.length:0, color:'#3D7A52', tab:'habits', icon:'habit'},
-    {label:'Tareas hoy',  val:`${doneTasks}/${totalTasks}`,  pct:totalTasks?doneTasks/totalTasks:0,  color:'#B5834A', tab:'tasks',  icon:'task'},
-    {label:'Comidas reg.',val:`${todayMeals}/3`,             pct:todayMeals/3,                        color:'#4A9C8C', tab:'food',   icon:'food'},
-    {label:'Balance mes', val:fmtMoney(income-expense),      pct:0,                                   color:'#7A6BB5', tab:'finance',icon:'finance'},
+    {l:'Hábitos hoy', v:`${doneH}/${habits.length}`, pct:habits.length?doneH/habits.length:0, c:'#3D7A52', t:'habits', i:'habit'},
+    {l:'Tareas hoy',  v:`${doneT}/${totT}`,  pct:totT?doneT/totT:0,  c:'#B5834A', t:'tasks',  i:'task'},
+    {l:'Comidas reg.',v:`${mealN}/3`,         pct:mealN/3,             c:'#4A9C8C', t:'food',   i:'food'},
+    {l:'Balance mes', v:fmtMoney(inc-exp),    pct:0,                   c:'#7A6BB5', t:'finance',i:'finance'},
   ];
 
-  return (
-    <div className="fade-up" style={{padding:'28px 24px 0'}}>
-      {/* Header */}
-      <div className="card" style={{marginBottom:20}}>
-        <p style={{fontSize:12,color:'rgba(92,82,68,0.6)',marginBottom:4}}>
-          {new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}
-        </p>
-        <h1 style={{fontSize:22,fontWeight:700,color:'#1E1A14',marginBottom:4}}>
-          {greet()}{name ? `, ${name}` : ''} 👋
-        </h1>
-        <p style={{fontSize:13,color:'rgba(92,82,68,0.6)'}}>¿Cómo está tu día?</p>
+  return html`
+    <div class="page fade-up">
+      <div class="card" style="margin-bottom:20px">
+        <p style="font-size:12px;color:rgba(92,82,68,0.6);margin-bottom:4px">${new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}</p>
+        <h1 style="font-size:22px;font-weight:700;color:#1E1A14;margin-bottom:4px">${greet()}${name?`, ${name}`:''} 👋</h1>
+        <p style="font-size:13px;color:rgba(92,82,68,0.6)">¿Cómo está tu día?</p>
       </div>
 
-      {/* Mood */}
-      <div className="card" style={{marginBottom:20}}>
-        <p style={{fontSize:12,fontWeight:500,color:'rgba(92,82,68,0.7)',marginBottom:10}}>Estado de ánimo</p>
-        <div style={{display:'flex',gap:8}}>
-          {MOODS.map(m=>(
-            <button key={m.v} className={`mood-btn${mood===m.v?' sel':''}`} onClick={()=>setMood(m.v)}>
-              <span style={{fontSize:22}}>{m.e}</span>
-              <span style={{fontSize:10,color:'rgba(92,82,68,0.65)',fontWeight:500}}>{m.n}</span>
+      <div class="card" style="margin-bottom:20px">
+        <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.7);margin-bottom:10px">Estado de ánimo</p>
+        <div style="display:flex;gap:8px">
+          ${MOODS.map(m=>html`
+            <button class=${'mood-btn'+(mood===m.v?' sel':'')} onClick=${()=>setMood(m.v)}>
+              <span style="font-size:22px">${m.e}</span>
+              <span style="font-size:10px;color:rgba(92,82,68,0.65);font-weight:500">${m.n}</span>
             </button>
-          ))}
+          `)}
         </div>
       </div>
 
-      {/* Widgets grid */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:20}}>
-        {widgets.map(w=>(
-          <div key={w.label} className="card glass-hover" style={{cursor:'pointer'}} onClick={()=>setTab(w.tab)}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-              <span style={{fontSize:11,color:'rgba(92,82,68,0.6)',fontWeight:500}}>{w.label}</span>
-              <Ic n={w.icon} s={14} c={w.color}/>
+      <div class="grid2" style="margin-bottom:20px">
+        ${widgets.map(w=>html`
+          <div class="card glass-hover" style="cursor:pointer" onClick=${()=>setTab(w.t)}>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:11px;color:rgba(92,82,68,0.6);font-weight:500">${w.l}</span>
+              <${Ic} n=${w.i} s=${14} c=${w.c}/>
             </div>
-            <p style={{fontSize:20,fontWeight:700,color:'#1E1A14',marginBottom:8}}>{w.val}</p>
-            {w.pct>0&&<div className="prog-track"><div className="prog-fill" style={{width:`${Math.round(w.pct*100)}%`,background:`linear-gradient(90deg,${w.color}99,${w.color})`}}/></div>}
+            <p style="font-size:20px;font-weight:700;color:#1E1A14;margin-bottom:8px">${w.v}</p>
+            ${w.pct>0&&html`<div class="prog-track"><div class="prog-fill" style=${{width:`${Math.round(w.pct*100)}%`,background:`linear-gradient(90deg,${w.c}99,${w.c})`}}/></div>`}
           </div>
-        ))}
+        `)}
       </div>
 
-      {/* Today workout */}
-      {todayWod && (
-        <div className="card" style={{marginBottom:20}}>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <Ic n="gym" s={16} c="#3D7A52"/>
-            <p style={{fontSize:13,fontWeight:600,color:'#1E1A14'}}>Gym hoy: {todayWod.name}</p>
-            {todayWod.done && <span className="badge badge-green" style={{marginLeft:'auto'}}>✓ Listo</span>}
-          </div>
+      ${wod&&html`
+        <div class="card" style="margin-bottom:20px;display:flex;align-items:center;gap:8px">
+          <${Ic} n="gym" s=${16} c="#3D7A52"/>
+          <p style="font-size:13px;font-weight:600;color:#1E1A14;flex:1">Gym hoy: ${wod.name}</p>
+          ${wod.done&&html`<span class="badge badge-g">✓ Listo</span>`}
         </div>
-      )}
+      `}
 
-      {/* Quick actions */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:28}}>
-        {[{tab:'food',label:'Planear comidas',icon:'food'},{tab:'gym',label:'Ver rutina',icon:'gym'},{tab:'goals',label:'Mis metas',icon:'goal'},{tab:'stats',label:'Estadísticas',icon:'stats'}].map(a=>(
-          <button key={a.tab} className="btn-ghost" style={{justifyContent:'center',gap:8}} onClick={()=>setTab(a.tab)}>
-            <Ic n={a.icon} s={14} c="#5C5244"/>{a.label}
+      <div class="grid2">
+        ${[{t:'goals',l:'Mis metas',i:'goal'},{t:'stats',l:'Estadísticas',i:'stats'},{t:'gym',l:'Ver rutina',i:'gym'},{t:'finance',l:'Finanzas',i:'finance'}].map(a=>html`
+          <button class="btn-g" style="justify-content:center;gap:8px;width:100%" onClick=${()=>setTab(a.t)}>
+            <${Ic} n=${a.i} s=${14} c="#5C5244"/>${a.l}
           </button>
-        ))}
+        `)}
       </div>
     </div>
-  );
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -299,92 +251,76 @@ const PageHome = ({setTab}) => {
 // ══════════════════════════════════════════════════════════════════════════
 const PageHabits = () => {
   const today = todayKey();
-  const [habits, setHabits] = useState(()=>load('habits',[]));
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({name:'',icon:'✦',freq:'daily'});
-
-  const sync = (h) => { setHabits(h); save('habits',h); };
-  const toggle = (id) => sync(habits.map(h=>{ if(h.id!==id)return h; const done=h.done||[]; return{...h,done:done.includes(today)?done.filter(d=>d!==today):[...done,today]}; }));
-  const remove = (id) => sync(habits.filter(h=>h.id!==id));
-  const add = () => { if(!form.name.trim())return; sync([...habits,{...form,id:uid(),done:[]}]); setForm({name:'',icon:'✦',freq:'daily'}); setShowAdd(false); };
-
-  const streak = (h) => {
-    let s=0; const d=new Date();
-    while(true){ const k=d.toISOString().split('T')[0]; if(!(h.done||[]).includes(k))break; s++; d.setDate(d.getDate()-1); }
-    return s;
-  };
-
+  const [habits,setHabits] = useState(()=>load('habits',[]));
+  const [showAdd,setShowAdd] = useState(false);
+  const [form,setForm] = useState({name:'',icon:'✦'});
+  const sync = h => { setHabits(h); save('habits',h); };
+  const toggle = id => sync(habits.map(h=>{if(h.id!==id)return h;const done=h.done||[];return{...h,done:done.includes(today)?done.filter(d=>d!==today):[...done,today]};}));
+  const remove = id => sync(habits.filter(h=>h.id!==id));
+  const add = () => { if(!form.name.trim())return; sync([...habits,{...form,id:uid(),done:[]}]); setForm({name:'',icon:'✦'}); setShowAdd(false); };
+  const streak = h => { let s=0;const d=new Date();while(true){const k=d.toISOString().split('T')[0];if(!(h.done||[]).includes(k))break;s++;d.setDate(d.getDate()-1);}return s; };
   const done = habits.filter(h=>(h.done||[]).includes(today)).length;
-  const pct  = habits.length ? Math.round(done/habits.length*100) : 0;
-
+  const pct  = habits.length?Math.round(done/habits.length*100):0;
   const ICONS = ['✦','💧','📚','🏃','🧘','🍎','💊','✍️','🌞','🎯','💪','🎵','🛏️','🧹','💻'];
 
-  return (
-    <div className="fade-up" style={{padding:'28px 24px 0'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-        <div>
-          <h2 style={{fontSize:20,fontWeight:700,color:'#1E1A14'}}>Hábitos</h2>
-          <p style={{fontSize:12,color:'rgba(92,82,68,0.6)',marginTop:2}}>{done}/{habits.length} hoy · {pct}% completado</p>
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col">
+          <h2 style="font-size:20px;font-weight:700;color:#1E1A14">Hábitos</h2>
+          <p style="font-size:12px;color:rgba(92,82,68,0.6)">${done}/${habits.length} hoy · ${pct}%</p>
         </div>
-        <button className="btn-primary" onClick={()=>setShowAdd(true)}><Ic n="plus" s={15} c="#fff"/>Nuevo</button>
+        <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
       </div>
 
-      {/* Progress */}
-      <div className="card" style={{marginBottom:20}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-          <span style={{fontSize:12,color:'rgba(92,82,68,0.6)'}}>Progreso del día</span>
-          <span style={{fontSize:18,fontWeight:700,color:'#3D7A52'}}>{pct}%</span>
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:12px;color:rgba(92,82,68,0.6)">Progreso del día</span>
+          <span style="font-size:18px;font-weight:700;color:#3D7A52">${pct}%</span>
         </div>
-        <div className="prog-track"><div className="prog-fill" style={{width:`${pct}%`}}/></div>
+        <div class="prog-track"><div class="prog-fill" style=${{width:`${pct}%`}}/></div>
       </div>
 
-      {/* List */}
-      {habits.length===0 && (
-        <div className="card" style={{textAlign:'center',padding:'48px 20px'}}>
-          <div style={{fontSize:40,marginBottom:12}}>✦</div>
-          <p style={{color:'rgba(92,82,68,0.5)',fontSize:13}}>Crea tu primer hábito</p>
-        </div>
-      )}
-      <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        {habits.map(h=>{
-          const isDone = (h.done||[]).includes(today);
-          const s = streak(h);
-          return (
-            <div key={h.id} className={`card glass-hover${isDone?' ':''}`} style={{display:'flex',alignItems:'center',gap:12,opacity:isDone?.7:1}}>
-              <div className={`check-box${isDone?' done':''}`} onClick={()=>toggle(h.id)}>
-                {isDone && <Ic n="check" s={13} c="#fff"/>}
+      ${habits.length===0&&html`<div class="card empty-state"><div class="emo">✦</div><p style="color:rgba(92,82,68,0.5);font-size:13px">Crea tu primer hábito</p></div>`}
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${habits.map(h=>{
+          const isDone=(h.done||[]).includes(today);
+          const s=streak(h);
+          return html`
+            <div class="card" style=${{display:'flex',alignItems:'center',gap:12,opacity:isDone?.7:1}}>
+              <div class=${'check-box'+(isDone?' done':'')} onClick=${()=>toggle(h.id)}>
+                ${isDone&&html`<${Ic} n="check" s=${13} c="#fff"/>`}
               </div>
-              <span style={{fontSize:18}}>{h.icon}</span>
-              <div style={{flex:1}}>
-                <p style={{fontSize:13,fontWeight:500,color:isDone?'rgba(92,82,68,0.5)':'#1E1A14',textDecoration:isDone?'line-through':'none'}}>{h.name}</p>
-                {s>0 && <p className="streak-fire" style={{fontSize:11,marginTop:2}}>🔥 {s} días</p>}
+              <span style="font-size:18px">${h.icon}</span>
+              <div style="flex:1">
+                <p style=${{fontSize:'13px',fontWeight:500,color:isDone?'rgba(92,82,68,0.5)':'#1E1A14',textDecoration:isDone?'line-through':'none'}}>${h.name}</p>
+                ${s>0&&html`<p class="streak">🔥 ${s} días</p>`}
               </div>
-              <button onClick={()=>remove(h.id)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(92,82,68,0.3)',padding:4}}>
-                <Ic n="trash" s={14}/>
-              </button>
+              <button onClick=${()=>remove(h.id)} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
             </div>
-          );
+          `;
         })}
       </div>
 
-      <Modal open={showAdd} onClose={()=>setShowAdd(false)} title="Nuevo hábito">
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Ej: Meditar 10 minutos" autoFocus onKeyDown={e=>e.key==='Enter'&&add()}/>
+      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nuevo hábito">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${form.name} onInput=${e=>setForm({...form,name:e.target.value})} placeholder="Ej: Meditar 10 minutos" autoFocus onKeyDown=${e=>e.key==='Enter'&&add()}/>
           <div>
-            <p style={{fontSize:12,color:'rgba(92,82,68,0.6)',marginBottom:8}}>Ícono</p>
-            <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-              {ICONS.map(ic=>(
-                <button key={ic} onClick={()=>setForm({...form,icon:ic})} style={{width:36,height:36,borderRadius:8,border:`1.5px solid ${form.icon===ic?'#3D7A52':'rgba(255,255,255,0.5)'}`,background:form.icon===ic?'rgba(61,122,82,0.12)':'rgba(255,255,255,0.3)',cursor:'pointer',fontSize:18}}>
-                  {ic}
+            <label class="lbl">Ícono</label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              ${ICONS.map(ic=>html`
+                <button onClick=${()=>setForm({...form,icon:ic})} style=${{width:36,height:36,borderRadius:8,border:`1.5px solid ${form.icon===ic?'#3D7A52':'rgba(255,255,255,0.5)'}`,background:form.icon===ic?'rgba(61,122,82,0.12)':'rgba(255,255,255,0.3)',cursor:'pointer',fontSize:18,fontFamily:'serif'}}>
+                  ${ic}
                 </button>
-              ))}
+              `)}
             </div>
           </div>
-          <button className="btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={add}>Crear hábito</button>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Crear hábito</button>
         </div>
-      </Modal>
+      <//>
     </div>
-  );
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -392,81 +328,65 @@ const PageHabits = () => {
 // ══════════════════════════════════════════════════════════════════════════
 const PageTasks = () => {
   const today = todayKey();
-  const [tasks, setTasks] = useState(()=>load('tasks',[]));
-  const [filter, setFilter] = useState('hoy');
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({title:'',category:'Personal',priority:'media',due:today,note:''});
-
-  const sync = (t) => { setTasks(t); save('tasks',t); };
-  const toggle = (id) => sync(tasks.map(t=>t.id===id?{...t,done:!t.done}:t));
-  const remove = (id) => sync(tasks.filter(t=>t.id!==id));
-  const add = () => { if(!form.title.trim())return; sync([...tasks,{...form,id:uid(),done:false,createdAt:today}]); setForm({title:'',category:'Personal',priority:'media',due:today,note:''}); setShowAdd(false); };
-
+  const [tasks,setTasks] = useState(()=>load('tasks',[]));
+  const [filter,setFilter] = useState('hoy');
+  const [showAdd,setShowAdd] = useState(false);
+  const [form,setForm] = useState({title:'',category:'Personal',priority:'media',due:today,note:''});
+  const sync = t => { setTasks(t); save('tasks',t); };
+  const toggle = id => sync(tasks.map(t=>t.id===id?{...t,done:!t.done}:t));
+  const remove = id => sync(tasks.filter(t=>t.id!==id));
+  const add = () => { if(!form.title.trim())return; sync([...tasks,{...form,id:uid(),done:false}]); setForm({title:'',category:'Personal',priority:'media',due:today,note:''}); setShowAdd(false); };
   const PRIO = {alta:{c:'#B5614A',l:'Alta'},media:{c:'#B5834A',l:'Media'},baja:{c:'#6B9C7A',l:'Baja'}};
-
   const list = tasks.filter(t=>{
-    if(filter==='hoy') return t.due===today && !t.done;
+    if(filter==='hoy') return t.due===today&&!t.done;
     if(filter==='pendientes') return !t.done;
     if(filter==='completadas') return t.done;
     return true;
   }).sort((a,b)=>({alta:0,media:1,baja:2}[a.priority]-{alta:0,media:1,baja:2}[b.priority]));
 
-  return (
-    <div className="fade-up" style={{padding:'28px 24px 0'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-        <div>
-          <h2 style={{fontSize:20,fontWeight:700,color:'#1E1A14'}}>Tareas</h2>
-          <p style={{fontSize:12,color:'rgba(92,82,68,0.6)',marginTop:2}}>{tasks.filter(t=>!t.done).length} pendientes</p>
-        </div>
-        <button className="btn-primary" onClick={()=>setShowAdd(true)}><Ic n="plus" s={15} c="#fff"/>Nueva</button>
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Tareas</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${tasks.filter(t=>!t.done).length} pendientes</p></div>
+        <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nueva</button>
       </div>
-
-      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
-        {['hoy','pendientes','completadas','todas'].map(f=>(
-          <button key={f} className={`tab-pill${filter===f?' active':''}`} onClick={()=>setFilter(f)} style={{textTransform:'capitalize'}}>{f}</button>
-        ))}
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        ${['hoy','pendientes','completadas','todas'].map(f=>html`<button class=${'tab-pill'+(filter===f?' active':'')} onClick=${()=>setFilter(f)} style="text-transform:capitalize">${f}</button>`)}
       </div>
-
-      {list.length===0&&<div className="card" style={{textAlign:'center',padding:'48px 20px'}}><p style={{fontSize:32,marginBottom:12}}>✓</p><p style={{color:'rgba(92,82,68,0.5)',fontSize:13}}>Sin tareas aquí</p></div>}
-      <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        {list.map(t=>(
-          <div key={t.id} className="card" style={{display:'flex',gap:12,alignItems:'flex-start',opacity:t.done?.65:1}}>
-            <div className={`check-box${t.done?' done':''}`} style={{marginTop:2}} onClick={()=>toggle(t.id)}>
-              {t.done&&<Ic n="check" s={13} c="#fff"/>}
+      ${list.length===0&&html`<div class="card empty-state"><div class="emo">✓</div><p style="color:rgba(92,82,68,0.5);font-size:13px">Sin tareas aquí</p></div>`}
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${list.map(t=>html`
+          <div class="card" style=${{display:'flex',gap:12,alignItems:'flex-start',opacity:t.done?.65:1}}>
+            <div class=${'check-box'+(t.done?' done':'')} style="margin-top:2px" onClick=${()=>toggle(t.id)}>
+              ${t.done&&html`<${Ic} n="check" s=${13} c="#fff"/>`}
             </div>
-            <div style={{flex:1,minWidth:0}}>
-              <p style={{fontSize:13,fontWeight:500,color:t.done?'rgba(92,82,68,0.5)':'#1E1A14',textDecoration:t.done?'line-through':'none'}}>{t.title}</p>
-              {t.note&&<p style={{fontSize:11,color:'rgba(92,82,68,0.5)',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.note}</p>}
-              <div style={{display:'flex',gap:6,marginTop:6,flexWrap:'wrap',alignItems:'center'}}>
-                <span className="badge" style={{background:CAT_COLORS[t.category]+'20',color:CAT_COLORS[t.category]}}>{t.category}</span>
-                <span style={{fontSize:11,color:PRIO[t.priority].c,fontWeight:500}}>● {PRIO[t.priority].l}</span>
-                {t.due&&<span style={{fontSize:11,color:'rgba(92,82,68,0.5)'}}>📅 {fmtDate(t.due)}</span>}
+            <div style="flex:1;min-width:0">
+              <p style=${{fontSize:'13px',fontWeight:500,color:t.done?'rgba(92,82,68,0.5)':'#1E1A14',textDecoration:t.done?'line-through':'none'}}>${t.title}</p>
+              ${t.note&&html`<p style="font-size:11px;color:rgba(92,82,68,0.5);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note}</p>`}
+              <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
+                <span class="badge" style=${{background:CAT_COLORS[t.category]+'20',color:CAT_COLORS[t.category]}}>${t.category}</span>
+                <span style=${{fontSize:'11px',color:PRIO[t.priority].c,fontWeight:500}}>● ${PRIO[t.priority].l}</span>
+                ${t.due&&html`<span style="font-size:11px;color:rgba(92,82,68,0.5)">📅 ${fmtDate(t.due)}</span>`}
               </div>
             </div>
-            <button onClick={()=>remove(t.id)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(92,82,68,0.3)',padding:4,marginTop:2}}><Ic n="trash" s={14}/></button>
+            <button onClick=${()=>remove(t.id)} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);padding:4px;margin-top:2px"><${Ic} n="trash" s=${14}/></button>
           </div>
-        ))}
+        `)}
       </div>
-
-      <Modal open={showAdd} onClose={()=>setShowAdd(false)} title="Nueva tarea">
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          <input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="¿Qué hay que hacer?" autoFocus onKeyDown={e=>e.key==='Enter'&&add()}/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Categoría</label>
-              <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></div>
-            <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Prioridad</label>
-              <select value={form.priority} onChange={e=>setForm({...form,priority:e.target.value})}>
-                <option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option>
-              </select></div>
+      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nueva tarea">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${form.title} onInput=${e=>setForm({...form,title:e.target.value})} placeholder="¿Qué hay que hacer?" autoFocus onKeyDown=${e=>e.key==='Enter'&&add()}/>
+          <div class="grid2">
+            <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
+            <div><label class="lbl">Prioridad</label><select value=${form.priority} onChange=${e=>setForm({...form,priority:e.target.value})}><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
           </div>
-          <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Fecha límite</label>
-            <input type="date" value={form.due} onChange={e=>setForm({...form,due:e.target.value})}/></div>
-          <textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Nota (opcional)" rows={2} style={{resize:'none'}}/>
-          <button className="btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={add}>Agregar tarea</button>
+          <div><label class="lbl">Fecha límite</label><input type="date" value=${form.due} onInput=${e=>setForm({...form,due:e.target.value})}/></div>
+          <textarea value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Nota (opcional)" rows="2" style="resize:none"/>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Agregar tarea</button>
         </div>
-      </Modal>
+      <//>
     </div>
-  );
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -474,160 +394,104 @@ const PageTasks = () => {
 // ══════════════════════════════════════════════════════════════════════════
 const PageFood = () => {
   const today = todayKey();
-  const [meals, setMeals] = useState(()=>load('meals',{}));
-  const [prefs, setPrefs] = useState(()=>load('food-prefs',{goal:'equilibrada',cals:2000,restrictions:''}));
-  const [showAdd, setShowAdd] = useState(false);
-  const [showPrefs, setShowPrefs] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
-  const [form, setForm] = useState({name:'',type:'desayuno',cals:'',note:''});
+  const [meals,setMeals] = useState(()=>load('meals',{}));
+  const [prefs,setPrefs] = useState(()=>load('food-prefs',{goal:'equilibrada',cals:2000,restrictions:''}));
+  const [showAdd,setShowAdd] = useState(false);
+  const [showPrefs,setShowPrefs] = useState(false);
+  const [aiLoad,setAiLoad] = useState(false);
+  const [aiErr,setAiErr] = useState('');
+  const [form,setForm] = useState({name:'',type:'desayuno',cals:'',note:''});
   const apiKey = load('ritual-api-key','');
+  const todayM = meals[today]||[];
+  const syncM = m => { setMeals(m); save('meals',m); };
+  const add = () => { if(!form.name.trim())return; const m={...meals};m[today]=[...(m[today]||[]),{...form,id:uid(),cals:Number(form.cals)||0}];syncM(m);setForm({name:'',type:'desayuno',cals:'',note:''});setShowAdd(false); };
+  const del = id => { const m={...meals};m[today]=(m[today]||[]).filter(x=>x.id!==id);syncM(m); };
+  const totalCals = todayM.reduce((s,m)=>s+m.cals,0);
+  const TYPES = ['desayuno','almuerzo','cena','snack'];
+  const TIPO_ICO = {desayuno:'🌅',almuerzo:'☀️',cena:'🌙',snack:'🍎'};
+  const TIPO_COL = {desayuno:'#B5834A',almuerzo:'#4A9C8C',cena:'#7A6BB5',snack:'#6B9C7A'};
 
-  const todayMeals = meals[today]||[];
-  const sync = (m) => { setMeals(m); save('meals',m); };
-  const add = () => {
-    if(!form.name.trim())return;
-    const m={...meals};
-    m[today]=[...(m[today]||[]),{...form,id:uid(),cals:Number(form.cals)||0}];
-    sync(m); setForm({name:'',type:'desayuno',cals:'',note:''}); setShowAdd(false);
-  };
-  const remove = (id) => {
-    const m={...meals}; m[today]=(m[today]||[]).filter(x=>x.id!==id); sync(m);
-  };
-
-  const totalCals = todayMeals.reduce((s,m)=>s+m.cals,0);
-  const MEAL_TYPES = ['desayuno','almuerzo','cena','snack'];
-  const MEAL_ICONS = {desayuno:'🌅',almuerzo:'☀️',cena:'🌙',snack:'🍎'};
-  const MEAL_COLORS = {desayuno:'#B5834A',almuerzo:'#4A9C8C',cena:'#7A6BB5',snack:'#6B9C7A'};
-
-  const generateWithAI = async () => {
-    setAiLoading(true); setAiError('');
+  const genAI = async () => {
+    setAiLoad(true); setAiErr('');
     try {
-      const prompt = `Genera un plan de comidas para hoy en español.
-Objetivo dietético: ${prefs.goal}
-Calorías objetivo: ${prefs.cals} kcal
-Restricciones/preferencias: ${prefs.restrictions||'ninguna'}
-
-Responde SOLO con JSON válido en este formato exacto, sin texto adicional:
-{"desayuno":{"nombre":"...","calorias":000,"descripcion":"..."},"almuerzo":{"nombre":"...","calorias":000,"descripcion":"..."},"cena":{"nombre":"...","calorias":000,"descripcion":"..."},"snack":{"nombre":"...","calorias":000,"descripcion":"..."}}`;
-
-      const text = await askAI(prompt, apiKey);
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if(!jsonMatch) throw new Error('Respuesta inválida de IA');
-      const plan = JSON.parse(jsonMatch[0]);
-      const m={...meals};
-      const newItems = Object.entries(plan).map(([type,v])=>({id:uid(),name:v.nombre,type,cals:v.calorias,note:v.descripcion}));
-      m[today]=[...(m[today]||[]),...newItems];
-      sync(m);
-    } catch(e) { setAiError(e.message); }
-    finally { setAiLoading(false); }
+      const txt = await askAI(`Genera un plan de comidas para hoy en español.
+Objetivo: ${prefs.goal}. Calorías: ${prefs.cals} kcal. Restricciones: ${prefs.restrictions||'ninguna'}.
+Responde SOLO con JSON válido sin texto adicional:
+{"desayuno":{"nombre":"...","calorias":000,"descripcion":"..."},"almuerzo":{"nombre":"...","calorias":000,"descripcion":"..."},"cena":{"nombre":"...","calorias":000,"descripcion":"..."},"snack":{"nombre":"...","calorias":000,"descripcion":"..."}}`, apiKey);
+      const m2 = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
+      const upd={...meals};
+      upd[today]=[...(upd[today]||[]),...Object.entries(m2).map(([t,v])=>({id:uid(),name:v.nombre,type:t,cals:v.calorias,note:v.descripcion}))];
+      syncM(upd);
+    } catch(e){ setAiErr(e.message); }
+    setAiLoad(false);
   };
 
-  const byType = MEAL_TYPES.map(t=>({type:t,items:todayMeals.filter(m=>m.type===t)}));
-
-  return (
-    <div className="fade-up" style={{padding:'28px 24px 0'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-        <div>
-          <h2 style={{fontSize:20,fontWeight:700,color:'#1E1A14'}}>Comidas</h2>
-          <p style={{fontSize:12,color:'rgba(92,82,68,0.6)',marginTop:2}}>{totalCals} / {prefs.cals} kcal hoy</p>
-        </div>
-        <div style={{display:'flex',gap:8}}>
-          <button className="btn-ghost" style={{padding:'8px 12px'}} onClick={()=>setShowPrefs(true)}><Ic n="settings" s={15} c="#5C5244"/></button>
-          <button className="btn-primary" onClick={()=>setShowAdd(true)}><Ic n="plus" s={15} c="#fff"/>Añadir</button>
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Comidas</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${totalCals} / ${prefs.cals} kcal hoy</p></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-g" style="padding:10px 12px" onClick=${()=>setShowPrefs(true)}><${Ic} n="settings" s=${15} c="#5C5244"/></button>
+          <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Añadir</button>
         </div>
       </div>
 
-      {/* Cals progress */}
-      <div className="card" style={{marginBottom:20}}>
-        <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-          <span style={{fontSize:12,color:'rgba(92,82,68,0.6)'}}>Calorías</span>
-          <span style={{fontSize:13,fontWeight:600,color:'#1E1A14'}}>{totalCals} kcal</span>
-        </div>
-        <div className="prog-track">
-          <div className="prog-fill" style={{width:`${Math.min(100,Math.round(totalCals/prefs.cals*100))}%`,background:'linear-gradient(90deg,#4A9C8C99,#4A9C8C)'}}/>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between',marginTop:6}}>
-          <span style={{fontSize:11,color:'rgba(92,82,68,0.45)'}}>0</span>
-          <span style={{fontSize:11,color:'rgba(92,82,68,0.45)'}}>{prefs.cals} kcal objetivo</span>
-        </div>
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:rgba(92,82,68,0.6)">Calorías</span><span style="font-size:13px;font-weight:600;color:#1E1A14">${totalCals} kcal</span></div>
+        <div class="prog-track"><div style=${{height:'100%',borderRadius:3,width:`${Math.min(100,Math.round(totalCals/prefs.cals*100))}%`,background:'linear-gradient(90deg,#4A9C8C99,#4A9C8C)',transition:'width .5s'}}/></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:11px;color:rgba(92,82,68,0.45)">0</span><span style="font-size:11px;color:rgba(92,82,68,0.45)">${prefs.cals} kcal objetivo</span></div>
       </div>
 
-      {/* AI Button */}
-      {!apiKey ? (
-        <div className="card" style={{marginBottom:20,background:'rgba(181,131,74,0.08)',borderColor:'rgba(181,131,74,0.25)'}}>
-          <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
-            <Ic n="info" s={16} c="#B5834A"/>
-            <div>
-              <p style={{fontSize:13,fontWeight:500,color:'#7A5C30',marginBottom:4}}>IA no configurada</p>
-              <p style={{fontSize:12,color:'rgba(92,82,68,0.6)'}}>Agrega tu Anthropic API key en Ajustes para generar planes con IA.</p>
-            </div>
-          </div>
+      ${!apiKey?html`
+        <div class="info-box" style="margin-bottom:20px">
+          <${Ic} n="info" s=${16} c="#B5834A"/>
+          <div><p style="font-size:13px;font-weight:500;color:#7A5C30;margin-bottom:4px">IA no configurada</p><p style="font-size:12px;color:rgba(92,82,68,0.6)">Agrega tu API key de Anthropic en Ajustes para generar planes.</p></div>
         </div>
-      ) : (
-        <button onClick={generateWithAI} disabled={aiLoading} className="btn-primary" style={{width:'100%',justifyContent:'center',marginBottom:20,padding:'12px'}}>
-          {aiLoading ? <><span className="spin">◌</span> Generando plan...</> : <><Ic n="spark" s={16} c="#fff"/>Generar plan con IA</>}
+      `:html`
+        <button class="btn-p" onClick=${genAI} disabled=${aiLoad} style="width:100%;justify-content:center;margin-bottom:20px;padding:12px">
+          ${aiLoad?html`<span class="spin">◌</span> Generando...`:html`<${Ic} n="spark" s=${16} c="#fff"/> Generar plan con IA`}
         </button>
-      )}
-      {aiError&&<div style={{marginBottom:12,padding:'10px 14px',borderRadius:10,background:'rgba(181,97,74,0.1)',border:'1px solid rgba(181,97,74,0.25)',fontSize:12,color:'#924A32'}}>{aiError}</div>}
+      `}
+      ${aiErr&&html`<div style="margin-bottom:12px;padding:10px 14px;border-radius:10px;background:rgba(181,97,74,0.1);border:1px solid rgba(181,97,74,0.25);font-size:12px;color:#924A32">${aiErr}</div>`}
 
-      {/* Meal sections */}
-      {byType.map(({type,items})=>(
-        <div key={type} style={{marginBottom:16}}>
-          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-            <span style={{fontSize:18}}>{MEAL_ICONS[type]}</span>
-            <span style={{fontSize:13,fontWeight:600,color:'#1E1A14',textTransform:'capitalize'}}>{type}</span>
-            <span style={{fontSize:11,color:'rgba(92,82,68,0.5)',marginLeft:'auto'}}>{items.reduce((s,m)=>s+m.cals,0)} kcal</span>
+      ${TYPES.map(type=>html`
+        <div style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="font-size:18px">${TIPO_ICO[type]}</span>
+            <span style="font-size:13px;font-weight:600;color:#1E1A14;text-transform:capitalize">${type}</span>
+            <span style="font-size:11px;color:rgba(92,82,68,0.5);margin-left:auto">${todayM.filter(m=>m.type===type).reduce((s,m)=>s+m.cals,0)} kcal</span>
           </div>
-          {items.length===0&&<p style={{fontSize:12,color:'rgba(92,82,68,0.4)',paddingLeft:26}}>Sin registros</p>}
-          {items.map(m=>(
-            <div key={m.id} className="card" style={{marginBottom:8,display:'flex',gap:12,alignItems:'flex-start',borderLeft:`3px solid ${MEAL_COLORS[type]}`}}>
-              <div style={{flex:1}}>
-                <p style={{fontSize:13,fontWeight:500,color:'#1E1A14'}}>{m.name}</p>
-                {m.note&&<p style={{fontSize:11,color:'rgba(92,82,68,0.55)',marginTop:3}}>{m.note}</p>}
-              </div>
-              <div style={{textAlign:'right',flexShrink:0}}>
-                {m.cals>0&&<p style={{fontSize:12,fontWeight:600,color:MEAL_COLORS[type]}}>{m.cals} kcal</p>}
-                <button onClick={()=>remove(m.id)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(92,82,68,0.3)',marginTop:4}}><Ic n="trash" s={13}/></button>
-              </div>
+          ${todayM.filter(m=>m.type===type).length===0&&html`<p style="font-size:12px;color:rgba(92,82,68,0.4);padding-left:26px">Sin registros</p>`}
+          ${todayM.filter(m=>m.type===type).map(m=>html`
+            <div class="card" style=${{marginBottom:8,display:'flex',gap:12,alignItems:'flex-start',borderLeft:`3px solid ${TIPO_COL[type]}`}}>
+              <div style="flex:1"><p style="font-size:13px;font-weight:500;color:#1E1A14">${m.name}</p>${m.note&&html`<p style="font-size:11px;color:rgba(92,82,68,0.55);margin-top:3px">${m.note}</p>`}</div>
+              <div style="text-align:right;flex-shrink:0">${m.cals>0&&html`<p style=${{fontSize:'12px',fontWeight:600,color:TIPO_COL[type]}}>${m.cals} kcal</p>`}<button onClick=${()=>del(m.id)} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);margin-top:4px"><${Ic} n="trash" s=${13}/></button></div>
             </div>
-          ))}
+          `)}
         </div>
-      ))}
+      `)}
 
-      {/* Add modal */}
-      <Modal open={showAdd} onClose={()=>setShowAdd(false)} title="Añadir comida">
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Nombre del alimento o comida" autoFocus/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Tipo</label>
-              <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}>
-                {MEAL_TYPES.map(t=><option key={t} style={{textTransform:'capitalize'}}>{t}</option>)}
-              </select></div>
-            <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Calorías</label>
-              <input type="number" value={form.cals} onChange={e=>setForm({...form,cals:e.target.value})} placeholder="kcal"/></div>
+      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Añadir comida">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${form.name} onInput=${e=>setForm({...form,name:e.target.value})} placeholder="Nombre del alimento" autoFocus/>
+          <div class="grid2">
+            <div><label class="lbl">Tipo</label><select value=${form.type} onChange=${e=>setForm({...form,type:e.target.value})}>${TYPES.map(t=>html`<option>${t}</option>`)}</select></div>
+            <div><label class="lbl">Calorías</label><input type="number" value=${form.cals} onInput=${e=>setForm({...form,cals:e.target.value})} placeholder="kcal"/></div>
           </div>
-          <input value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Descripción (opcional)"/>
-          <button className="btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={add}>Guardar</button>
+          <input value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Descripción (opcional)"/>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Guardar</button>
         </div>
-      </Modal>
-
-      {/* Prefs modal */}
-      <Modal open={showPrefs} onClose={()=>{setShowPrefs(false);save('food-prefs',prefs);}} title="Preferencias de comida">
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Objetivo</label>
-            <select value={prefs.goal} onChange={e=>setPrefs({...prefs,goal:e.target.value})}>
-              {['equilibrada','pérdida de peso','ganancia muscular','vegana','vegetariana','keto','sin gluten'].map(g=><option key={g}>{g}</option>)}
-            </select></div>
-          <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Calorías diarias</label>
-            <input type="number" value={prefs.cals} onChange={e=>setPrefs({...prefs,cals:Number(e.target.value)})}/></div>
-          <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Restricciones / alergias</label>
-            <input value={prefs.restrictions} onChange={e=>setPrefs({...prefs,restrictions:e.target.value})} placeholder="Ej: sin lactosa, alérgico al maní..."/></div>
-          <button className="btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={()=>{save('food-prefs',prefs);setShowPrefs(false);}}>Guardar preferencias</button>
+      <//>
+      <${Modal} open=${showPrefs} onClose=${()=>{save('food-prefs',prefs);setShowPrefs(false);}} title="Preferencias de comida">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div><label class="lbl">Objetivo</label><select value=${prefs.goal} onChange=${e=>setPrefs({...prefs,goal:e.target.value})}>${['equilibrada','pérdida de peso','ganancia muscular','vegana','vegetariana','keto','sin gluten'].map(g=>html`<option>${g}</option>`)}</select></div>
+          <div><label class="lbl">Calorías diarias</label><input type="number" value=${prefs.cals} onInput=${e=>setPrefs({...prefs,cals:Number(e.target.value)})}/></div>
+          <div><label class="lbl">Restricciones / alergias</label><input value=${prefs.restrictions} onInput=${e=>setPrefs({...prefs,restrictions:e.target.value})} placeholder="Ej: sin lactosa..."/></div>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{save('food-prefs',prefs);setShowPrefs(false);}}>Guardar</button>
         </div>
-      </Modal>
+      <//>
     </div>
-  );
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -635,171 +499,108 @@ Responde SOLO con JSON válido en este formato exacto, sin texto adicional:
 // ══════════════════════════════════════════════════════════════════════════
 const PageGym = () => {
   const today = todayKey();
-  const [plans, setPlans] = useState(()=>load('gym-plans',[]));
-  const [logs, setLogs] = useState(()=>load('workout-logs',[]));
-  const [showPlan, setShowPlan] = useState(false);
-  const [showLog, setShowLog] = useState(false);
-  const [selPlan, setSelPlan] = useState(null);
-  const [planForm, setPlanForm] = useState({name:'',days:[],exercises:''});
-  const [view, setView] = useState('hoy');
-
-  const DAYS_ES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  const dayOfWeek = () => { const d=new Date().getDay(); return DAYS_ES[d===0?6:d-1]; };
-  const todayDay = dayOfWeek();
-
-  const syncPlans = (p)=>{setPlans(p);save('gym-plans',p);};
-  const syncLogs  = (l)=>{setLogs(l);save('workout-logs',l);};
-
-  const addPlan = () => {
-    if(!planForm.name.trim())return;
-    syncPlans([...plans,{...planForm,id:uid()}]);
-    setPlanForm({name:'',days:[],exercises:''}); setShowPlan(false);
-  };
-  const removePlan = (id)=>syncPlans(plans.filter(p=>p.id!==id));
-
-  const todayPlans = plans.filter(p=>(p.days||[]).includes(todayDay));
+  const [plans,setPlans] = useState(()=>load('gym-plans',[]));
+  const [logs,setLogs]   = useState(()=>load('workout-logs',[]));
+  const [showPlan,setShowPlan] = useState(false);
+  const [showLog,setShowLog]   = useState(false);
+  const [selPlan,setSelPlan]   = useState(null);
+  const [pf,setPf] = useState({name:'',days:[],exercises:''});
+  const [view,setView] = useState('hoy');
+  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const todayDay = () => { const d=new Date().getDay(); return DAYS[d===0?6:d-1]; };
+  const syncP = p => { setPlans(p); save('gym-plans',p); };
+  const syncL = l => { setLogs(l);  save('workout-logs',l); };
+  const addPlan = () => { if(!pf.name.trim())return; syncP([...plans,{...pf,id:uid()}]); setPf({name:'',days:[],exercises:''}); setShowPlan(false); };
+  const logW = (plan,done) => { syncL([...logs.filter(l=>l.date!==today),{date:today,planId:plan.id,name:plan.name,done,id:uid()}]); setShowLog(false); };
+  const toggleDay = d => setPf({...pf,days:pf.days.includes(d)?pf.days.filter(x=>x!==d):[...pf.days,d]});
+  const todayPlans = plans.filter(p=>(p.days||[]).includes(todayDay()));
   const todayLog   = logs.find(l=>l.date===today);
+  const week = Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-d.getDay()+1+i);const k=d.toISOString().split('T')[0];const ld=logs.find(l=>l.date===k);return{k,day:DAYS[i],done:ld?.done,isToday:k===today};});
 
-  const logWorkout = (plan, done) => {
-    const newLogs = logs.filter(l=>l.date!==today);
-    syncLogs([...newLogs,{date:today,planId:plan.id,name:plan.name,done,id:uid()}]);
-    setShowLog(false);
-  };
-
-  const toggleDay = (d) => {
-    const days = planForm.days.includes(d)?planForm.days.filter(x=>x!==d):[...planForm.days,d];
-    setPlanForm({...planForm,days});
-  };
-
-  const thisWeek = Array.from({length:7},(_,i)=>{
-    const d=new Date(); d.setDate(d.getDate()-d.getDay()+1+i);
-    const k=d.toISOString().split('T')[0];
-    const done=logs.find(l=>l.date===k)?.done;
-    return{k,day:DAYS_ES[i],done,isToday:k===today};
-  });
-
-  return (
-    <div className="fade-up" style={{padding:'28px 24px 0'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-        <div>
-          <h2 style={{fontSize:20,fontWeight:700,color:'#1E1A14'}}>Gym</h2>
-          <p style={{fontSize:12,color:'rgba(92,82,68,0.6)',marginTop:2}}>{logs.filter(l=>l.done).length} entrenos este mes</p>
-        </div>
-        <button className="btn-primary" onClick={()=>setShowPlan(true)}><Ic n="plus" s={15} c="#fff"/>Rutina</button>
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Gym</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${logs.filter(l=>l.done).length} entrenos totales</p></div>
+        <button class="btn-p" onClick=${()=>setShowPlan(true)}><${Ic} n="plus" s=${15} c="#fff"/>Rutina</button>
       </div>
 
-      {/* Week view */}
-      <div className="card" style={{marginBottom:20}}>
-        <p style={{fontSize:12,fontWeight:500,color:'rgba(92,82,68,0.6)',marginBottom:12}}>Esta semana</p>
-        <div style={{display:'flex',gap:6}}>
-          {thisWeek.map(d=>(
-            <div key={d.k} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-              <span style={{fontSize:10,color:d.isToday?'#3D7A52':'rgba(92,82,68,0.5)',fontWeight:d.isToday?600:400}}>{d.day}</span>
-              <div style={{width:32,height:32,borderRadius:8,background:d.done?'rgba(61,122,82,0.7)':d.done===false?'rgba(181,97,74,0.3)':'rgba(255,255,255,0.3)',border:`1.5px solid ${d.isToday?'#3D7A52':'rgba(255,255,255,0.4)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
-                {d.done?'✓':d.done===false?'×':''}
+      <div class="card" style="margin-bottom:20px">
+        <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:12px">Esta semana</p>
+        <div style="display:flex;gap:6px">
+          ${week.map(d=>html`
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+              <span style=${{fontSize:10,color:d.isToday?'#3D7A52':'rgba(92,82,68,0.5)',fontWeight:d.isToday?600:400}}>${d.day}</span>
+              <div style=${{width:32,height:32,borderRadius:8,background:d.done===true?'rgba(61,122,82,0.7)':d.done===false?'rgba(181,97,74,0.3)':'rgba(255,255,255,0.3)',border:`1.5px solid ${d.isToday?'#3D7A52':'rgba(255,255,255,0.4)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
+                ${d.done===true?'✓':d.done===false?'×':''}
               </div>
             </div>
-          ))}
+          `)}
         </div>
       </div>
 
-      {/* Today */}
-      <p style={{fontSize:13,fontWeight:600,color:'#1E1A14',marginBottom:10}}>Hoy · {todayDay}</p>
-      {todayPlans.length===0&&!todayLog&&(
-        <div className="card" style={{textAlign:'center',padding:'32px 20px',marginBottom:20}}>
-          <div style={{fontSize:36,marginBottom:8}}>🏖</div>
-          <p style={{fontSize:13,color:'rgba(92,82,68,0.5)'}}>Día de descanso</p>
-          <p style={{fontSize:11,color:'rgba(92,82,68,0.4)',marginTop:4}}>No hay rutinas programadas</p>
-        </div>
-      )}
-      {todayLog&&(
-        <div className="card" style={{marginBottom:12,borderLeft:`3px solid ${todayLog.done?'#3D7A52':'#B5614A'}`}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:20}}>{todayLog.done?'💪':'😴'}</span>
-            <div>
-              <p style={{fontSize:13,fontWeight:500,color:'#1E1A14'}}>{todayLog.name}</p>
-              <p style={{fontSize:11,color:todayLog.done?'#3D7A52':'#B5614A'}}>{todayLog.done?'Completado':'Saltado'}</p>
-            </div>
-          </div>
-        </div>
-      )}
-      {todayPlans.map(p=>(
-        <div key={p.id} className="card glass-hover" style={{marginBottom:12,cursor:'pointer'}} onClick={()=>{setSelPlan(p);setShowLog(true);}}>
-          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between'}}>
-            <div>
-              <p style={{fontSize:14,fontWeight:600,color:'#1E1A14',marginBottom:4}}>{p.name}</p>
-              <p style={{fontSize:11,color:'rgba(92,82,68,0.55)',lineHeight:1.5}}>{p.exercises}</p>
-            </div>
-            <span className="badge badge-green">Hoy</span>
-          </div>
-        </div>
-      ))}
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        ${['hoy','planes'].map(v=>html`<button class=${'tab-pill'+(view===v?' active':'')} onClick=${()=>setView(v)} style="text-transform:capitalize">${v}</button>`)}
+      </div>
 
-      {/* All plans */}
-      {view==='planes'&&(
+      ${view==='hoy'&&html`
         <div>
-          <p style={{fontSize:13,fontWeight:600,color:'#1E1A14',marginBottom:10}}>Todas las rutinas</p>
-          {plans.length===0&&<p style={{fontSize:12,color:'rgba(92,82,68,0.4)'}}>Sin rutinas aún</p>}
-          {plans.map(p=>(
-            <div key={p.id} className="card" style={{marginBottom:10}}>
-              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between'}}>
-                <div style={{flex:1}}>
-                  <p style={{fontSize:13,fontWeight:600,color:'#1E1A14'}}>{p.name}</p>
-                  <div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:6}}>
-                    {(p.days||[]).map(d=><span key={d} className="badge badge-green" style={{fontSize:10}}>{d}</span>)}
-                  </div>
-                  {p.exercises&&<p style={{fontSize:11,color:'rgba(92,82,68,0.55)',marginTop:6,lineHeight:1.5}}>{p.exercises}</p>}
+          ${todayLog&&html`<div class="card" style=${{marginBottom:12,borderLeft:`3px solid ${todayLog.done?'#3D7A52':'#B5614A'}`}}>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:20px">${todayLog.done?'💪':'😴'}</span>
+              <div><p style="font-size:13px;font-weight:500;color:#1E1A14">${todayLog.name}</p><p style=${{fontSize:11,color:todayLog.done?'#3D7A52':'#B5614A'}}>${todayLog.done?'Completado':'Saltado'}</p></div>
+            </div>
+          </div>`}
+          ${todayPlans.length===0&&!todayLog&&html`<div class="card empty-state"><div class="emo">🏖</div><p style="font-size:13px;color:rgba(92,82,68,0.5)">Día de descanso</p></div>`}
+          ${todayPlans.map(p=>html`
+            <div class="card glass-hover" style="margin-bottom:12px;cursor:pointer" onClick=${()=>{setSelPlan(p);setShowLog(true);}}>
+              <div style="display:flex;align-items:flex-start;justify-content:space-between">
+                <div><p style="font-size:14px;font-weight:600;color:#1E1A14;margin-bottom:4px">${p.name}</p><p style="font-size:11px;color:rgba(92,82,68,0.55);line-height:1.5">${p.exercises}</p></div>
+                <span class="badge badge-g">Hoy</span>
+              </div>
+            </div>
+          `)}
+        </div>
+      `}
+      ${view==='planes'&&html`
+        <div>
+          ${plans.length===0&&html`<p style="font-size:12px;color:rgba(92,82,68,0.4)">Sin rutinas aún</p>`}
+          ${plans.map(p=>html`
+            <div class="card" style="margin-bottom:10px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between">
+                <div style="flex:1">
+                  <p style="font-size:13px;font-weight:600;color:#1E1A14">${p.name}</p>
+                  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${(p.days||[]).map(d=>html`<span class="badge badge-g" style="font-size:10px">${d}</span>`)}</div>
+                  ${p.exercises&&html`<p style="font-size:11px;color:rgba(92,82,68,0.55);margin-top:6px;line-height:1.5">${p.exercises}</p>`}
                 </div>
-                <button onClick={()=>removePlan(p.id)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(92,82,68,0.3)',padding:4}}><Ic n="trash" s={14}/></button>
+                <button onClick=${()=>syncP(plans.filter(x=>x.id!==p.id))} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
               </div>
             </div>
-          ))}
+          `)}
         </div>
-      )}
+      `}
 
-      <div style={{display:'flex',gap:8,marginTop:8,marginBottom:20}}>
-        {['hoy','planes'].map(v=>(
-          <button key={v} className={`tab-pill${view===v?' active':''}`} onClick={()=>setView(v)} style={{textTransform:'capitalize'}}>{v}</button>
-        ))}
-      </div>
-
-      {/* Log modal */}
-      <Modal open={showLog&&!!selPlan} onClose={()=>setShowLog(false)} title={`Registrar: ${selPlan?.name||''}`}>
-        <p style={{fontSize:13,color:'rgba(92,82,68,0.7)',marginBottom:16}}>{selPlan?.exercises}</p>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-          <button className="btn-primary" style={{justifyContent:'center',padding:'14px'}} onClick={()=>logWorkout(selPlan,true)}>
-            💪 ¡Completado!
-          </button>
-          <button className="btn-danger" style={{padding:'14px',width:'100%'}} onClick={()=>logWorkout(selPlan,false)}>
-            😴 Saltarlo
-          </button>
+      <${Modal} open=${showLog&&!!selPlan} onClose=${()=>setShowLog(false)} title=${`Registrar: ${selPlan?.name||''}`}>
+        <p style="font-size:13px;color:rgba(92,82,68,0.7);margin-bottom:16px">${selPlan?.exercises}</p>
+        <div class="grid2">
+          <button class="btn-p" style="justify-content:center;padding:14px" onClick=${()=>logW(selPlan,true)}>💪 Completado</button>
+          <button class="btn-d" style="padding:14px;width:100%" onClick=${()=>logW(selPlan,false)}>😴 Saltarlo</button>
         </div>
-      </Modal>
-
-      {/* Plan modal */}
-      <Modal open={showPlan} onClose={()=>setShowPlan(false)} title="Nueva rutina">
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          <input value={planForm.name} onChange={e=>setPlanForm({...planForm,name:e.target.value})} placeholder="Nombre (ej: Push Day, Legs...)" autoFocus/>
+      <//>
+      <${Modal} open=${showPlan} onClose=${()=>setShowPlan(false)} title="Nueva rutina">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${pf.name} onInput=${e=>setPf({...pf,name:e.target.value})} placeholder="Nombre (ej: Push Day, Legs...)" autoFocus/>
           <div>
-            <label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:8}}>Días</label>
-            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-              {DAYS_ES.map(d=>(
-                <button key={d} onClick={()=>toggleDay(d)}
-                  style={{padding:'6px 12px',borderRadius:20,border:`1.5px solid ${planForm.days.includes(d)?'#3D7A52':'rgba(255,255,255,0.5)'}`,background:planForm.days.includes(d)?'rgba(61,122,82,0.15)':'rgba(255,255,255,0.3)',color:planForm.days.includes(d)?'#2D6040':'#5C5244',fontSize:12,fontWeight:500,cursor:'pointer'}}>
-                  {d}
-                </button>
-              ))}
+            <label class="lbl">Días</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${DAYS.map(d=>html`<button onClick=${()=>toggleDay(d)} style=${{padding:'6px 12px',borderRadius:20,border:`1.5px solid ${pf.days.includes(d)?'#3D7A52':'rgba(255,255,255,0.5)'}`,background:pf.days.includes(d)?'rgba(61,122,82,0.15)':'rgba(255,255,255,0.3)',color:pf.days.includes(d)?'#2D6040':'#5C5244',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
             </div>
           </div>
-          <div>
-            <label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Ejercicios</label>
-            <textarea value={planForm.exercises} onChange={e=>setPlanForm({...planForm,exercises:e.target.value})} placeholder="Ej: Sentadillas 4x10, Press banca 3x8, Peso muerto 3x5..." rows={4} style={{resize:'none'}}/>
-          </div>
-          <button className="btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={addPlan}>Crear rutina</button>
+          <div><label class="lbl">Ejercicios</label><textarea value=${pf.exercises} onInput=${e=>setPf({...pf,exercises:e.target.value})} placeholder="Ej: Sentadillas 4x10, Press banca 3x8..." rows="4" style="resize:none"/></div>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${addPlan}>Crear rutina</button>
         </div>
-      </Modal>
+      <//>
     </div>
-  );
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -807,122 +608,86 @@ const PageGym = () => {
 // ══════════════════════════════════════════════════════════════════════════
 const PageFinance = () => {
   const today = todayKey();
-  const thisMonth = today.slice(0,7);
-  const [txns, setTxns] = useState(()=>load('txns',[]));
-  const [view, setView] = useState('mes');
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({type:'expense',amount:'',category:'Comida',note:'',date:today});
-
-  const FIN_CATS = {income:['Salario','Freelance','Negocio','Inversión','Otro'],expense:['Comida','Transporte','Entretenimiento','Salud','Ropa','Educación','Hogar','Suscripciones','Otro']};
-  const CAT_COL_FIN = {'Salario':'#3D7A52','Freelance':'#4A9C8C','Negocio':'#7A6BB5','Inversión':'#B5834A','Otro':'#9A7A6B','Comida':'#B5614A','Transporte':'#4A7CB5','Entretenimiento':'#B5834A','Salud':'#4A9C8C','Ropa':'#D4537E','Educación':'#7A6BB5','Hogar':'#6B9C7A','Suscripciones':'#9A6BB5'};
-
-  const sync = (t)=>{setTxns(t);save('txns',t);};
-  const remove = (id)=>sync(txns.filter(t=>t.id!==id));
-  const add = () => {
-    if(!form.amount||!form.category)return;
-    sync([{...form,id:uid(),amount:Number(form.amount)},  ...txns]);
-    setForm({type:'expense',amount:'',category:'Comida',note:'',date:today}); setShowAdd(false);
-  };
-
-  const inPeriod = txns.filter(t=>t.date.startsWith(view==='mes'?thisMonth:today.slice(0,4)));
-  const income  = inPeriod.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const expense = inPeriod.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const profit  = income - expense;
-
-  // expense by category
+  const mo = today.slice(0,7);
+  const [txns,setTxns] = useState(()=>load('txns',[]));
+  const [view,setView] = useState('mes');
+  const [showAdd,setShowAdd] = useState(false);
+  const [form,setForm] = useState({type:'expense',amount:'',category:'Comida',note:'',date:today});
+  const FCATS = {income:['Salario','Freelance','Negocio','Inversión','Otro'],expense:['Comida','Transporte','Entretenimiento','Salud','Ropa','Educación','Hogar','Suscripciones','Otro']};
+  const FCCOL = {'Salario':'#3D7A52','Freelance':'#4A9C8C','Negocio':'#7A6BB5','Inversión':'#B5834A','Otro':'#9A7A6B','Comida':'#B5614A','Transporte':'#4A7CB5','Entretenimiento':'#B5834A','Salud':'#4A9C8C','Ropa':'#D4537E','Educación':'#7A6BB5','Hogar':'#6B9C7A','Suscripciones':'#9A6BB5'};
+  const sync = t => { setTxns(t); save('txns',t); };
+  const add = () => { if(!form.amount)return; sync([{...form,id:uid(),amount:Number(form.amount)},...txns]); setForm({type:'expense',amount:'',category:'Comida',note:'',date:today}); setShowAdd(false); };
+  const pfx = view==='mes'?mo:today.slice(0,4);
+  const inP  = txns.filter(t=>t.date.startsWith(pfx));
+  const inc  = inP.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp  = inP.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   const byCat = {};
-  inPeriod.filter(t=>t.type==='expense').forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
+  inP.filter(t=>t.type==='expense').forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
   const catList = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
-  const recentTxns = [...txns].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30)
-    .filter(t=>t.date.startsWith(view==='mes'?thisMonth:today.slice(0,4)));
-
-  return (
-    <div className="fade-up" style={{padding:'28px 24px 0'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-        <div>
-          <h2 style={{fontSize:20,fontWeight:700,color:'#1E1A14'}}>Finanzas</h2>
-          <p style={{fontSize:12,color:'rgba(92,82,68,0.6)',marginTop:2}}>{view==='mes'?'Este mes':'Este año'}</p>
-        </div>
-        <button className="btn-primary" onClick={()=>setShowAdd(true)}><Ic n="plus" s={15} c="#fff"/>Movimiento</button>
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Finanzas</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${view==='mes'?'Este mes':'Este año'}</p></div>
+        <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Movimiento</button>
       </div>
-
-      {/* Period tabs */}
-      <div style={{display:'flex',gap:8,marginBottom:16}}>
-        {['mes','año'].map(v=><button key={v} className={`tab-pill${view===v?' active':''}`} onClick={()=>setView(v)} style={{textTransform:'capitalize'}}>{v}</button>)}
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        ${['mes','año'].map(v=>html`<button class=${'tab-pill'+(view===v?' active':'')} onClick=${()=>setView(v)} style="text-transform:capitalize">${v}</button>`)}
       </div>
-
-      {/* Summary cards */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:20}}>
-        {[{l:'Ingresos',v:income,c:'#3D7A52',icon:'arrow_up'},{l:'Gastos',v:expense,c:'#B5614A',icon:'arrow_down'},{l:'Balance',v:profit,c:profit>=0?'#3D7A52':'#B5614A',icon:'finance'}].map(s=>(
-          <div key={s.l} className="card" style={{textAlign:'center',padding:'14px 10px'}}>
-            <div style={{display:'flex',justifyContent:'center',marginBottom:6}}><Ic n={s.icon} s={14} c={s.c}/></div>
-            <p style={{fontSize:10,color:'rgba(92,82,68,0.6)',marginBottom:4}}>{s.l}</p>
-            <p style={{fontSize:13,fontWeight:700,color:s.c}}>{fmtMoney(s.v)}</p>
+      <div class="grid3" style="margin-bottom:20px">
+        ${[{l:'Ingresos',v:inc,c:'#3D7A52',i:'up'},{l:'Gastos',v:exp,c:'#B5614A',i:'down'},{l:'Balance',v:inc-exp,c:inc-exp>=0?'#3D7A52':'#B5614A',i:'finance'}].map(s=>html`
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="display:flex;justify-content:center;margin-bottom:6px"><${Ic} n=${s.i} s=${14} c=${s.c}/></div>
+            <p style="font-size:10px;color:rgba(92,82,68,0.6);margin-bottom:4px">${s.l}</p>
+            <p style=${{fontSize:13,fontWeight:700,color:s.c}}>${fmtMoney(s.v)}</p>
           </div>
-        ))}
+        `)}
       </div>
-
-      {/* Expense breakdown */}
-      {catList.length>0&&(
-        <div className="card" style={{marginBottom:20}}>
-          <p style={{fontSize:12,fontWeight:500,color:'rgba(92,82,68,0.6)',marginBottom:12}}>Gastos por categoría</p>
-          {catList.map(([cat,amt])=>(
-            <div key={cat} style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-              <span style={{fontSize:11,color:'#5C5244',width:90,flexShrink:0}}>{cat}</span>
-              <div className="prog-track" style={{flex:1}}>
-                <div style={{height:'100%',borderRadius:3,background:CAT_COL_FIN[cat]||'#9A7A6B',width:`${Math.min(100,amt/expense*100)}%`,transition:'width .5s'}}/>
-              </div>
-              <span style={{fontSize:11,fontWeight:600,color:'#1E1A14',width:72,textAlign:'right',flexShrink:0}}>{fmtMoney(amt)}</span>
+      ${catList.length>0&&html`
+        <div class="card" style="margin-bottom:20px">
+          <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:12px">Gastos por categoría</p>
+          ${catList.map(([cat,amt])=>html`
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <span style="font-size:11px;color:#5C5244;width:90px;flex-shrink:0">${cat}</span>
+              <div class="prog-track" style="flex:1"><div style=${{height:'100%',borderRadius:3,background:FCCOL[cat]||'#9A7A6B',width:`${Math.min(100,amt/exp*100)}%`,transition:'width .5s'}}/></div>
+              <span style="font-size:11px;font-weight:600;color:#1E1A14;width:72px;text-align:right;flex-shrink:0">${fmtMoney(amt)}</span>
             </div>
-          ))}
+          `)}
         </div>
-      )}
-
-      {/* Transactions */}
-      <p style={{fontSize:13,fontWeight:600,color:'#1E1A14',marginBottom:10}}>Movimientos</p>
-      {recentTxns.length===0&&<div className="card" style={{textAlign:'center',padding:'32px'}}><p style={{color:'rgba(92,82,68,0.4)',fontSize:13}}>Sin movimientos</p></div>}
-      <div style={{display:'flex',flexDirection:'column',gap:8}}>
-        {recentTxns.map(t=>(
-          <div key={t.id} className="card" style={{display:'flex',alignItems:'center',gap:12}}>
-            <div style={{width:36,height:36,borderRadius:10,background:(CAT_COL_FIN[t.category]||'#9A7A6B')+'20',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <Ic n={t.type==='income'?'arrow_up':'arrow_down'} s={16} c={t.type==='income'?'#3D7A52':'#B5614A'}/>
+      `}
+      <p style="font-size:13px;font-weight:600;color:#1E1A14;margin-bottom:10px">Movimientos</p>
+      ${inP.length===0&&html`<div class="card empty-state"><div class="emo">💸</div><p style="color:rgba(92,82,68,0.4);font-size:13px">Sin movimientos</p></div>`}
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${[...txns].filter(t=>t.date.startsWith(pfx)).sort((a,b)=>b.date.localeCompare(a.date)).map(t=>html`
+          <div class="card" style="display:flex;align-items:center;gap:12px">
+            <div style=${{width:36,height:36,borderRadius:10,background:(FCCOL[t.category]||'#9A7A6B')+'20',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <${Ic} n=${t.type==='income'?'up':'down'} s=${16} c=${t.type==='income'?'#3D7A52':'#B5614A'}/>
             </div>
-            <div style={{flex:1,minWidth:0}}>
-              <p style={{fontSize:13,fontWeight:500,color:'#1E1A14',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.note||t.category}</p>
-              <p style={{fontSize:11,color:'rgba(92,82,68,0.5)',marginTop:1}}>{fmtDate(t.date)} · {t.category}</p>
+            <div style="flex:1;min-width:0">
+              <p style="font-size:13px;font-weight:500;color:#1E1A14;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||t.category}</p>
+              <p style="font-size:11px;color:rgba(92,82,68,0.5);margin-top:1px">${fmtDate(t.date)} · ${t.category}</p>
             </div>
-            <div style={{flexShrink:0,textAlign:'right'}}>
-              <p style={{fontSize:13,fontWeight:600,color:t.type==='income'?'#3D7A52':'#B5614A'}}>{t.type==='income'?'+':'-'}{fmtMoney(t.amount)}</p>
-              <button onClick={()=>remove(t.id)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(92,82,68,0.25)',marginTop:2}}><Ic n="trash" s={12}/></button>
+            <div style="flex-shrink:0;text-align:right">
+              <p style=${{fontSize:13,fontWeight:600,color:t.type==='income'?'#3D7A52':'#B5614A'}}>${t.type==='income'?'+':'-'}${fmtMoney(t.amount)}</p>
+              <button onClick=${()=>sync(txns.filter(x=>x.id!==t.id))} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.25);margin-top:2px"><${Ic} n="trash" s=${12}/></button>
             </div>
           </div>
-        ))}
+        `)}
       </div>
-
-      <Modal open={showAdd} onClose={()=>setShowAdd(false)} title="Nuevo movimiento">
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,borderRadius:12,overflow:'hidden',border:'1px solid rgba(255,255,255,0.5)'}}>
-            {['income','expense'].map(type=>(
-              <button key={type} onClick={()=>setForm({...form,type,category:type==='income'?'Salario':'Comida'})}
-                style={{padding:'10px',border:'none',cursor:'pointer',fontWeight:500,fontSize:13,background:form.type===type?(type==='income'?'rgba(61,122,82,0.7)':'rgba(181,97,74,0.7)'):'rgba(255,255,255,0.3)',color:form.type===type?'#fff':'#5C5244',transition:'all .2s'}}>
-                {type==='income'?'💰 Ingreso':'💸 Gasto'}
-              </button>
-            ))}
+      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nuevo movimiento">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.5)">
+            ${['income','expense'].map(tp=>html`<button onClick=${()=>setForm({...form,type:tp,category:tp==='income'?'Salario':'Comida'})} style=${{padding:10,border:'none',cursor:'pointer',fontWeight:500,fontSize:13,background:form.type===tp?(tp==='income'?'rgba(61,122,82,0.7)':'rgba(181,97,74,0.7)'):'rgba(255,255,255,0.3)',color:form.type===tp?'#fff':'#5C5244',fontFamily:'Inter,sans-serif'}}>${tp==='income'?'💰 Ingreso':'💸 Gasto'}</button>`)}
           </div>
-          <input type="number" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="Monto" autoFocus/>
-          <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Categoría</label>
-            <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
-              {(FIN_CATS[form.type]||[]).map(c=><option key={c}>{c}</option>)}
-            </select></div>
-          <input value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Descripción (opcional)"/>
-          <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Fecha</label>
-            <input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></div>
-          <button className="btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={add}>Guardar</button>
+          <input type="number" value=${form.amount} onInput=${e=>setForm({...form,amount:e.target.value})} placeholder="Monto" autoFocus/>
+          <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${(FCATS[form.type]||[]).map(c=>html`<option>${c}</option>`)}</select></div>
+          <input value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Descripción (opcional)"/>
+          <div><label class="lbl">Fecha</label><input type="date" value=${form.date} onInput=${e=>setForm({...form,date:e.target.value})}/></div>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Guardar</button>
         </div>
-      </Modal>
+      <//>
     </div>
-  );
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -930,94 +695,64 @@ const PageFinance = () => {
 // ══════════════════════════════════════════════════════════════════════════
 const PageGoals = () => {
   const today = todayKey();
-  const [goals, setGoals] = useState(()=>load('goals',[]));
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({title:'',category:'Personal',target:100,current:0,unit:'%',due:'',note:''});
+  const [goals,setGoals] = useState(()=>load('goals',[]));
+  const [showAdd,setShowAdd] = useState(false);
+  const [form,setForm] = useState({title:'',category:'Personal',target:100,current:0,unit:'%',due:'',note:''});
+  const sync = g => { setGoals(g); save('goals',g); };
+  const add = () => { if(!form.title.trim())return; sync([...goals,{...form,id:uid(),target:Number(form.target),current:Number(form.current)}]); setForm({title:'',category:'Personal',target:100,current:0,unit:'%',due:'',note:''}); setShowAdd(false); };
+  const upd = (id,d) => sync(goals.map(g=>g.id===id?{...g,current:Math.min(g.target,Math.max(0,g.current+d))}:g));
 
-  const sync=(g)=>{setGoals(g);save('goals',g);};
-  const add=()=>{if(!form.title.trim())return;sync([...goals,{...form,id:uid(),target:Number(form.target),current:Number(form.current)}]);setForm({title:'',category:'Personal',target:100,current:0,unit:'%',due:'',note:''});setShowAdd(false);};
-  const upd=(id,delta)=>sync(goals.map(g=>g.id===id?{...g,current:Math.min(g.target,Math.max(0,g.current+delta))}:g));
-  const remove=(id)=>sync(goals.filter(g=>g.id!==id));
-
-  const done=goals.filter(g=>g.current>=g.target).length;
-
-  return (
-    <div className="fade-up" style={{padding:'28px 24px 0'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
-        <div>
-          <h2 style={{fontSize:20,fontWeight:700,color:'#1E1A14'}}>Metas</h2>
-          <p style={{fontSize:12,color:'rgba(92,82,68,0.6)',marginTop:2}}>{done}/{goals.length} completadas</p>
-        </div>
-        <button className="btn-primary" onClick={()=>setShowAdd(true)}><Ic n="plus" s={15} c="#fff"/>Nueva</button>
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Metas</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${goals.filter(g=>g.current>=g.target).length}/${goals.length} completadas</p></div>
+        <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nueva</button>
       </div>
-
-      {goals.length===0&&(
-        <div className="card" style={{textAlign:'center',padding:'56px 20px'}}>
-          <div style={{fontSize:48,marginBottom:12}}>🎯</div>
-          <p style={{fontSize:14,fontWeight:500,color:'#1E1A14',marginBottom:6}}>Define tu primera meta</p>
-          <p style={{fontSize:12,color:'rgba(92,82,68,0.5)'}}>Establece objetivos y sigue tu progreso</p>
-        </div>
-      )}
-
-      <div style={{display:'flex',flexDirection:'column',gap:14}}>
-        {goals.map(g=>{
+      ${goals.length===0&&html`<div class="card empty-state"><div class="emo">🎯</div><p style="font-size:14px;font-weight:500;color:#1E1A14;margin-bottom:6px">Define tu primera meta</p><p style="font-size:12px;color:rgba(92,82,68,0.5)">Establece objetivos y sigue tu progreso</p></div>`}
+      <div style="display:flex;flex-direction:column;gap:14px">
+        ${goals.map(g=>{
           const pct=Math.min(100,Math.round(g.current/g.target*100));
-          const isDone=pct>=100;
-          return (
-            <div key={g.id} className="card" style={{borderLeft:`3px solid ${isDone?'#3D7A52':CAT_COLORS[g.category]||'#9A7A6B'}`}}>
-              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:12}}>
-                <div style={{flex:1}}>
-                  <div style={{display:'flex',alignItems:'center',gap:8}}>
-                    {isDone&&<span>⭐</span>}
-                    <p style={{fontSize:14,fontWeight:600,color:'#1E1A14'}}>{g.title}</p>
-                  </div>
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>
-                    <span className="badge" style={{background:CAT_COLORS[g.category]+'20',color:CAT_COLORS[g.category],fontSize:10}}>{g.category}</span>
-                    {g.due&&<span style={{fontSize:11,color:'rgba(92,82,68,0.5)'}}>📅 {fmtDate(g.due)}</span>}
+          const done=pct>=100;
+          return html`
+            <div class="card" style=${{borderLeft:`3px solid ${done?'#3D7A52':CAT_COLORS[g.category]||'#9A7A6B'}`}}>
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+                <div style="flex:1">
+                  <div style="display:flex;align-items:center;gap:8px">${done&&html`<span>⭐</span>`}<p style="font-size:14px;font-weight:600;color:#1E1A14">${g.title}</p></div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                    <span class="badge" style=${{background:CAT_COLORS[g.category]+'20',color:CAT_COLORS[g.category],fontSize:10}}>${g.category}</span>
+                    ${g.due&&html`<span style="font-size:11px;color:rgba(92,82,68,0.5)">📅 ${fmtDate(g.due)}</span>`}
                   </div>
                 </div>
-                <button onClick={()=>remove(g.id)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(92,82,68,0.3)',padding:4}}><Ic n="trash" s={14}/></button>
+                <button onClick=${()=>sync(goals.filter(x=>x.id!==g.id))} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
               </div>
-
-              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-                <div className="prog-track" style={{flex:1}}>
-                  <div className="prog-fill" style={{width:`${pct}%`,background:`linear-gradient(90deg,${CAT_COLORS[g.category]||'#9A7A6B'}99,${CAT_COLORS[g.category]||'#9A7A6B'})`}}/>
-                </div>
-                <span style={{fontSize:14,fontWeight:700,color:'#3D7A52',minWidth:40,textAlign:'right'}}>{pct}%</span>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${pct}%`,background:`linear-gradient(90deg,${CAT_COLORS[g.category]||'#9A7A6B'}99,${CAT_COLORS[g.category]||'#9A7A6B'})`}}/></div>
+                <span style="font-size:14px;font-weight:700;color:#3D7A52;min-width:40px;text-align:right">${pct}%</span>
               </div>
-
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                <p style={{fontSize:12,color:'rgba(92,82,68,0.6)'}}>{g.current} / {g.target} {g.unit}</p>
-                {!isDone&&(
-                  <div style={{display:'flex',gap:6}}>
-                    <button onClick={()=>upd(g.id,-1)} style={{width:28,height:28,borderRadius:8,border:'1px solid rgba(255,255,255,0.5)',background:'rgba(255,255,255,0.3)',cursor:'pointer',fontSize:16,color:'#5C5244',display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
-                    <button onClick={()=>upd(g.id,1)}  style={{width:28,height:28,borderRadius:8,border:'1px solid rgba(61,122,82,0.35)',background:'rgba(61,122,82,0.12)',cursor:'pointer',fontSize:16,color:'#2D6040',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
-                  </div>
-                )}
-                {isDone&&<span style={{fontSize:12,fontWeight:500,color:'#3D7A52'}}>¡Completada! 🎉</span>}
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <p style="font-size:12px;color:rgba(92,82,68,0.6)">${g.current} / ${g.target} ${g.unit}</p>
+                ${!done?html`<div style="display:flex;gap:6px"><button onClick=${()=>upd(g.id,-1)} style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.3);cursor:pointer;font-size:16px;color:#5C5244;display:flex;align-items:center;justify-content:center">−</button><button onClick=${()=>upd(g.id,1)} style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(61,122,82,0.35);background:rgba(61,122,82,0.12);cursor:pointer;font-size:16px;color:#2D6040;display:flex;align-items:center;justify-content:center">+</button></div>`:html`<span style="font-size:12px;font-weight:500;color:#3D7A52">¡Completada! 🎉</span>`}
               </div>
-              {g.note&&<p style={{fontSize:11,color:'rgba(92,82,68,0.5)',marginTop:10,paddingTop:10,borderTop:'1px solid rgba(255,255,255,0.4)'}}>{g.note}</p>}
+              ${g.note&&html`<p style="font-size:11px;color:rgba(92,82,68,0.5);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.4)">${g.note}</p>`}
             </div>
-          );
+          `;
         })}
       </div>
-
-      <Modal open={showAdd} onClose={()=>setShowAdd(false)} title="Nueva meta">
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          <input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="¿Cuál es tu meta?" autoFocus/>
-          <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Categoría</label>
-            <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Objetivo</label><input type="number" value={form.target} onChange={e=>setForm({...form,target:e.target.value})}/></div>
-            <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Unidad</label><input value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} placeholder="km, libros, %"/></div>
+      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nueva meta">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${form.title} onInput=${e=>setForm({...form,title:e.target.value})} placeholder="¿Cuál es tu meta?" autoFocus/>
+          <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
+          <div class="grid2">
+            <div><label class="lbl">Objetivo</label><input type="number" value=${form.target} onInput=${e=>setForm({...form,target:e.target.value})}/></div>
+            <div><label class="lbl">Unidad</label><input value=${form.unit} onInput=${e=>setForm({...form,unit:e.target.value})} placeholder="km, libros, %"/></div>
           </div>
-          <div><label style={{fontSize:11,color:'rgba(92,82,68,0.6)',display:'block',marginBottom:5}}>Fecha límite</label><input type="date" value={form.due} onChange={e=>setForm({...form,due:e.target.value})}/></div>
-          <textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Nota o descripción" rows={2} style={{resize:'none'}}/>
-          <button className="btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={add}>Crear meta</button>
+          <div><label class="lbl">Fecha límite</label><input type="date" value=${form.due} onInput=${e=>setForm({...form,due:e.target.value})}/></div>
+          <textarea value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Nota o descripción" rows="2" style="resize:none"/>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Crear meta</button>
         </div>
-      </Modal>
+      <//>
     </div>
-  );
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1025,240 +760,163 @@ const PageGoals = () => {
 // ══════════════════════════════════════════════════════════════════════════
 const PageStats = () => {
   const today = todayKey();
+  const mo    = today.slice(0,7);
   const habits = load('habits',[]);
   const tasks  = load('tasks',[]);
   const txns   = load('txns',[]);
   const logs   = load('workout-logs',[]);
+  const last30 = Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);const k=d.toISOString().split('T')[0];const done=habits.filter(h=>(h.done||[]).includes(k)).length;return{k,pct:habits.length?done/habits.length:0,isToday:k===today};});
+  const hStreaks = habits.map(h=>{let mx=0,cur=0;[...new Set(h.done||[])].sort().forEach((d,i,a)=>{if(i===0){cur=1;}else{const diff=(new Date(d)-new Date(a[i-1]))/86400000;cur=diff===1?cur+1:1;}if(cur>mx)mx=cur;});return{name:h.name,icon:h.icon,s:mx};}).sort((a,b)=>b.s-a.s).slice(0,5);
+  const MNAMES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mData=Array.from({length:6},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()-5+i);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;const inc=txns.filter(t=>t.type==='income'&&t.date.startsWith(k)).reduce((s,t)=>s+t.amount,0);const exp=txns.filter(t=>t.type==='expense'&&t.date.startsWith(k)).reduce((s,t)=>s+t.amount,0);return{l:MNAMES[d.getMonth()],inc,exp};});
+  const maxV=Math.max(...mData.flatMap(m=>[m.inc,m.exp]),1);
 
-  // Last 30 days habit heatmap
-  const last30 = Array.from({length:30},(_,i)=>{
-    const d=new Date(); d.setDate(d.getDate()-29+i);
-    const k=d.toISOString().split('T')[0];
-    const done=habits.filter(h=>(h.done||[]).includes(k)).length;
-    const pct=habits.length?done/habits.length:0;
-    return{k,pct,isToday:k===today};
-  });
-
-  // Best streak per habit
-  const habitStreaks = habits.map(h=>{
-    let max=0,cur=0;
-    const sorted=[...new Set(h.done||[])].sort();
-    sorted.forEach((d,i)=>{
-      if(i===0){cur=1;}
-      else{
-        const prev=new Date(sorted[i-1]); const curr=new Date(d);
-        const diff=(curr-prev)/86400000;
-        if(diff===1){cur++;}else{cur=1;}
-      }
-      if(cur>max)max=cur;
-    });
-    return{name:h.name,icon:h.icon,streak:max};
-  }).sort((a,b)=>b.streak-a.streak).slice(0,5);
-
-  // Monthly finance
-  const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const monthlyData = Array.from({length:6},(_,i)=>{
-    const d=new Date(); d.setMonth(d.getMonth()-5+i);
-    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const inc=txns.filter(t=>t.type==='income'&&t.date.startsWith(key)).reduce((s,t)=>s+t.amount,0);
-    const exp=txns.filter(t=>t.type==='expense'&&t.date.startsWith(key)).reduce((s,t)=>s+t.amount,0);
-    return{label:months[d.getMonth()],inc,exp};
-  });
-  const maxVal=Math.max(...monthlyData.flatMap(m=>[m.inc,m.exp]),1);
-
-  // Workout consistency
-  const workoutsThisMonth=logs.filter(l=>l.date.startsWith(today.slice(0,7))&&l.done).length;
-  const tasksCompleted=tasks.filter(t=>t.done).length;
-  const tasksTotal=tasks.length;
-
-  return (
-    <div className="fade-up" style={{padding:'28px 24px 0'}}>
-      <h2 style={{fontSize:20,fontWeight:700,color:'#1E1A14',marginBottom:20}}>Estadísticas</h2>
-
-      {/* Quick stats */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
-        {[
+  return html`
+    <div class="page fade-up">
+      <h2 style="font-size:20px;font-weight:700;color:#1E1A14;margin-bottom:20px">Estadísticas</h2>
+      <div class="grid2" style="margin-bottom:20px">
+        ${[
           {l:'Hábitos activos',v:habits.length,c:'#3D7A52'},
-          {l:'Tareas completadas',v:`${tasksCompleted}/${tasksTotal}`,c:'#B5834A'},
-          {l:'Entrenos este mes',v:workoutsThisMonth,c:'#4A9C8C'},
-          {l:'Balance mes',v:fmtMoney(txns.filter(t=>t.type==='income'&&t.date.startsWith(today.slice(0,7))).reduce((s,t)=>s+t.amount,0)-txns.filter(t=>t.type==='expense'&&t.date.startsWith(today.slice(0,7))).reduce((s,t)=>s+t.amount,0)),c:'#7A6BB5'},
-        ].map(s=>(
-          <div key={s.l} className="card">
-            <p style={{fontSize:11,color:'rgba(92,82,68,0.6)',marginBottom:6}}>{s.l}</p>
-            <p style={{fontSize:20,fontWeight:700,color:s.c}}>{s.v}</p>
-          </div>
-        ))}
+          {l:'Tareas completadas',v:`${tasks.filter(t=>t.done).length}/${tasks.length}`,c:'#B5834A'},
+          {l:'Entrenos este mes',v:logs.filter(l=>l.date.startsWith(mo)&&l.done).length,c:'#4A9C8C'},
+          {l:'Balance mes',v:fmtMoney(txns.filter(t=>t.type==='income'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0)-txns.filter(t=>t.type==='expense'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0)),c:'#7A6BB5'},
+        ].map(s=>html`<div class="card"><p style="font-size:11px;color:rgba(92,82,68,0.6);margin-bottom:6px">${s.l}</p><p style=${{fontSize:20,fontWeight:700,color:s.c}}>${s.v}</p></div>`)}
       </div>
 
-      {/* Habit heatmap */}
-      <div className="card" style={{marginBottom:20}}>
-        <p style={{fontSize:12,fontWeight:500,color:'rgba(92,82,68,0.6)',marginBottom:12}}>Hábitos — últimos 30 días</p>
-        <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
-          {last30.map((d,i)=>(
-            <div key={i} style={{width:18,height:18,borderRadius:4,background:d.pct===0?'rgba(255,255,255,0.3)':`rgba(61,122,82,${0.15+d.pct*0.75})`,border:d.isToday?'1.5px solid #3D7A52':'none'}} title={`${d.k}: ${Math.round(d.pct*100)}%`}/>
-          ))}
+      <div class="card" style="margin-bottom:20px">
+        <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:12px">Hábitos — últimos 30 días</p>
+        <div style="display:flex;flex-wrap:wrap;gap:3px">
+          ${last30.map((d,i)=>html`<div style=${{width:18,height:18,borderRadius:4,background:d.pct===0?'rgba(255,255,255,0.3)':`rgba(61,122,82,${0.15+d.pct*0.75})`,border:d.isToday?'1.5px solid #3D7A52':'none'}} title=${`${d.k}: ${Math.round(d.pct*100)}%`}/>`)}
         </div>
-        <div style={{display:'flex',gap:6,alignItems:'center',marginTop:10}}>
-          <span style={{fontSize:10,color:'rgba(92,82,68,0.5)'}}>Menos</span>
-          {[0.1,0.3,0.5,0.7,0.9].map(p=><div key={p} style={{width:12,height:12,borderRadius:3,background:`rgba(61,122,82,${p})`}}/>)}
-          <span style={{fontSize:10,color:'rgba(92,82,68,0.5)'}}>Más</span>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:10px">
+          <span style="font-size:10px;color:rgba(92,82,68,0.5)">Menos</span>
+          ${[0.15,0.35,0.55,0.75,0.9].map(p=>html`<div style=${{width:12,height:12,borderRadius:3,background:`rgba(61,122,82,${p})`}}/>`)}
+          <span style="font-size:10px;color:rgba(92,82,68,0.5)">Más</span>
         </div>
       </div>
 
-      {/* Habit streaks */}
-      {habitStreaks.length>0&&(
-        <div className="card" style={{marginBottom:20}}>
-          <p style={{fontSize:12,fontWeight:500,color:'rgba(92,82,68,0.6)',marginBottom:12}}>Mejores rachas</p>
-          {habitStreaks.map((h,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-              <span style={{fontSize:18}}>{h.icon}</span>
-              <span style={{flex:1,fontSize:12,color:'#1E1A14',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{h.name}</span>
-              <span style={{fontSize:13,fontWeight:700,color:'#e07030'}}>🔥 {h.streak}</span>
-            </div>
-          ))}
+      ${hStreaks.length>0&&html`
+        <div class="card" style="margin-bottom:20px">
+          <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:12px">Mejores rachas</p>
+          ${hStreaks.map(h=>html`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">${h.icon}</span><span style="flex:1;font-size:12px;color:#1E1A14;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.name}</span><span style="font-size:13px;font-weight:700;color:#e07030">🔥 ${h.s}</span></div>`)}
         </div>
-      )}
+      `}
 
-      {/* Finance chart */}
-      <div className="card" style={{marginBottom:20}}>
-        <p style={{fontSize:12,fontWeight:500,color:'rgba(92,82,68,0.6)',marginBottom:16}}>Ingresos vs Gastos</p>
-        <div style={{display:'flex',alignItems:'flex-end',gap:8,height:100}}>
-          {monthlyData.map((m,i)=>(
-            <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
-              <div style={{width:'100%',display:'flex',gap:2,alignItems:'flex-end',height:80}}>
-                <div style={{flex:1,borderRadius:'3px 3px 0 0',background:'rgba(61,122,82,0.7)',height:`${Math.max(2,(m.inc/maxVal)*78)}px`,transition:'height .5s'}}/>
-                <div style={{flex:1,borderRadius:'3px 3px 0 0',background:'rgba(181,97,74,0.65)',height:`${Math.max(2,(m.exp/maxVal)*78)}px`,transition:'height .5s'}}/>
+      <div class="card" style="margin-bottom:20px">
+        <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:16px">Ingresos vs Gastos</p>
+        <div style="display:flex;align-items:flex-end;gap:8px;height:100px">
+          ${mData.map(m=>html`
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:80px">
+                <div style=${{flex:1,borderRadius:'3px 3px 0 0',background:'rgba(61,122,82,0.7)',height:`${Math.max(2,(m.inc/maxV)*78)}px`,transition:'height .5s'}}/>
+                <div style=${{flex:1,borderRadius:'3px 3px 0 0',background:'rgba(181,97,74,0.65)',height:`${Math.max(2,(m.exp/maxV)*78)}px`,transition:'height .5s'}}/>
               </div>
-              <span style={{fontSize:9,color:'rgba(92,82,68,0.5)'}}>{m.label}</span>
+              <span style="font-size:9px;color:rgba(92,82,68,0.5)">${m.l}</span>
             </div>
-          ))}
+          `)}
         </div>
-        <div style={{display:'flex',gap:16,marginTop:8}}>
-          <div style={{display:'flex',gap:6,alignItems:'center'}}><div style={{width:10,height:10,borderRadius:2,background:'rgba(61,122,82,0.7)'}}/><span style={{fontSize:10,color:'rgba(92,82,68,0.6)'}}>Ingresos</span></div>
-          <div style={{display:'flex',gap:6,alignItems:'center'}}><div style={{width:10,height:10,borderRadius:2,background:'rgba(181,97,74,0.65)'}}/><span style={{fontSize:10,color:'rgba(92,82,68,0.6)'}}>Gastos</span></div>
+        <div style="display:flex;gap:16px;margin-top:8px">
+          <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:rgba(61,122,82,0.7)"/><span style="font-size:10px;color:rgba(92,82,68,0.6)">Ingresos</span></div>
+          <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:rgba(181,97,74,0.65)"/><span style="font-size:10px;color:rgba(92,82,68,0.6)">Gastos</span></div>
         </div>
       </div>
     </div>
-  );
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// SETTINGS MODAL
+// SETTINGS
 // ══════════════════════════════════════════════════════════════════════════
-const SettingsModal = ({open, onClose}) => {
-  const [apiKey, setApiKey] = useState(()=>load('ritual-api-key',''));
-  const [name, setName]     = useState(()=>load('ritual-name',''));
-  const save_ = () => { save('ritual-api-key',apiKey); save('ritual-name',name); onClose(); };
-  return (
-    <Modal open={open} onClose={onClose} title="Ajustes">
-      <div style={{display:'flex',flexDirection:'column',gap:14}}>
+const Settings = ({open,onClose}) => {
+  const [key,setKey] = useState(()=>load('ritual-api-key',''));
+  const [name,setName] = useState(()=>load('ritual-name',''));
+  const saveAll = () => { save('ritual-api-key',key); save('ritual-name',name); onClose(); };
+  return html`
+    <${Modal} open=${open} onClose=${onClose} title="Ajustes">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div><label class="lbl">Tu nombre</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo te llamas?"/></div>
         <div>
-          <label style={{fontSize:12,fontWeight:500,color:'#5C5244',display:'block',marginBottom:6}}>Tu nombre</label>
-          <input value={name} onChange={e=>setName(e.target.value)} placeholder="¿Cómo te llamas?"/>
+          <label class="lbl" style="display:flex;align-items:center;gap:6px"><${Ic} n="key" s=${13} c="#B5834A"/> Anthropic API Key (IA de comidas)</label>
+          <input type="password" value=${key} onInput=${e=>setKey(e.target.value)} placeholder="sk-ant-..."/>
+          <p style="font-size:11px;color:rgba(92,82,68,0.5);margin-top:6px">Se guarda solo en tu dispositivo. Necesaria para generar planes con IA.</p>
         </div>
-        <div>
-          <label style={{fontSize:12,fontWeight:500,color:'#5C5244',display:'block',marginBottom:6}}>
-            <span style={{display:'flex',alignItems:'center',gap:6}}><Ic n="key" s={14} c="#B5834A"/> Anthropic API Key (para IA de comidas)</span>
-          </label>
-          <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="sk-ant-..."/>
-          <p style={{fontSize:11,color:'rgba(92,82,68,0.5)',marginTop:6}}>Tu key se guarda solo en tu dispositivo. Necesaria para generar planes de comida con IA.</p>
-        </div>
-        <button className="btn-primary" style={{width:'100%',justifyContent:'center'}} onClick={save_}>Guardar ajustes</button>
+        <button class="btn-p" style="width:100%;justify-content:center" onClick=${saveAll}>Guardar ajustes</button>
       </div>
-    </Modal>
-  );
+    <//>
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
 // APP ROOT
 // ══════════════════════════════════════════════════════════════════════════
 const App = () => {
-  const [tab, setTab] = useState('home');
-  const [showSettings, setShowSettings] = useState(false);
-  const [showMore, setShowMore] = useState(false);
+  const [tab,setTab] = useState('home');
+  const [showSet,setShowSet] = useState(false);
+  const [showMore,setShowMore] = useState(false);
 
-  const SECONDARY = ['finance','goals','stats'];
+  const pages = {home:PageHome,habits:PageHabits,tasks:PageTasks,food:PageFood,gym:PageGym,finance:PageFinance,goals:PageGoals,stats:PageStats};
+  const Page  = pages[tab]||PageHome;
 
-  const renderPage = () => {
-    switch(tab) {
-      case 'home':    return <PageHome setTab={setTab}/>;
-      case 'habits':  return <PageHabits/>;
-      case 'tasks':   return <PageTasks/>;
-      case 'food':    return <PageFood/>;
-      case 'gym':     return <PageGym/>;
-      case 'finance': return <PageFinance/>;
-      case 'goals':   return <PageGoals/>;
-      case 'stats':   return <PageStats/>;
-      default:        return <PageHome setTab={setTab}/>;
-    }
-  };
-
-  return (
-    <div style={{minHeight:'100vh'}}>
-      {/* SIDEBAR (desktop) */}
-      <nav className="sidebar" style={{padding:'24px 14px'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:28,padding:'0 6px'}}>
-          <div style={{width:32,height:32,borderRadius:10,background:'rgba(61,122,82,0.8)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <span style={{fontSize:16}}>🌿</span>
-          </div>
-          <span style={{fontSize:17,fontWeight:700,color:'#1E1A14',letterSpacing:'-0.3px'}}>ritual.</span>
+  return html`
+    <div style="min-height:100vh">
+      <!-- SIDEBAR desktop -->
+      <nav class="sidebar">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;padding:0 6px">
+          <div style="width:32px;height:32px;border-radius:10px;background:rgba(61,122,82,0.8);display:flex;align-items:center;justify-content:center"><span style="font-size:16px">🌿</span></div>
+          <span style="font-size:17px;font-weight:700;color:#1E1A14;letter-spacing:-0.3px">ritual.</span>
         </div>
-        <div style={{display:'flex',flexDirection:'column',gap:4,flex:1}}>
-          {TABS.map(t=>(
-            <button key={t.id} className={`nav-item${tab===t.id?' active':''}`} onClick={()=>setTab(t.id)}>
-              <Ic n={t.icon} s={16} c={tab===t.id?'#2D6040':'rgba(92,82,68,0.6)'}/>
-              {t.label}
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+          ${TABS.map(t=>html`
+            <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>setTab(t.id)}>
+              <${Ic} n=${t.icon} s=${16} c=${tab===t.id?'#2D6040':'rgba(92,82,68,0.6)'}/>
+              ${t.label}
             </button>
-          ))}
+          `)}
         </div>
-        <button className="nav-item" style={{marginTop:8}} onClick={()=>setShowSettings(true)}>
-          <Ic n="settings" s={16} c="rgba(92,82,68,0.6)"/>Ajustes
+        <button class="nav-item" style="margin-top:8px" onClick=${()=>setShowSet(true)}>
+          <${Ic} n="settings" s=${16} c="rgba(92,82,68,0.6)"/>Ajustes
         </button>
       </nav>
 
-      {/* MAIN */}
-      <main className="main-content" style={{minHeight:'100vh',maxWidth:640,paddingBottom:40}}>
-        {renderPage()}
+      <!-- MAIN -->
+      <main class="main-content" style="min-height:100vh;max-width:640px;padding-bottom:40px">
+        <${Page} setTab=${setTab}/>
       </main>
 
-      {/* BOTTOM NAV (mobile) */}
-      <nav className="bottom-nav">
-        {BNAV_PRIMARY.map(id=>{
-          const t=TABS.find(x=>x.id===id);
-          return (
-            <button key={id} className={`bnav-item${tab===id?' active':''}`} onClick={()=>{setTab(id);setShowMore(false);}}>
-              <Ic n={t.icon} s={20} c={tab===id?'#2D6040':'rgba(92,82,68,0.55)'}/>
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
-        <button className={`bnav-item${SECONDARY.includes(tab)||showMore?' active':''}`} onClick={()=>setShowMore(!showMore)}>
-          <Ic n="more" s={20} c={SECONDARY.includes(tab)||showMore?'#2D6040':'rgba(92,82,68,0.55)'}/>
+      <!-- BOTTOM NAV mobile -->
+      <nav class="bottom-nav">
+        ${BNAV.map(id=>{const t=TABS.find(x=>x.id===id);return html`
+          <button class=${'bnav-item'+(tab===id?' active':'')} onClick=${()=>{setTab(id);setShowMore(false);}}>
+            <${Ic} n=${t.icon} s=${20} c=${tab===id?'#2D6040':'rgba(92,82,68,0.55)'}/>
+            <span>${t.label}</span>
+          </button>
+        `;})}
+        <button class=${'bnav-item'+(SEC.includes(tab)||showMore?' active':'')} onClick=${()=>setShowMore(!showMore)}>
+          <${Ic} n="more" s=${20} c=${SEC.includes(tab)||showMore?'#2D6040':'rgba(92,82,68,0.55)'}/>
           <span>Más</span>
         </button>
       </nav>
 
-      {/* More menu (mobile) */}
-      {showMore&&(
-        <div style={{position:'fixed',bottom:80,right:12,zIndex:40}}>
-          <div className="glass" style={{borderRadius:16,padding:'8px',display:'flex',flexDirection:'column',gap:4,minWidth:160,boxShadow:'0 8px 32px rgba(90,70,45,0.2)'}}>
-            {TABS.filter(t=>SECONDARY.includes(t.id)).concat([{id:'settings',label:'Ajustes',icon:'settings'}]).map(t=>(
-              <button key={t.id} className={`nav-item${tab===t.id?' active':''}`}
-                onClick={()=>{if(t.id==='settings'){setShowSettings(true);}else{setTab(t.id);}setShowMore(false);}}>
-                <Ic n={t.icon} s={15} c={tab===t.id?'#2D6040':'rgba(92,82,68,0.65)'}/>
-                {t.label}
+      <!-- MORE MENU mobile -->
+      ${showMore&&html`
+        <div style="position:fixed;bottom:80px;right:12px;z-index:40">
+          <div class="glass" style="border-radius:16px;padding:8px;display:flex;flex-direction:column;gap:4px;min-width:160px;box-shadow:0 8px 32px rgba(90,70,45,0.2)">
+            ${[...TABS.filter(t=>SEC.includes(t.id)),{id:'settings',label:'Ajustes',icon:'settings'}].map(t=>html`
+              <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>{if(t.id==='settings')setShowSet(true);else setTab(t.id);setShowMore(false);}}>
+                <${Ic} n=${t.icon} s=${15} c=${tab===t.id?'#2D6040':'rgba(92,82,68,0.65)'}/>
+                ${t.label}
               </button>
-            ))}
+            `)}
           </div>
         </div>
-      )}
+      `}
 
-      <SettingsModal open={showSettings} onClose={()=>setShowSettings(false)}/>
+      <${Settings} open=${showSet} onClose=${()=>setShowSet(false)}/>
     </div>
-  );
+  `;
 };
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+render(html`<${App}/>`, document.getElementById('root'));
 </script>
 </body>
 </html>
