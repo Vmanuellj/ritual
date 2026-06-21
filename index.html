@@ -12,34 +12,32 @@
     /* ══ MONSTERA PHOTO BACKGROUND ══════════════════════════════════════════ */
     .bg-scene{
       position:fixed;inset:0;z-index:0;overflow:hidden;
-      /* fallback while image loads */
-      background:#071209;
+      background:#081A0C;
     }
+    /* Monstera photo — direct CSS, most reliable */
     .bg-photo{
       position:absolute;inset:0;
-      background-image:var(--bg-img, none);
+      background-image:url(bg.avif);
       background-size:cover;
-      background-position:center top;
+      background-position:center 30%;
       background-repeat:no-repeat;
-      filter:brightness(0.55) saturate(1.15);
+      filter:brightness(0.5) saturate(1.2);
     }
-    /* dark vignette overlay so content is always readable */
+    /* vignette: left dark for sidebar, slight bottom dark */
     .bg-photo::after{
       content:'';
       position:absolute;inset:0;
       background:
-        linear-gradient(to right, rgba(4,14,6,0.72) 0%, rgba(4,14,6,0.3) 100%),
-        radial-gradient(ellipse at 60% 30%, transparent 30%, rgba(4,14,6,0.55) 100%);
+        linear-gradient(to right, rgba(2,10,3,0.75) 0%, rgba(2,10,3,0.18) 55%, rgba(2,10,3,0.45) 100%),
+        linear-gradient(to bottom, rgba(2,10,3,0.25) 0%, transparent 40%, rgba(2,10,3,0.55) 100%);
     }
-    /* CSS fallback botanical scene (shown if no image) */
-    .bg-css{position:absolute;inset:0;}
+    /* CSS botanical overlay on top of photo for richness */
+    .bg-css{position:absolute;inset:0;pointer-events:none;}
     .bg-css-base{
       position:absolute;inset:0;
       background:
-        radial-gradient(ellipse 80% 60% at 15% 10%, #1C4020 0%, transparent 60%),
-        radial-gradient(ellipse 60% 80% at 80% 60%, #162E14 0%, transparent 55%),
-        radial-gradient(ellipse 100% 50% at 50% 90%, #0E2210 0%, transparent 70%),
-        #060F08;
+        radial-gradient(ellipse 60% 40% at 10% 5%, rgba(30,80,25,0.35) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 60% at 85% 70%, rgba(20,60,18,0.3) 0%, transparent 55%);
     }
     /* Monstera leaf silhouettes via clip-path */
     .css-leaf{position:absolute;pointer-events:none;}
@@ -87,12 +85,12 @@
     }
     /* Cards — liquid glass iOS style */
     .card{
-      background:rgba(255,255,255,0.075);
+      background:rgba(255,255,255,0.11);
       backdrop-filter:blur(40px) saturate(180%) brightness(1.05);
       -webkit-backdrop-filter:blur(40px) saturate(180%) brightness(1.05);
       border:0.5px solid rgba(255,255,255,0.2);
       border-radius:18px;padding:18px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.25),0 8px 32px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.1);
+      box-shadow:0 2px 8px rgba(0,0,0,0.4),0 8px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(0,0,0,0.15);
     }
     .glass{
       background:rgba(255,255,255,0.07);
@@ -195,7 +193,7 @@
     /* Modal — iOS sheet style */
     .modal-bg{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,8,2,0.6);backdrop-filter:blur(12px);}
     .modal-box{
-      background:rgba(12,28,14,0.9);
+      background:rgba(8,20,10,0.92);
       backdrop-filter:blur(50px) saturate(200%) brightness(1.1);
       -webkit-backdrop-filter:blur(50px) saturate(200%) brightness(1.1);
       border:0.5px solid rgba(255,255,255,0.18);
@@ -244,31 +242,9 @@
 </head>
 <body>
 <div class="bg-scene">
-  <!-- Photo layer: shows when bg.jpg exists in same folder -->
-  <div class="bg-photo" id="bgPhoto"></div>
-  <!-- CSS botanical fallback -->
-  <div class="bg-css" id="bgCss">
-    <div class="bg-css-base"></div>
-    <div class="css-leaf cl-1"></div>
-    <div class="css-leaf cl-2"></div>
-    <div class="css-leaf cl-3"></div>
-    <div class="light-patch lp-1"></div>
-    <div class="light-patch lp-2"></div>
-    <div class="light-patch lp-3"></div>
-  </div>
+  <div class="bg-photo"></div>
+  <div class="bg-css"><div class="bg-css-base"></div></div>
 </div>
-<script>
-// Try to load bg.jpg — if it exists, use it; otherwise keep CSS fallback
-(function(){
-  var img = new Image();
-  img.onload = function(){
-    var p = document.getElementById('bgPhoto');
-    p.style.backgroundImage = 'url(bg.jpg)';
-    document.getElementById('bgCss').style.display = 'none';
-  };
-  img.src = 'bg.avif';
-})();
-</script>
 <div id="root" style="position:relative;z-index:1;min-height:100vh;"></div>
 
 <script type="module">
