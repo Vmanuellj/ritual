@@ -7,50 +7,71 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Inter',sans-serif;background:#DDD8CF;overflow-x:hidden;min-height:100vh;}
-    .bg-scene{position:fixed;inset:0;z-index:0;overflow:hidden;}
-    .blob{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;}
-    .blob-1{width:600px;height:600px;top:-150px;left:-100px;background:rgba(110,160,100,0.38);}
-    .blob-2{width:500px;height:500px;top:30%;right:-150px;background:rgba(196,170,118,0.35);}
-    .blob-3{width:400px;height:400px;bottom:-100px;left:30%;background:rgba(140,190,155,0.3);}
-    .blob-4{width:350px;height:350px;top:10%;right:25%;background:rgba(210,200,175,0.25);}
-    .glass{background:rgba(255,255,255,0.28);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid rgba(255,255,255,0.52);box-shadow:0 8px 32px rgba(90,70,45,0.1),inset 0 1px 0 rgba(255,255,255,0.65);}
-    .glass-hover:hover{background:rgba(255,255,255,0.38);box-shadow:0 12px 40px rgba(90,70,45,0.14),inset 0 1px 0 rgba(255,255,255,0.75);transform:translateY(-1px);transition:all .2s ease;}
-    .sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;z-index:30;background:rgba(255,255,255,0.32);backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border-right:1px solid rgba(255,255,255,0.5);display:flex;flex-direction:column;padding:24px 14px;}
-    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:500;color:rgba(92,82,68,0.75);cursor:pointer;transition:all .15s ease;border:1px solid transparent;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;}
-    .nav-item:hover{background:rgba(255,255,255,0.45);color:#1E1A14;}
-    .nav-item.active{background:rgba(61,122,82,0.13);color:#2D6040;border-color:rgba(61,122,82,0.2);}
-    .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:30;padding:8px 12px 20px;background:rgba(255,255,255,0.4);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,0.5);}
-    .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:10px;font-size:10px;font-weight:500;color:rgba(92,82,68,0.6);cursor:pointer;transition:all .15s ease;border:1px solid transparent;background:none;font-family:'Inter',sans-serif;}
-    .bnav-item.active{background:rgba(61,122,82,0.12);color:#2D6040;border-color:rgba(61,122,82,0.18);}
+    body{font-family:'Inter',sans-serif;background:#081510;overflow-x:hidden;min-height:100vh;color:#E0EDD8;}
+
+    /* ── BOTANICAL BACKGROUND ──────────────────────── */
+    .bg-scene{position:fixed;inset:0;z-index:0;overflow:hidden;background:radial-gradient(ellipse at 20% 0%,#1A3A1A 0%,#0A1E0D 40%,#060F08 100%);}
+    /* light shafts through foliage */
+    .blob{position:absolute;pointer-events:none;border-radius:50%;}
+    .blob-1{width:700px;height:900px;top:-200px;left:-120px;background:radial-gradient(ellipse,rgba(60,130,50,0.22) 0%,transparent 70%);filter:blur(60px);}
+    .blob-2{width:500px;height:700px;top:10%;right:-80px;background:radial-gradient(ellipse,rgba(90,160,60,0.15) 0%,transparent 70%);filter:blur(80px);}
+    .blob-3{width:800px;height:400px;bottom:-100px;left:-50px;background:radial-gradient(ellipse,rgba(30,90,30,0.3) 0%,transparent 70%);filter:blur(50px);}
+    /* golden light shafts */
+    .blob-4{width:200px;height:600px;top:0;left:35%;background:linear-gradient(180deg,rgba(180,230,100,0.07) 0%,transparent 100%);filter:blur(40px);transform:rotate(-8deg);}
+    .blob-5{width:150px;height:500px;top:20%;right:25%;background:linear-gradient(180deg,rgba(200,240,120,0.05) 0%,transparent 100%);filter:blur(35px);transform:rotate(5deg);}
+    /* leaf silhouettes (CSS clip-path) */
+    .leaf{position:absolute;pointer-events:none;opacity:.06;}
+    .leaf-1{width:380px;height:500px;bottom:-60px;right:-60px;background:#6CB85A;border-radius:0 80% 0 80%;transform:rotate(-30deg);}
+    .leaf-2{width:280px;height:380px;top:-40px;left:-40px;background:#4A9A40;border-radius:80% 0 80% 0;transform:rotate(20deg);}
+    .leaf-3{width:200px;height:280px;top:30%;right:5%;background:#5AAA48;border-radius:0 70% 0 70%;transform:rotate(-55deg);}
+
+    /* ── GLASS CRYSTAL ─────────────────────────────── */
+    .glass{background:rgba(255,255,255,0.06);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,0.14);box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.18);}
+    .glass-hover:hover{background:rgba(255,255,255,0.1);box-shadow:0 12px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.22);transform:translateY(-1px);transition:all .2s ease;}
+    .sidebar{position:fixed;top:0;left:0;bottom:0;width:220px;z-index:30;background:rgba(5,18,8,0.55);backdrop-filter:blur(32px) saturate(160%);-webkit-backdrop-filter:blur(32px) saturate(160%);border-right:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;padding:24px 14px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:500;color:rgba(200,230,200,0.55);cursor:pointer;transition:all .15s ease;border:1px solid transparent;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;}
+    .nav-item:hover{background:rgba(255,255,255,0.08);color:#D4EED4;}
+    .nav-item.active{background:rgba(80,180,90,0.15);color:#90DDA0;border-color:rgba(80,180,90,0.25);}
+    .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:30;padding:8px 12px 20px;background:rgba(5,18,8,0.7);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-top:1px solid rgba(255,255,255,0.1);}
+    .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:10px;font-size:10px;font-weight:500;color:rgba(180,220,180,0.45);cursor:pointer;transition:all .15s ease;border:1px solid transparent;background:none;font-family:'Inter',sans-serif;}
+    .bnav-item.active{background:rgba(80,180,90,0.15);color:#90DDA0;border-color:rgba(80,180,90,0.22);}
     @media(min-width:768px){.main-content{margin-left:220px;}.bottom-nav{display:none!important;}.sidebar{display:flex;}}
     @media(max-width:767px){.sidebar{display:none;}.bottom-nav{display:flex;}.main-content{margin-left:0;padding-bottom:90px;}}
-    input,textarea,select{background:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.6);color:#1E1A14;border-radius:10px;padding:10px 13px;width:100%;outline:none;font-family:'Inter',sans-serif;font-size:13px;transition:border-color .2s,background .2s;}
-    input:focus,textarea:focus,select:focus{border-color:rgba(61,122,82,0.5);background:rgba(255,255,255,0.6);box-shadow:0 0 0 3px rgba(61,122,82,0.08);}
-    input::placeholder,textarea::placeholder{color:rgba(92,82,68,0.4);}
-    select option{background:#f5f0e8;color:#1E1A14;}
-    .btn-p{background:rgba(61,122,82,0.85);color:#fff;border:1px solid rgba(61,122,82,0.4);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;font-family:'Inter',sans-serif;}
-    .btn-p:hover{background:rgba(61,122,82,1);box-shadow:0 4px 16px rgba(61,122,82,0.3);transform:translateY(-1px);}
-    .btn-p:disabled{opacity:.6;cursor:not-allowed;transform:none;}
-    .btn-g{background:rgba(255,255,255,0.4);color:#5C5244;border:1px solid rgba(255,255,255,0.6);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:6px;}
-    .btn-g:hover{background:rgba(255,255,255,0.6);}
-    .btn-d{background:rgba(181,97,74,0.1);color:#B5614A;border:1px solid rgba(181,97,74,0.25);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;}
-    .check-box{width:22px;height:22px;border-radius:7px;border:1.5px solid rgba(61,122,82,0.35);background:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;}
-    .check-box.done{background:rgba(61,122,82,0.82);border-color:transparent;box-shadow:0 2px 8px rgba(61,122,82,0.28);}
-    .prog-track{height:6px;background:rgba(255,255,255,0.4);border-radius:3px;overflow:hidden;}
-    .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,rgba(61,122,82,0.7),rgba(90,154,88,0.9));transition:width .5s ease;}
-    .modal-bg{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(30,26,20,0.45);backdrop-filter:blur(5px);}
-    .modal-box{background:rgba(245,241,235,0.94);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,0.72);box-shadow:0 24px 60px rgba(90,70,45,0.22);border-radius:20px;padding:22px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
-    .card{background:rgba(255,255,255,0.28);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid rgba(255,255,255,0.52);border-radius:16px;padding:18px;}
+
+    input,textarea,select{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);color:#D8EDD8;border-radius:10px;padding:10px 13px;width:100%;outline:none;font-family:'Inter',sans-serif;font-size:13px;transition:border-color .2s,background .2s;}
+    input:focus,textarea:focus,select:focus{border-color:rgba(90,190,100,0.5);background:rgba(255,255,255,0.1);box-shadow:0 0 0 3px rgba(90,190,100,0.1);}
+    input::placeholder,textarea::placeholder{color:rgba(180,220,180,0.3);}
+    select option{background:#0D2010;color:#D8EDD8;}
+
+    .btn-p{background:rgba(60,160,70,0.7);color:#fff;border:1px solid rgba(90,200,100,0.35);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;font-family:'Inter',sans-serif;backdrop-filter:blur(10px);}
+    .btn-p:hover{background:rgba(60,160,70,0.9);box-shadow:0 4px 20px rgba(60,160,70,0.35);transform:translateY(-1px);}
+    .btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+    .btn-g{background:rgba(255,255,255,0.07);color:rgba(200,230,200,0.8);border:1px solid rgba(255,255,255,0.13);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:6px;backdrop-filter:blur(10px);}
+    .btn-g:hover{background:rgba(255,255,255,0.11);color:#D4EED4;}
+    .btn-d{background:rgba(200,80,60,0.12);color:#F09080;border:1px solid rgba(200,80,60,0.22);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;}
+
+    .check-box{width:22px;height:22px;border-radius:7px;border:1.5px solid rgba(90,190,100,0.35);background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;}
+    .check-box.done{background:rgba(60,160,70,0.7);border-color:transparent;box-shadow:0 2px 12px rgba(60,160,70,0.4);}
+    .prog-track{height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;}
+    .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,rgba(60,160,70,0.7),rgba(100,210,110,0.9));transition:width .5s ease;}
+
+    .modal-bg{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,10,3,0.65);backdrop-filter:blur(8px);}
+    .modal-box{background:rgba(10,25,12,0.88);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.16);box-shadow:0 24px 60px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.12);border-radius:20px;padding:22px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
+
+    /* crystal card — most transparent element */
+    .card{background:rgba(255,255,255,0.055);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:18px;box-shadow:0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.12);}
+
     .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
-    .badge-g{background:rgba(61,122,82,0.13);color:#2D6040;}
-    .badge-s{background:rgba(181,131,74,0.15);color:#7A5C30;}
-    .badge-r{background:rgba(181,97,74,0.13);color:#924A32;}
-    .tab-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.2);color:rgba(92,82,68,0.7);transition:all .15s;font-family:'Inter',sans-serif;}
-    .tab-pill.active{background:rgba(61,122,82,0.15);color:#2D6040;border-color:rgba(61,122,82,0.25);}
-    .mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1px solid rgba(255,255,255,0.4);cursor:pointer;transition:all .2s;background:rgba(255,255,255,0.2);font-family:'Inter',sans-serif;}
-    .mood-btn.sel{background:rgba(61,122,82,0.15);border-color:rgba(61,122,82,0.3);}
-    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.4);border-radius:3px;}
+    .badge-g{background:rgba(60,160,70,0.18);color:#90DDA0;}
+    .badge-s{background:rgba(160,200,80,0.15);color:#B8D880;}
+    .badge-r{background:rgba(200,80,60,0.15);color:#F09080;}
+
+    .tab-pill{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(180,220,180,0.55);transition:all .15s;font-family:'Inter',sans-serif;}
+    .tab-pill.active{background:rgba(60,160,70,0.18);color:#90DDA0;border-color:rgba(60,160,70,0.3);}
+    .mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:all .2s;background:rgba(255,255,255,0.04);font-family:'Inter',sans-serif;}
+    .mood-btn.sel{background:rgba(60,160,70,0.18);border-color:rgba(60,160,70,0.32);}
+
+    ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:3px;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
     .fade-up{animation:fadeUp .28s ease forwards;}
     @keyframes spin-anim{to{transform:rotate(360deg)}}
@@ -61,11 +82,11 @@
     .col{display:flex;flex-direction:column;gap:4px;}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-    label.lbl{font-size:11px;color:rgba(92,82,68,0.6);display:block;margin-bottom:5px;}
+    label.lbl{font-size:11px;color:rgba(180,220,180,0.5);display:block;margin-bottom:5px;}
     .empty-state{text-align:center;padding:48px 20px;}
     .empty-state .emo{font-size:44px;margin-bottom:12px;}
-    .streak{color:#e07030;font-size:11px;}
-    .info-box{background:rgba(181,131,74,0.08);border:1px solid rgba(181,131,74,0.25);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;}
+    .streak{color:#A0E060;font-size:11px;}
+    .info-box{background:rgba(160,200,80,0.07);border:1px solid rgba(160,200,80,0.2);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;}
   </style>
 </head>
 <body>
@@ -74,6 +95,10 @@
   <div class="blob blob-2"></div>
   <div class="blob blob-3"></div>
   <div class="blob blob-4"></div>
+  <div class="blob blob-5"></div>
+  <div class="leaf leaf-1"></div>
+  <div class="leaf leaf-2"></div>
+  <div class="leaf leaf-3"></div>
 </div>
 <div id="root" style="position:relative;z-index:1;min-height:100vh;"></div>
 
@@ -127,8 +152,8 @@ const Modal = ({open,onClose,title,children}) => {
     <div class="modal-bg" onClick=${onClose}>
       <div class="modal-box fade-up" onClick=${e=>e.stopPropagation()}>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-          <h3 style="font-size:16px;font-weight:600;color:#1E1A14">${title}</h3>
-          <button onClick=${onClose} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.5);padding:4px"><${Ic} n="x" s=${18}/></button>
+          <h3 style="font-size:16px;font-weight:600;color:#D8EDD8">${title}</h3>
+          <button onClick=${onClose} style="background:none;border:none;cursor:pointer;color:rgba(180,220,180,0.45);padding:4px"><${Ic} n="x" s=${18}/></button>
         </div>
         ${children}
       </div>
@@ -197,18 +222,18 @@ const PageHome = ({setTab}) => {
   return html`
     <div class="page fade-up">
       <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;color:rgba(92,82,68,0.6);margin-bottom:4px">${new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}</p>
-        <h1 style="font-size:22px;font-weight:700;color:#1E1A14;margin-bottom:4px">${greet()}${name?`, ${name}`:''} 👋</h1>
-        <p style="font-size:13px;color:rgba(92,82,68,0.6)">¿Cómo está tu día?</p>
+        <p style="font-size:12px;color:rgba(180,220,180,0.55);margin-bottom:4px">${new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}</p>
+        <h1 style="font-size:22px;font-weight:700;color:#D8EDD8;margin-bottom:4px">${greet()}${name?`, ${name}`:''} 👋</h1>
+        <p style="font-size:13px;color:rgba(180,220,180,0.55)">¿Cómo está tu día?</p>
       </div>
 
       <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.7);margin-bottom:10px">Estado de ánimo</p>
+        <p style="font-size:12px;font-weight:500;color:rgba(180,220,180,0.65);margin-bottom:10px">Estado de ánimo</p>
         <div style="display:flex;gap:8px">
           ${MOODS.map(m=>html`
             <button class=${'mood-btn'+(mood===m.v?' sel':'')} onClick=${()=>setMood(m.v)}>
               <span style="font-size:22px">${m.e}</span>
-              <span style="font-size:10px;color:rgba(92,82,68,0.65);font-weight:500">${m.n}</span>
+              <span style="font-size:10px;color:rgba(180,220,180,0.6);font-weight:500">${m.n}</span>
             </button>
           `)}
         </div>
@@ -218,10 +243,10 @@ const PageHome = ({setTab}) => {
         ${widgets.map(w=>html`
           <div class="card glass-hover" style="cursor:pointer" onClick=${()=>setTab(w.t)}>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-              <span style="font-size:11px;color:rgba(92,82,68,0.6);font-weight:500">${w.l}</span>
+              <span style="font-size:11px;color:rgba(180,220,180,0.55);font-weight:500">${w.l}</span>
               <${Ic} n=${w.i} s=${14} c=${w.c}/>
             </div>
-            <p style="font-size:20px;font-weight:700;color:#1E1A14;margin-bottom:8px">${w.v}</p>
+            <p style="font-size:20px;font-weight:700;color:#D8EDD8;margin-bottom:8px">${w.v}</p>
             ${w.pct>0&&html`<div class="prog-track"><div class="prog-fill" style=${{width:`${Math.round(w.pct*100)}%`,background:`linear-gradient(90deg,${w.c}99,${w.c})`}}/></div>`}
           </div>
         `)}
@@ -230,7 +255,7 @@ const PageHome = ({setTab}) => {
       ${wod&&html`
         <div class="card" style="margin-bottom:20px;display:flex;align-items:center;gap:8px">
           <${Ic} n="gym" s=${16} c="#3D7A52"/>
-          <p style="font-size:13px;font-weight:600;color:#1E1A14;flex:1">Gym hoy: ${wod.name}</p>
+          <p style="font-size:13px;font-weight:600;color:#D8EDD8;flex:1">Gym hoy: ${wod.name}</p>
           ${wod.done&&html`<span class="badge badge-g">✓ Listo</span>`}
         </div>
       `}
@@ -238,7 +263,7 @@ const PageHome = ({setTab}) => {
       <div class="grid2">
         ${[{t:'goals',l:'Mis metas',i:'goal'},{t:'stats',l:'Estadísticas',i:'stats'},{t:'gym',l:'Ver rutina',i:'gym'},{t:'finance',l:'Finanzas',i:'finance'}].map(a=>html`
           <button class="btn-g" style="justify-content:center;gap:8px;width:100%" onClick=${()=>setTab(a.t)}>
-            <${Ic} n=${a.i} s=${14} c="#5C5244"/>${a.l}
+            <${Ic} n=${a.i} s=${14} c="rgba(180,220,180,0.7)"/>${a.l}
           </button>
         `)}
       </div>
@@ -267,21 +292,21 @@ const PageHabits = () => {
     <div class="page fade-up">
       <div class="page-header">
         <div class="col">
-          <h2 style="font-size:20px;font-weight:700;color:#1E1A14">Hábitos</h2>
-          <p style="font-size:12px;color:rgba(92,82,68,0.6)">${done}/${habits.length} hoy · ${pct}%</p>
+          <h2 style="font-size:20px;font-weight:700;color:#D8EDD8">Hábitos</h2>
+          <p style="font-size:12px;color:rgba(180,220,180,0.55)">${done}/${habits.length} hoy · ${pct}%</p>
         </div>
         <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
       </div>
 
       <div class="card" style="margin-bottom:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:12px;color:rgba(92,82,68,0.6)">Progreso del día</span>
-          <span style="font-size:18px;font-weight:700;color:#3D7A52">${pct}%</span>
+          <span style="font-size:12px;color:rgba(180,220,180,0.55)">Progreso del día</span>
+          <span style="font-size:18px;font-weight:700;color:#6DD880">${pct}%</span>
         </div>
         <div class="prog-track"><div class="prog-fill" style=${{width:`${pct}%`}}/></div>
       </div>
 
-      ${habits.length===0&&html`<div class="card empty-state"><div class="emo">✦</div><p style="color:rgba(92,82,68,0.5);font-size:13px">Crea tu primer hábito</p></div>`}
+      ${habits.length===0&&html`<div class="card empty-state"><div class="emo">✦</div><p style="color:rgba(180,220,180,0.45);font-size:13px">Crea tu primer hábito</p></div>`}
 
       <div style="display:flex;flex-direction:column;gap:10px">
         ${habits.map(h=>{
@@ -297,7 +322,7 @@ const PageHabits = () => {
                 <p style=${{fontSize:'13px',fontWeight:500,color:isDone?'rgba(92,82,68,0.5)':'#1E1A14',textDecoration:isDone?'line-through':'none'}}>${h.name}</p>
                 ${s>0&&html`<p class="streak">🔥 ${s} días</p>`}
               </div>
-              <button onClick=${()=>remove(h.id)} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
+              <button onClick=${()=>remove(h.id)} style="background:none;border:none;cursor:pointer;color:rgba(180,220,180,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
             </div>
           `;
         })}
@@ -347,13 +372,13 @@ const PageTasks = () => {
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Tareas</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${tasks.filter(t=>!t.done).length} pendientes</p></div>
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#D8EDD8">Tareas</h2><p style="font-size:12px;color:rgba(180,220,180,0.55)">${tasks.filter(t=>!t.done).length} pendientes</p></div>
         <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nueva</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
         ${['hoy','pendientes','completadas','todas'].map(f=>html`<button class=${'tab-pill'+(filter===f?' active':'')} onClick=${()=>setFilter(f)} style="text-transform:capitalize">${f}</button>`)}
       </div>
-      ${list.length===0&&html`<div class="card empty-state"><div class="emo">✓</div><p style="color:rgba(92,82,68,0.5);font-size:13px">Sin tareas aquí</p></div>`}
+      ${list.length===0&&html`<div class="card empty-state"><div class="emo">✓</div><p style="color:rgba(180,220,180,0.45);font-size:13px">Sin tareas aquí</p></div>`}
       <div style="display:flex;flex-direction:column;gap:10px">
         ${list.map(t=>html`
           <div class="card" style=${{display:'flex',gap:12,alignItems:'flex-start',opacity:t.done?.65:1}}>
@@ -362,14 +387,14 @@ const PageTasks = () => {
             </div>
             <div style="flex:1;min-width:0">
               <p style=${{fontSize:'13px',fontWeight:500,color:t.done?'rgba(92,82,68,0.5)':'#1E1A14',textDecoration:t.done?'line-through':'none'}}>${t.title}</p>
-              ${t.note&&html`<p style="font-size:11px;color:rgba(92,82,68,0.5);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note}</p>`}
+              ${t.note&&html`<p style="font-size:11px;color:rgba(180,220,180,0.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note}</p>`}
               <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
                 <span class="badge" style=${{background:CAT_COLORS[t.category]+'20',color:CAT_COLORS[t.category]}}>${t.category}</span>
                 <span style=${{fontSize:'11px',color:PRIO[t.priority].c,fontWeight:500}}>● ${PRIO[t.priority].l}</span>
-                ${t.due&&html`<span style="font-size:11px;color:rgba(92,82,68,0.5)">📅 ${fmtDate(t.due)}</span>`}
+                ${t.due&&html`<span style="font-size:11px;color:rgba(180,220,180,0.45)">📅 ${fmtDate(t.due)}</span>`}
               </div>
             </div>
-            <button onClick=${()=>remove(t.id)} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);padding:4px;margin-top:2px"><${Ic} n="trash" s=${14}/></button>
+            <button onClick=${()=>remove(t.id)} style="background:none;border:none;cursor:pointer;color:rgba(180,220,180,0.3);padding:4px;margin-top:2px"><${Ic} n="trash" s=${14}/></button>
           </div>
         `)}
       </div>
@@ -429,43 +454,43 @@ Responde SOLO con JSON válido sin texto adicional:
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Comidas</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${totalCals} / ${prefs.cals} kcal hoy</p></div>
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#D8EDD8">Comidas</h2><p style="font-size:12px;color:rgba(180,220,180,0.55)">${totalCals} / ${prefs.cals} kcal hoy</p></div>
         <div style="display:flex;gap:8px">
-          <button class="btn-g" style="padding:10px 12px" onClick=${()=>setShowPrefs(true)}><${Ic} n="settings" s=${15} c="#5C5244"/></button>
+          <button class="btn-g" style="padding:10px 12px" onClick=${()=>setShowPrefs(true)}><${Ic} n="settings" s=${15} c="rgba(180,220,180,0.7)"/></button>
           <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Añadir</button>
         </div>
       </div>
 
       <div class="card" style="margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:rgba(92,82,68,0.6)">Calorías</span><span style="font-size:13px;font-weight:600;color:#1E1A14">${totalCals} kcal</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:rgba(180,220,180,0.55)">Calorías</span><span style="font-size:13px;font-weight:600;color:#D8EDD8">${totalCals} kcal</span></div>
         <div class="prog-track"><div style=${{height:'100%',borderRadius:3,width:`${Math.min(100,Math.round(totalCals/prefs.cals*100))}%`,background:'linear-gradient(90deg,#4A9C8C99,#4A9C8C)',transition:'width .5s'}}/></div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:11px;color:rgba(92,82,68,0.45)">0</span><span style="font-size:11px;color:rgba(92,82,68,0.45)">${prefs.cals} kcal objetivo</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:11px;color:rgba(180,220,180,0.4)">0</span><span style="font-size:11px;color:rgba(180,220,180,0.4)">${prefs.cals} kcal objetivo</span></div>
       </div>
 
       ${!apiKey?html`
         <div class="info-box" style="margin-bottom:20px">
           <${Ic} n="info" s=${16} c="#B5834A"/>
-          <div><p style="font-size:13px;font-weight:500;color:#7A5C30;margin-bottom:4px">IA no configurada</p><p style="font-size:12px;color:rgba(92,82,68,0.6)">Agrega tu API key de Anthropic en Ajustes para generar planes.</p></div>
+          <div><p style="font-size:13px;font-weight:500;color:#C0D870;margin-bottom:4px">IA no configurada</p><p style="font-size:12px;color:rgba(180,220,180,0.55)">Agrega tu API key de Anthropic en Ajustes para generar planes.</p></div>
         </div>
       `:html`
         <button class="btn-p" onClick=${genAI} disabled=${aiLoad} style="width:100%;justify-content:center;margin-bottom:20px;padding:12px">
           ${aiLoad?html`<span class="spin">◌</span> Generando...`:html`<${Ic} n="spark" s=${16} c="#fff"/> Generar plan con IA`}
         </button>
       `}
-      ${aiErr&&html`<div style="margin-bottom:12px;padding:10px 14px;border-radius:10px;background:rgba(181,97,74,0.1);border:1px solid rgba(181,97,74,0.25);font-size:12px;color:#924A32">${aiErr}</div>`}
+      ${aiErr&&html`<div style="margin-bottom:12px;padding:10px 14px;border-radius:10px;background:rgba(181,97,74,0.1);border:1px solid rgba(181,97,74,0.25);font-size:12px;color:#F09080">${aiErr}</div>`}
 
       ${TYPES.map(type=>html`
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
             <span style="font-size:18px">${TIPO_ICO[type]}</span>
-            <span style="font-size:13px;font-weight:600;color:#1E1A14;text-transform:capitalize">${type}</span>
-            <span style="font-size:11px;color:rgba(92,82,68,0.5);margin-left:auto">${todayM.filter(m=>m.type===type).reduce((s,m)=>s+m.cals,0)} kcal</span>
+            <span style="font-size:13px;font-weight:600;color:#D8EDD8;text-transform:capitalize">${type}</span>
+            <span style="font-size:11px;color:rgba(180,220,180,0.45);margin-left:auto">${todayM.filter(m=>m.type===type).reduce((s,m)=>s+m.cals,0)} kcal</span>
           </div>
-          ${todayM.filter(m=>m.type===type).length===0&&html`<p style="font-size:12px;color:rgba(92,82,68,0.4);padding-left:26px">Sin registros</p>`}
+          ${todayM.filter(m=>m.type===type).length===0&&html`<p style="font-size:12px;color:rgba(180,220,180,0.35);padding-left:26px">Sin registros</p>`}
           ${todayM.filter(m=>m.type===type).map(m=>html`
             <div class="card" style=${{marginBottom:8,display:'flex',gap:12,alignItems:'flex-start',borderLeft:`3px solid ${TIPO_COL[type]}`}}>
-              <div style="flex:1"><p style="font-size:13px;font-weight:500;color:#1E1A14">${m.name}</p>${m.note&&html`<p style="font-size:11px;color:rgba(92,82,68,0.55);margin-top:3px">${m.note}</p>`}</div>
-              <div style="text-align:right;flex-shrink:0">${m.cals>0&&html`<p style=${{fontSize:'12px',fontWeight:600,color:TIPO_COL[type]}}>${m.cals} kcal</p>`}<button onClick=${()=>del(m.id)} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);margin-top:4px"><${Ic} n="trash" s=${13}/></button></div>
+              <div style="flex:1"><p style="font-size:13px;font-weight:500;color:#D8EDD8">${m.name}</p>${m.note&&html`<p style="font-size:11px;color:rgba(180,220,180,0.5);margin-top:3px">${m.note}</p>`}</div>
+              <div style="text-align:right;flex-shrink:0">${m.cals>0&&html`<p style=${{fontSize:'12px',fontWeight:600,color:TIPO_COL[type]}}>${m.cals} kcal</p>`}<button onClick=${()=>del(m.id)} style="background:none;border:none;cursor:pointer;color:rgba(180,220,180,0.3);margin-top:4px"><${Ic} n="trash" s=${13}/></button></div>
             </div>
           `)}
         </div>
@@ -520,12 +545,12 @@ const PageGym = () => {
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Gym</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${logs.filter(l=>l.done).length} entrenos totales</p></div>
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#D8EDD8">Gym</h2><p style="font-size:12px;color:rgba(180,220,180,0.55)">${logs.filter(l=>l.done).length} entrenos totales</p></div>
         <button class="btn-p" onClick=${()=>setShowPlan(true)}><${Ic} n="plus" s=${15} c="#fff"/>Rutina</button>
       </div>
 
       <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:12px">Esta semana</p>
+        <p style="font-size:12px;font-weight:500;color:rgba(180,220,180,0.55);margin-bottom:12px">Esta semana</p>
         <div style="display:flex;gap:6px">
           ${week.map(d=>html`
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -547,14 +572,14 @@ const PageGym = () => {
           ${todayLog&&html`<div class="card" style=${{marginBottom:12,borderLeft:`3px solid ${todayLog.done?'#3D7A52':'#B5614A'}`}}>
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-size:20px">${todayLog.done?'💪':'😴'}</span>
-              <div><p style="font-size:13px;font-weight:500;color:#1E1A14">${todayLog.name}</p><p style=${{fontSize:11,color:todayLog.done?'#3D7A52':'#B5614A'}}>${todayLog.done?'Completado':'Saltado'}</p></div>
+              <div><p style="font-size:13px;font-weight:500;color:#D8EDD8">${todayLog.name}</p><p style=${{fontSize:11,color:todayLog.done?'#3D7A52':'#B5614A'}}>${todayLog.done?'Completado':'Saltado'}</p></div>
             </div>
           </div>`}
-          ${todayPlans.length===0&&!todayLog&&html`<div class="card empty-state"><div class="emo">🏖</div><p style="font-size:13px;color:rgba(92,82,68,0.5)">Día de descanso</p></div>`}
+          ${todayPlans.length===0&&!todayLog&&html`<div class="card empty-state"><div class="emo">🏖</div><p style="font-size:13px;color:rgba(180,220,180,0.45)">Día de descanso</p></div>`}
           ${todayPlans.map(p=>html`
             <div class="card glass-hover" style="margin-bottom:12px;cursor:pointer" onClick=${()=>{setSelPlan(p);setShowLog(true);}}>
               <div style="display:flex;align-items:flex-start;justify-content:space-between">
-                <div><p style="font-size:14px;font-weight:600;color:#1E1A14;margin-bottom:4px">${p.name}</p><p style="font-size:11px;color:rgba(92,82,68,0.55);line-height:1.5">${p.exercises}</p></div>
+                <div><p style="font-size:14px;font-weight:600;color:#D8EDD8;margin-bottom:4px">${p.name}</p><p style="font-size:11px;color:rgba(180,220,180,0.5);line-height:1.5">${p.exercises}</p></div>
                 <span class="badge badge-g">Hoy</span>
               </div>
             </div>
@@ -563,16 +588,16 @@ const PageGym = () => {
       `}
       ${view==='planes'&&html`
         <div>
-          ${plans.length===0&&html`<p style="font-size:12px;color:rgba(92,82,68,0.4)">Sin rutinas aún</p>`}
+          ${plans.length===0&&html`<p style="font-size:12px;color:rgba(180,220,180,0.35)">Sin rutinas aún</p>`}
           ${plans.map(p=>html`
             <div class="card" style="margin-bottom:10px">
               <div style="display:flex;align-items:flex-start;justify-content:space-between">
                 <div style="flex:1">
-                  <p style="font-size:13px;font-weight:600;color:#1E1A14">${p.name}</p>
+                  <p style="font-size:13px;font-weight:600;color:#D8EDD8">${p.name}</p>
                   <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${(p.days||[]).map(d=>html`<span class="badge badge-g" style="font-size:10px">${d}</span>`)}</div>
-                  ${p.exercises&&html`<p style="font-size:11px;color:rgba(92,82,68,0.55);margin-top:6px;line-height:1.5">${p.exercises}</p>`}
+                  ${p.exercises&&html`<p style="font-size:11px;color:rgba(180,220,180,0.5);margin-top:6px;line-height:1.5">${p.exercises}</p>`}
                 </div>
-                <button onClick=${()=>syncP(plans.filter(x=>x.id!==p.id))} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
+                <button onClick=${()=>syncP(plans.filter(x=>x.id!==p.id))} style="background:none;border:none;cursor:pointer;color:rgba(180,220,180,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
               </div>
             </div>
           `)}
@@ -580,7 +605,7 @@ const PageGym = () => {
       `}
 
       <${Modal} open=${showLog&&!!selPlan} onClose=${()=>setShowLog(false)} title=${`Registrar: ${selPlan?.name||''}`}>
-        <p style="font-size:13px;color:rgba(92,82,68,0.7);margin-bottom:16px">${selPlan?.exercises}</p>
+        <p style="font-size:13px;color:rgba(180,220,180,0.65);margin-bottom:16px">${selPlan?.exercises}</p>
         <div class="grid2">
           <button class="btn-p" style="justify-content:center;padding:14px" onClick=${()=>logW(selPlan,true)}>💪 Completado</button>
           <button class="btn-d" style="padding:14px;width:100%" onClick=${()=>logW(selPlan,false)}>😴 Saltarlo</button>
@@ -592,7 +617,7 @@ const PageGym = () => {
           <div>
             <label class="lbl">Días</label>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
-              ${DAYS.map(d=>html`<button onClick=${()=>toggleDay(d)} style=${{padding:'6px 12px',borderRadius:20,border:`1.5px solid ${pf.days.includes(d)?'#3D7A52':'rgba(255,255,255,0.5)'}`,background:pf.days.includes(d)?'rgba(61,122,82,0.15)':'rgba(255,255,255,0.3)',color:pf.days.includes(d)?'#2D6040':'#5C5244',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
+              ${DAYS.map(d=>html`<button onClick=${()=>toggleDay(d)} style=${{padding:'6px 12px',borderRadius:20,border:`1.5px solid ${pf.days.includes(d)?'#3D7A52':'rgba(255,255,255,0.5)'}`,background:pf.days.includes(d)?'rgba(61,122,82,0.15)':'rgba(255,255,255,0.3)',color:pf.days.includes(d)?'#2D6040':'rgba(180,220,180,0.7)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
             </div>
           </div>
           <div><label class="lbl">Ejercicios</label><textarea value=${pf.exercises} onInput=${e=>setPf({...pf,exercises:e.target.value})} placeholder="Ej: Sentadillas 4x10, Press banca 3x8..." rows="4" style="resize:none"/></div>
@@ -628,7 +653,7 @@ const PageFinance = () => {
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Finanzas</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${view==='mes'?'Este mes':'Este año'}</p></div>
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#D8EDD8">Finanzas</h2><p style="font-size:12px;color:rgba(180,220,180,0.55)">${view==='mes'?'Este mes':'Este año'}</p></div>
         <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Movimiento</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -638,25 +663,25 @@ const PageFinance = () => {
         ${[{l:'Ingresos',v:inc,c:'#3D7A52',i:'up'},{l:'Gastos',v:exp,c:'#B5614A',i:'down'},{l:'Balance',v:inc-exp,c:inc-exp>=0?'#3D7A52':'#B5614A',i:'finance'}].map(s=>html`
           <div class="card" style="text-align:center;padding:14px 10px">
             <div style="display:flex;justify-content:center;margin-bottom:6px"><${Ic} n=${s.i} s=${14} c=${s.c}/></div>
-            <p style="font-size:10px;color:rgba(92,82,68,0.6);margin-bottom:4px">${s.l}</p>
+            <p style="font-size:10px;color:rgba(180,220,180,0.55);margin-bottom:4px">${s.l}</p>
             <p style=${{fontSize:13,fontWeight:700,color:s.c}}>${fmtMoney(s.v)}</p>
           </div>
         `)}
       </div>
       ${catList.length>0&&html`
         <div class="card" style="margin-bottom:20px">
-          <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:12px">Gastos por categoría</p>
+          <p style="font-size:12px;font-weight:500;color:rgba(180,220,180,0.55);margin-bottom:12px">Gastos por categoría</p>
           ${catList.map(([cat,amt])=>html`
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-              <span style="font-size:11px;color:#5C5244;width:90px;flex-shrink:0">${cat}</span>
+              <span style="font-size:11px;color:rgba(180,220,180,0.7);width:90px;flex-shrink:0">${cat}</span>
               <div class="prog-track" style="flex:1"><div style=${{height:'100%',borderRadius:3,background:FCCOL[cat]||'#9A7A6B',width:`${Math.min(100,amt/exp*100)}%`,transition:'width .5s'}}/></div>
-              <span style="font-size:11px;font-weight:600;color:#1E1A14;width:72px;text-align:right;flex-shrink:0">${fmtMoney(amt)}</span>
+              <span style="font-size:11px;font-weight:600;color:#D8EDD8;width:72px;text-align:right;flex-shrink:0">${fmtMoney(amt)}</span>
             </div>
           `)}
         </div>
       `}
-      <p style="font-size:13px;font-weight:600;color:#1E1A14;margin-bottom:10px">Movimientos</p>
-      ${inP.length===0&&html`<div class="card empty-state"><div class="emo">💸</div><p style="color:rgba(92,82,68,0.4);font-size:13px">Sin movimientos</p></div>`}
+      <p style="font-size:13px;font-weight:600;color:#D8EDD8;margin-bottom:10px">Movimientos</p>
+      ${inP.length===0&&html`<div class="card empty-state"><div class="emo">💸</div><p style="color:rgba(180,220,180,0.35);font-size:13px">Sin movimientos</p></div>`}
       <div style="display:flex;flex-direction:column;gap:8px">
         ${[...txns].filter(t=>t.date.startsWith(pfx)).sort((a,b)=>b.date.localeCompare(a.date)).map(t=>html`
           <div class="card" style="display:flex;align-items:center;gap:12px">
@@ -664,12 +689,12 @@ const PageFinance = () => {
               <${Ic} n=${t.type==='income'?'up':'down'} s=${16} c=${t.type==='income'?'#3D7A52':'#B5614A'}/>
             </div>
             <div style="flex:1;min-width:0">
-              <p style="font-size:13px;font-weight:500;color:#1E1A14;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||t.category}</p>
-              <p style="font-size:11px;color:rgba(92,82,68,0.5);margin-top:1px">${fmtDate(t.date)} · ${t.category}</p>
+              <p style="font-size:13px;font-weight:500;color:#D8EDD8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||t.category}</p>
+              <p style="font-size:11px;color:rgba(180,220,180,0.45);margin-top:1px">${fmtDate(t.date)} · ${t.category}</p>
             </div>
             <div style="flex-shrink:0;text-align:right">
               <p style=${{fontSize:13,fontWeight:600,color:t.type==='income'?'#3D7A52':'#B5614A'}}>${t.type==='income'?'+':'-'}${fmtMoney(t.amount)}</p>
-              <button onClick=${()=>sync(txns.filter(x=>x.id!==t.id))} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.25);margin-top:2px"><${Ic} n="trash" s=${12}/></button>
+              <button onClick=${()=>sync(txns.filter(x=>x.id!==t.id))} style="background:none;border:none;cursor:pointer;color:rgba(180,220,180,0.2);margin-top:2px"><${Ic} n="trash" s=${12}/></button>
             </div>
           </div>
         `)}
@@ -677,7 +702,7 @@ const PageFinance = () => {
       <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nuevo movimiento">
         <div style="display:flex;flex-direction:column;gap:12px">
           <div style="display:grid;grid-template-columns:1fr 1fr;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.5)">
-            ${['income','expense'].map(tp=>html`<button onClick=${()=>setForm({...form,type:tp,category:tp==='income'?'Salario':'Comida'})} style=${{padding:10,border:'none',cursor:'pointer',fontWeight:500,fontSize:13,background:form.type===tp?(tp==='income'?'rgba(61,122,82,0.7)':'rgba(181,97,74,0.7)'):'rgba(255,255,255,0.3)',color:form.type===tp?'#fff':'#5C5244',fontFamily:'Inter,sans-serif'}}>${tp==='income'?'💰 Ingreso':'💸 Gasto'}</button>`)}
+            ${['income','expense'].map(tp=>html`<button onClick=${()=>setForm({...form,type:tp,category:tp==='income'?'Salario':'Comida'})} style=${{padding:10,border:'none',cursor:'pointer',fontWeight:500,fontSize:13,background:form.type===tp?(tp==='income'?'rgba(61,122,82,0.7)':'rgba(181,97,74,0.7)'):'rgba(255,255,255,0.3)',color:form.type===tp?'#fff':'rgba(180,220,180,0.7)',fontFamily:'Inter,sans-serif'}}>${tp==='income'?'💰 Ingreso':'💸 Gasto'}</button>`)}
           </div>
           <input type="number" value=${form.amount} onInput=${e=>setForm({...form,amount:e.target.value})} placeholder="Monto" autoFocus/>
           <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${(FCATS[form.type]||[]).map(c=>html`<option>${c}</option>`)}</select></div>
@@ -705,10 +730,10 @@ const PageGoals = () => {
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#1E1A14">Metas</h2><p style="font-size:12px;color:rgba(92,82,68,0.6)">${goals.filter(g=>g.current>=g.target).length}/${goals.length} completadas</p></div>
+        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#D8EDD8">Metas</h2><p style="font-size:12px;color:rgba(180,220,180,0.55)">${goals.filter(g=>g.current>=g.target).length}/${goals.length} completadas</p></div>
         <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nueva</button>
       </div>
-      ${goals.length===0&&html`<div class="card empty-state"><div class="emo">🎯</div><p style="font-size:14px;font-weight:500;color:#1E1A14;margin-bottom:6px">Define tu primera meta</p><p style="font-size:12px;color:rgba(92,82,68,0.5)">Establece objetivos y sigue tu progreso</p></div>`}
+      ${goals.length===0&&html`<div class="card empty-state"><div class="emo">🎯</div><p style="font-size:14px;font-weight:500;color:#D8EDD8;margin-bottom:6px">Define tu primera meta</p><p style="font-size:12px;color:rgba(180,220,180,0.45)">Establece objetivos y sigue tu progreso</p></div>`}
       <div style="display:flex;flex-direction:column;gap:14px">
         ${goals.map(g=>{
           const pct=Math.min(100,Math.round(g.current/g.target*100));
@@ -717,23 +742,23 @@ const PageGoals = () => {
             <div class="card" style=${{borderLeft:`3px solid ${done?'#3D7A52':CAT_COLORS[g.category]||'#9A7A6B'}`}}>
               <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
                 <div style="flex:1">
-                  <div style="display:flex;align-items:center;gap:8px">${done&&html`<span>⭐</span>`}<p style="font-size:14px;font-weight:600;color:#1E1A14">${g.title}</p></div>
+                  <div style="display:flex;align-items:center;gap:8px">${done&&html`<span>⭐</span>`}<p style="font-size:14px;font-weight:600;color:#D8EDD8">${g.title}</p></div>
                   <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
                     <span class="badge" style=${{background:CAT_COLORS[g.category]+'20',color:CAT_COLORS[g.category],fontSize:10}}>${g.category}</span>
-                    ${g.due&&html`<span style="font-size:11px;color:rgba(92,82,68,0.5)">📅 ${fmtDate(g.due)}</span>`}
+                    ${g.due&&html`<span style="font-size:11px;color:rgba(180,220,180,0.45)">📅 ${fmtDate(g.due)}</span>`}
                   </div>
                 </div>
-                <button onClick=${()=>sync(goals.filter(x=>x.id!==g.id))} style="background:none;border:none;cursor:pointer;color:rgba(92,82,68,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
+                <button onClick=${()=>sync(goals.filter(x=>x.id!==g.id))} style="background:none;border:none;cursor:pointer;color:rgba(180,220,180,0.3);padding:4px"><${Ic} n="trash" s=${14}/></button>
               </div>
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
                 <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${pct}%`,background:`linear-gradient(90deg,${CAT_COLORS[g.category]||'#9A7A6B'}99,${CAT_COLORS[g.category]||'#9A7A6B'})`}}/></div>
-                <span style="font-size:14px;font-weight:700;color:#3D7A52;min-width:40px;text-align:right">${pct}%</span>
+                <span style="font-size:14px;font-weight:700;color:#6DD880;min-width:40px;text-align:right">${pct}%</span>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between">
-                <p style="font-size:12px;color:rgba(92,82,68,0.6)">${g.current} / ${g.target} ${g.unit}</p>
-                ${!done?html`<div style="display:flex;gap:6px"><button onClick=${()=>upd(g.id,-1)} style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.3);cursor:pointer;font-size:16px;color:#5C5244;display:flex;align-items:center;justify-content:center">−</button><button onClick=${()=>upd(g.id,1)} style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(61,122,82,0.35);background:rgba(61,122,82,0.12);cursor:pointer;font-size:16px;color:#2D6040;display:flex;align-items:center;justify-content:center">+</button></div>`:html`<span style="font-size:12px;font-weight:500;color:#3D7A52">¡Completada! 🎉</span>`}
+                <p style="font-size:12px;color:rgba(180,220,180,0.55)">${g.current} / ${g.target} ${g.unit}</p>
+                ${!done?html`<div style="display:flex;gap:6px"><button onClick=${()=>upd(g.id,-1)} style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.3);cursor:pointer;font-size:16px;color:rgba(180,220,180,0.7);display:flex;align-items:center;justify-content:center">−</button><button onClick=${()=>upd(g.id,1)} style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(61,122,82,0.35);background:rgba(61,122,82,0.12);cursor:pointer;font-size:16px;color:#90DDA0;display:flex;align-items:center;justify-content:center">+</button></div>`:html`<span style="font-size:12px;font-weight:500;color:#6DD880">¡Completada! 🎉</span>`}
               </div>
-              ${g.note&&html`<p style="font-size:11px;color:rgba(92,82,68,0.5);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.4)">${g.note}</p>`}
+              ${g.note&&html`<p style="font-size:11px;color:rgba(180,220,180,0.45);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.4)">${g.note}</p>`}
             </div>
           `;
         })}
@@ -773,37 +798,37 @@ const PageStats = () => {
 
   return html`
     <div class="page fade-up">
-      <h2 style="font-size:20px;font-weight:700;color:#1E1A14;margin-bottom:20px">Estadísticas</h2>
+      <h2 style="font-size:20px;font-weight:700;color:#D8EDD8;margin-bottom:20px">Estadísticas</h2>
       <div class="grid2" style="margin-bottom:20px">
         ${[
           {l:'Hábitos activos',v:habits.length,c:'#3D7A52'},
           {l:'Tareas completadas',v:`${tasks.filter(t=>t.done).length}/${tasks.length}`,c:'#B5834A'},
           {l:'Entrenos este mes',v:logs.filter(l=>l.date.startsWith(mo)&&l.done).length,c:'#4A9C8C'},
           {l:'Balance mes',v:fmtMoney(txns.filter(t=>t.type==='income'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0)-txns.filter(t=>t.type==='expense'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0)),c:'#7A6BB5'},
-        ].map(s=>html`<div class="card"><p style="font-size:11px;color:rgba(92,82,68,0.6);margin-bottom:6px">${s.l}</p><p style=${{fontSize:20,fontWeight:700,color:s.c}}>${s.v}</p></div>`)}
+        ].map(s=>html`<div class="card"><p style="font-size:11px;color:rgba(180,220,180,0.55);margin-bottom:6px">${s.l}</p><p style=${{fontSize:20,fontWeight:700,color:s.c}}>${s.v}</p></div>`)}
       </div>
 
       <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:12px">Hábitos — últimos 30 días</p>
+        <p style="font-size:12px;font-weight:500;color:rgba(180,220,180,0.55);margin-bottom:12px">Hábitos — últimos 30 días</p>
         <div style="display:flex;flex-wrap:wrap;gap:3px">
           ${last30.map((d,i)=>html`<div style=${{width:18,height:18,borderRadius:4,background:d.pct===0?'rgba(255,255,255,0.3)':`rgba(61,122,82,${0.15+d.pct*0.75})`,border:d.isToday?'1.5px solid #3D7A52':'none'}} title=${`${d.k}: ${Math.round(d.pct*100)}%`}/>`)}
         </div>
         <div style="display:flex;gap:6px;align-items:center;margin-top:10px">
-          <span style="font-size:10px;color:rgba(92,82,68,0.5)">Menos</span>
+          <span style="font-size:10px;color:rgba(180,220,180,0.45)">Menos</span>
           ${[0.15,0.35,0.55,0.75,0.9].map(p=>html`<div style=${{width:12,height:12,borderRadius:3,background:`rgba(61,122,82,${p})`}}/>`)}
-          <span style="font-size:10px;color:rgba(92,82,68,0.5)">Más</span>
+          <span style="font-size:10px;color:rgba(180,220,180,0.45)">Más</span>
         </div>
       </div>
 
       ${hStreaks.length>0&&html`
         <div class="card" style="margin-bottom:20px">
-          <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:12px">Mejores rachas</p>
-          ${hStreaks.map(h=>html`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">${h.icon}</span><span style="flex:1;font-size:12px;color:#1E1A14;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.name}</span><span style="font-size:13px;font-weight:700;color:#e07030">🔥 ${h.s}</span></div>`)}
+          <p style="font-size:12px;font-weight:500;color:rgba(180,220,180,0.55);margin-bottom:12px">Mejores rachas</p>
+          ${hStreaks.map(h=>html`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">${h.icon}</span><span style="flex:1;font-size:12px;color:#D8EDD8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.name}</span><span style="font-size:13px;font-weight:700;color:#A0E060">🔥 ${h.s}</span></div>`)}
         </div>
       `}
 
       <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;font-weight:500;color:rgba(92,82,68,0.6);margin-bottom:16px">Ingresos vs Gastos</p>
+        <p style="font-size:12px;font-weight:500;color:rgba(180,220,180,0.55);margin-bottom:16px">Ingresos vs Gastos</p>
         <div style="display:flex;align-items:flex-end;gap:8px;height:100px">
           ${mData.map(m=>html`
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
@@ -811,13 +836,13 @@ const PageStats = () => {
                 <div style=${{flex:1,borderRadius:'3px 3px 0 0',background:'rgba(61,122,82,0.7)',height:`${Math.max(2,(m.inc/maxV)*78)}px`,transition:'height .5s'}}/>
                 <div style=${{flex:1,borderRadius:'3px 3px 0 0',background:'rgba(181,97,74,0.65)',height:`${Math.max(2,(m.exp/maxV)*78)}px`,transition:'height .5s'}}/>
               </div>
-              <span style="font-size:9px;color:rgba(92,82,68,0.5)">${m.l}</span>
+              <span style="font-size:9px;color:rgba(180,220,180,0.45)">${m.l}</span>
             </div>
           `)}
         </div>
         <div style="display:flex;gap:16px;margin-top:8px">
-          <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:rgba(61,122,82,0.7)"/><span style="font-size:10px;color:rgba(92,82,68,0.6)">Ingresos</span></div>
-          <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:rgba(181,97,74,0.65)"/><span style="font-size:10px;color:rgba(92,82,68,0.6)">Gastos</span></div>
+          <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:rgba(61,122,82,0.7)"/><span style="font-size:10px;color:rgba(180,220,180,0.55)">Ingresos</span></div>
+          <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:rgba(181,97,74,0.65)"/><span style="font-size:10px;color:rgba(180,220,180,0.55)">Gastos</span></div>
         </div>
       </div>
     </div>
@@ -838,7 +863,7 @@ const Settings = ({open,onClose}) => {
         <div>
           <label class="lbl" style="display:flex;align-items:center;gap:6px"><${Ic} n="key" s=${13} c="#B5834A"/> Anthropic API Key (IA de comidas)</label>
           <input type="password" value=${key} onInput=${e=>setKey(e.target.value)} placeholder="sk-ant-..."/>
-          <p style="font-size:11px;color:rgba(92,82,68,0.5);margin-top:6px">Se guarda solo en tu dispositivo. Necesaria para generar planes con IA.</p>
+          <p style="font-size:11px;color:rgba(180,220,180,0.45);margin-top:6px">Se guarda solo en tu dispositivo. Necesaria para generar planes con IA.</p>
         </div>
         <button class="btn-p" style="width:100%;justify-content:center" onClick=${saveAll}>Guardar ajustes</button>
       </div>
@@ -863,7 +888,7 @@ const App = () => {
       <nav class="sidebar">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;padding:0 6px">
           <div style="width:32px;height:32px;border-radius:10px;background:rgba(61,122,82,0.8);display:flex;align-items:center;justify-content:center"><span style="font-size:16px">🌿</span></div>
-          <span style="font-size:17px;font-weight:700;color:#1E1A14;letter-spacing:-0.3px">ritual.</span>
+          <span style="font-size:17px;font-weight:700;color:#D8EDD8;letter-spacing:-0.3px">ritual.</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;flex:1">
           ${TABS.map(t=>html`
