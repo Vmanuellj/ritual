@@ -596,11 +596,15 @@ const PageTasks = () => {
   const [tasks,setTasks] = useState(()=>load('tasks',[]));
   const [filter,setFilter] = useState('hoy');
   const [showAdd,setShowAdd] = useState(false);
+  const [editItem,setEditItem] = useState(null);
   const [form,setForm] = useState({title:'',category:'Personal',priority:'media',due:today,note:''});
+  const [eform,setEform] = useState({});
   const sync = t => { setTasks(t); save('tasks',t); };
   const toggle = id => sync(tasks.map(t=>t.id===id?{...t,done:!t.done}:t));
   const remove = id => sync(tasks.filter(t=>t.id!==id));
   const add = () => { if(!form.title.trim())return; sync([...tasks,{...form,id:uid(),done:false}]); setForm({title:'',category:'Personal',priority:'media',due:today,note:''}); setShowAdd(false); };
+  const openEdit = t => { setEform({...t}); setEditItem(t); };
+  const saveEdit = () => { sync(tasks.map(t=>t.id===eform.id?{...eform}:t)); setEditItem(null); };
   const PRIO = {alta:{c:'#B5614A',l:'Alta'},media:{c:'#CC7700',l:'Media'},baja:{c:'#6B9C7A',l:'Baja'}};
   const list = tasks.filter(t=>{
     if(filter==='hoy') return t.due===today&&!t.done;
@@ -634,7 +638,10 @@ const PageTasks = () => {
                 ${t.due&&html`<span style="font-size:11px;color:rgba(196,176,154,0.45)">📅 ${fmtDate(t.due)}</span>`}
               </div>
             </div>
-            <button onClick=${()=>remove(t.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.3);padding:4px;margin-top:2px"><${Ic} n="trash" s=${14}/></button>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px">
+              <button onClick=${()=>openEdit(t)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.35);padding:4px"><${Ic} n="settings" s=${13}/></button>
+              <button onClick=${()=>remove(t.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.25);padding:4px"><${Ic} n="trash" s=${13}/></button>
+            </div>
           </div>
         `)}
       </div>
@@ -648,6 +655,21 @@ const PageTasks = () => {
           <div><label class="lbl">Fecha límite</label><input type="date" value=${form.due} onInput=${e=>setForm({...form,due:e.target.value})}/></div>
           <textarea value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Nota (opcional)" rows="2" style="resize:none"/>
           <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Agregar tarea</button>
+        </div>
+      <//>
+      <${Modal} open=${!!editItem} onClose=${()=>setEditItem(null)} title="Editar tarea">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${eform.title||''} onInput=${e=>setEform({...eform,title:e.target.value})} placeholder="¿Qué hay que hacer?" autoFocus/>
+          <div class="grid2">
+            <div><label class="lbl">Categoría</label><select value=${eform.category||'Personal'} onChange=${e=>setEform({...eform,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
+            <div><label class="lbl">Prioridad</label><select value=${eform.priority||'media'} onChange=${e=>setEform({...eform,priority:e.target.value})}><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
+          </div>
+          <div><label class="lbl">Fecha límite</label><input type="date" value=${eform.due||''} onInput=${e=>setEform({...eform,due:e.target.value})}/></div>
+          <textarea value=${eform.note||''} onInput=${e=>setEform({...eform,note:e.target.value})} placeholder="Nota (opcional)" rows="2" style="resize:none"/>
+          <div style="display:flex;gap:8px">
+            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{remove(eform.id);setEditItem(null);}}>Eliminar</button>
+            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEdit}>Guardar cambios</button>
+          </div>
         </div>
       <//>
     </div>
@@ -668,9 +690,13 @@ const PageFood = () => {
   const [form,setForm] = useState({name:'',type:'desayuno',cals:'',note:''});
   const apiKey = load('ritual-api-key','');
   const todayM = meals[today]||[];
+  const [editMeal,setEditMeal] = useState(null);
+  const [eMeal,setEMeal] = useState({});
   const syncM = m => { setMeals(m); save('meals',m); };
   const add = () => { if(!form.name.trim())return; const m={...meals};m[today]=[...(m[today]||[]),{...form,id:uid(),cals:Number(form.cals)||0}];syncM(m);setForm({name:'',type:'desayuno',cals:'',note:''});setShowAdd(false); };
   const del = id => { const m={...meals};m[today]=(m[today]||[]).filter(x=>x.id!==id);syncM(m); };
+  const openEditMeal = m => { setEMeal({...m,cals:String(m.cals)}); setEditMeal(m); };
+  const saveEditMeal = () => { const m={...meals};m[today]=(m[today]||[]).map(x=>x.id===eMeal.id?{...eMeal,cals:Number(eMeal.cals)||0}:x);syncM(m);setEditMeal(null); };
   const totalCals = todayM.reduce((s,m)=>s+m.cals,0);
   const TYPES = ['desayuno','almuerzo','cena','snack'];
   const TIPO_ICO = {desayuno:'🌅',almuerzo:'☀️',cena:'🌙',snack:'🍎'};
@@ -730,7 +756,13 @@ Responde SOLO con JSON válido sin texto adicional:
           ${todayM.filter(m=>m.type===type).map(m=>html`
             <div class="card" style=${{marginBottom:8,display:'flex',gap:12,alignItems:'flex-start',borderLeft:`3px solid ${TIPO_COL[type]}`}}>
               <div style="flex:1"><p style="font-size:13px;font-weight:500;color:#e5e2e1">${m.name}</p>${m.note&&html`<p style="font-size:11px;color:rgba(196,176,154,0.5);margin-top:3px">${m.note}</p>`}</div>
-              <div style="text-align:right;flex-shrink:0">${m.cals>0&&html`<p style=${{fontSize:'12px',fontWeight:600,color:TIPO_COL[type]}}>${m.cals} kcal</p>`}<button onClick=${()=>del(m.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.3);margin-top:4px"><${Ic} n="trash" s=${13}/></button></div>
+              <div style="text-align:right;flex-shrink:0">
+                ${m.cals>0&&html`<p style=${{fontSize:'12px',fontWeight:600,color:TIPO_COL[type]}}>${m.cals} kcal</p>`}
+                <div style="display:flex;gap:2px;justify-content:flex-end;margin-top:4px">
+                  <button onClick=${()=>openEditMeal(m)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.35)"><${Ic} n="settings" s=${12}/></button>
+                  <button onClick=${()=>del(m.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.25)"><${Ic} n="trash" s=${12}/></button>
+                </div>
+              </div>
             </div>
           `)}
         </div>
@@ -745,6 +777,20 @@ Responde SOLO con JSON válido sin texto adicional:
           </div>
           <input value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Descripción (opcional)"/>
           <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Guardar</button>
+        </div>
+      <//>
+      <${Modal} open=${!!editMeal} onClose=${()=>setEditMeal(null)} title="Editar comida">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${eMeal.name||''} onInput=${e=>setEMeal({...eMeal,name:e.target.value})} placeholder="Nombre del alimento" autoFocus/>
+          <div class="grid2">
+            <div><label class="lbl">Tipo</label><select value=${eMeal.type||'desayuno'} onChange=${e=>setEMeal({...eMeal,type:e.target.value})}>${TYPES.map(t=>html`<option>${t}</option>`)}</select></div>
+            <div><label class="lbl">Calorías</label><input type="number" value=${eMeal.cals||''} onInput=${e=>setEMeal({...eMeal,cals:e.target.value})} placeholder="kcal"/></div>
+          </div>
+          <input value=${eMeal.note||''} onInput=${e=>setEMeal({...eMeal,note:e.target.value})} placeholder="Descripción (opcional)"/>
+          <div style="display:flex;gap:8px">
+            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{del(eMeal.id);setEditMeal(null);}}>Eliminar</button>
+            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditMeal}>Guardar cambios</button>
+          </div>
         </div>
       <//>
       <${Modal} open=${showPrefs} onClose=${()=>{save('food-prefs',prefs);setShowPrefs(false);}} title="Preferencias de comida">
@@ -798,10 +844,15 @@ const PageGym = () => {
   const [presetCat,setPresetCat] = useState('Running');
   const DAYS=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const todayDay=()=>{const d=new Date().getDay();return DAYS[d===0?6:d-1];};
+  const [editPlan,setEditPlan] = useState(null);
+  const [ePlan,setEPlan] = useState({});
   const syncP=p=>{setPlans(p);save('gym-plans',p);};
   const syncL=l=>{setLogs(l);save('workout-logs',l);};
   const addPlan=()=>{if(!pf.name.trim())return;syncP([...plans,{...pf,id:uid()}]);setPf({name:'',days:[],exercises:'',category:'Pesas'});setShowPlan(false);};
   const addPreset=r=>{syncP([...plans,{id:uid(),name:r.name,days:[todayDay()],exercises:r.desc,category:presetCat}]);};
+  const openEditPlan=p=>{setEPlan({...p,days:[...(p.days||[])]});setEditPlan(p);};
+  const saveEditPlan=()=>{syncP(plans.map(p=>p.id===ePlan.id?{...ePlan}:p));setEditPlan(null);};
+  const toggleEDay=d=>setEPlan({...ePlan,days:ePlan.days.includes(d)?ePlan.days.filter(x=>x!==d):[...ePlan.days,d]});
   const logW=(plan,done)=>{syncL([...logs.filter(l=>l.date!==today),{date:today,planId:plan.id,name:plan.name,done,id:uid()}]);setShowLog(false);};
   const toggleDay=d=>setPf({...pf,days:pf.days.includes(d)?pf.days.filter(x=>x!==d):[...pf.days,d]});
   const todayPlans=plans.filter(p=>(p.days||[]).includes(todayDay()));
@@ -853,7 +904,10 @@ const PageGym = () => {
           <div class="card" style="margin-bottom:10px">
             <div style="display:flex;align-items:flex-start;justify-content:space-between">
               <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span>${CAT_ICON[p.category]||'🏋️'}</span><p style="font-size:13px;font-weight:600;color:#e5e2e1">${p.name}</p></div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">${(p.days||[]).map(d=>html`<span class="badge badge-g" style="font-size:10px">${d}</span>`)}</div>${p.exercises&&html`<p style="font-size:11px;color:rgba(196,176,154,0.45);line-height:1.5">${p.exercises}</p>`}</div>
-              <button onClick=${()=>syncP(plans.filter(x=>x.id!==p.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.25);padding:4px;flex-shrink:0"><${Ic} n="trash" s=${14}/></button>
+              <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+                <button onClick=${()=>openEditPlan(p)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.35);padding:4px"><${Ic} n="settings" s=${13}/></button>
+                <button onClick=${()=>syncP(plans.filter(x=>x.id!==p.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.25);padding:4px"><${Ic} n="trash" s=${13}/></button>
+              </div>
             </div>
           </div>
         `)}
@@ -880,6 +934,22 @@ const PageGym = () => {
               <button class="btn-p" style="width:100%;justify-content:center;padding:8px;font-size:12px" onClick=${()=>{addPreset(r);setShowPresets(false);}}>+ Agregar a mis rutinas</button>
             </div>
           `)}
+        </div>
+      <//>
+      <${Modal} open=${!!editPlan} onClose=${()=>setEditPlan(null)} title="Editar rutina">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${ePlan.name||''} onInput=${e=>setEPlan({...ePlan,name:e.target.value})} placeholder="Nombre de la rutina" autoFocus/>
+          <div><label class="lbl">Categoría</label><div style="display:flex;gap:6px">
+            ${Object.keys(GYM_PRESETS).map(cat=>html`<button onClick=${()=>setEPlan({...ePlan,category:cat})} style=${{padding:'8px 12px',borderRadius:10,border:`1px solid ${ePlan.category===cat?'#FF9500':'rgba(255,255,255,0.12)'}`,background:ePlan.category===cat?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.05)',color:ePlan.category===cat?'#ffb84d':'rgba(196,176,154,0.5)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${CAT_ICON[cat]} ${cat}</button>`)}
+          </div></div>
+          <div><label class="lbl">Días</label><div style="display:flex;gap:5px;flex-wrap:wrap">
+            ${DAYS.map(d=>html`<button onClick=${()=>toggleEDay(d)} style=${{padding:'6px 10px',borderRadius:8,border:`1px solid ${(ePlan.days||[]).includes(d)?'#FF9500':'rgba(255,255,255,0.12)'}`,background:(ePlan.days||[]).includes(d)?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.05)',color:(ePlan.days||[]).includes(d)?'#ffb84d':'rgba(196,176,154,0.5)',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
+          </div></div>
+          <div><label class="lbl">Ejercicios</label><textarea value=${ePlan.exercises||''} onInput=${e=>setEPlan({...ePlan,exercises:e.target.value})} rows="4" style="resize:none"/></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{syncP(plans.filter(x=>x.id!==ePlan.id));setEditPlan(null);}}>Eliminar</button>
+            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditPlan}>Guardar cambios</button>
+          </div>
         </div>
       <//>
       <${Modal} open=${showPlan} onClose=${()=>setShowPlan(false)} title="Nueva rutina propia">
@@ -911,8 +981,12 @@ const PageFinance = () => {
   const [form,setForm] = useState({type:'expense',amount:'',category:'Comida',note:'',date:today});
   const FCATS = {income:['Salario','Freelance','Negocio','Inversión','Otro'],expense:['Comida','Transporte','Entretenimiento','Salud','Ropa','Educación','Hogar','Suscripciones','Otro']};
   const FCCOL = {'Salario':'#4CAF50','Freelance':'#8BC34A','Comida':'#FF7043','Transporte':'#42A5F5','Entretenimiento':'#AB47BC','Salud':'#26C6DA','Ropa':'#EC407A','Educación':'#7E57C2','Hogar':'#66BB6A','Suscripciones':'#FFA726','Inversión':'#FFD700','Negocio':'#CDDC39','Otro':'#78909C'};
+  const [editTxn,setEditTxn] = useState(null);
+  const [eform,setEform] = useState({});
   const sync = t => { setTxns(t); save('txns',t); };
   const add = () => { if(!form.amount)return; sync([{...form,id:uid(),amount:Number(form.amount)},...txns]); setForm({type:'expense',amount:'',category:'Comida',note:'',date:today}); setShowAdd(false); };
+  const openEditTxn = t => { setEform({...t,amount:String(t.amount)}); setEditTxn(t); };
+  const saveEditTxn = () => { sync(txns.map(t=>t.id===eform.id?{...eform,amount:Number(eform.amount)}:t)); setEditTxn(null); };
   const pfx = view==='mes'?mo:today.slice(0,4);
   const inP = txns.filter(t=>t.date.startsWith(pfx));
   const inc = inP.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
@@ -981,7 +1055,10 @@ const PageFinance = () => {
                   </div>
                   <div style="flex-shrink:0;text-align:right">
                     <p style=${{fontSize:14,fontWeight:700,color:t.type==='income'?'#FF9500':'#FF8A80'}}>${t.type==='income'?'+':'-'}${fmtMoney(t.amount)}</p>
-                    <button onClick=${()=>sync(txns.filter(x=>x.id!==t.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.2);margin-top:2px"><${Ic} n="trash" s=${12}/></button>
+                    <div style="display:flex;gap:2px;justify-content:flex-end;margin-top:2px">
+                      <button onClick=${()=>openEditTxn(t)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.3);padding:2px"><${Ic} n="settings" s=${12}/></button>
+                      <button onClick=${()=>sync(txns.filter(x=>x.id!==t.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.2);padding:2px"><${Ic} n="trash" s=${12}/></button>
+                    </div>
                   </div>
                 </div>
               `)}
@@ -1001,6 +1078,21 @@ const PageFinance = () => {
           <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Guardar</button>
         </div>
       <//>
+      <${Modal} open=${!!editTxn} onClose=${()=>setEditTxn(null)} title="Editar movimiento">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;border-radius:12px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.15)">
+            ${['income','expense'].map(tp=>html`<button onClick=${()=>setEform({...eform,type:tp,category:tp==='income'?'Salario':'Comida'})} style=${{padding:10,border:'none',cursor:'pointer',fontWeight:600,fontSize:13,background:eform.type===tp?(tp==='income'?'rgba(255,149,0,0.65)':'rgba(255,69,58,0.5)'):'rgba(255,255,255,0.06)',color:eform.type===tp?'#fff':'rgba(196,176,154,0.6)',fontFamily:'Inter,sans-serif'}}>${tp==='income'?'💰 Ingreso':'💸 Gasto'}</button>`)}
+          </div>
+          <input type="number" value=${eform.amount||''} onInput=${e=>setEform({...eform,amount:e.target.value})} placeholder="Monto" autoFocus/>
+          <div><label class="lbl">Categoría</label><select value=${eform.category||''} onChange=${e=>setEform({...eform,category:e.target.value})}>${(FCATS[eform.type||'expense']||[]).map(c=>html`<option>${c}</option>`)}</select></div>
+          <input value=${eform.note||''} onInput=${e=>setEform({...eform,note:e.target.value})} placeholder="Descripción (opcional)"/>
+          <div><label class="lbl">Fecha</label><input type="date" value=${eform.date||''} onInput=${e=>setEform({...eform,date:e.target.value})}/></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{sync(txns.filter(x=>x.id!==eform.id));setEditTxn(null);}}>Eliminar</button>
+            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditTxn}>Guardar cambios</button>
+          </div>
+        </div>
+      <//>
     </div>
   `;
 };
@@ -1015,11 +1107,19 @@ const PageGoals = () => {
   const [addSubFor,setAddSubFor] = useState(null);
   const [subForm,setSubForm] = useState({title:'',due:''});
   const [form,setForm] = useState({title:'',category:'Personal',due:'',note:''});
+  const [editGoal,setEditGoal] = useState(null);
+  const [eGoal,setEGoal] = useState({});
+  const [editSub,setEditSub] = useState(null);
+  const [eSub,setESub] = useState({});
   const sync = g => { setGoals(g); save('goals',g); };
   const addGoal = () => { if(!form.title.trim())return; sync([...goals,{...form,id:uid(),subtasks:[]}]); setForm({title:'',category:'Personal',due:'',note:''}); setShowAdd(false); };
   const addSub = gid => { if(!subForm.title.trim())return; sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:[...(g.subtasks||[]),{id:uid(),title:subForm.title,due:subForm.due,done:false}]})); setSubForm({title:'',due:''}); setAddSubFor(null); };
   const toggleSub = (gid,sid) => sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:(g.subtasks||[]).map(s=>s.id===sid?{...s,done:!s.done}:s)}));
   const delSub = (gid,sid) => sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:(g.subtasks||[]).filter(s=>s.id!==sid)}));
+  const openEditGoal = g => { setEGoal({...g}); setEditGoal(g); };
+  const saveEditGoal = () => { sync(goals.map(g=>g.id===eGoal.id?{...g,...eGoal}:g)); setEditGoal(null); };
+  const openEditSub = (gid,s) => { setESub({...s,gid}); setEditSub(s); };
+  const saveEditSub = () => { sync(goals.map(g=>g.id!==eSub.gid?g:{...g,subtasks:(g.subtasks||[]).map(s=>s.id===eSub.id?{...eSub}:s)})); setEditSub(null); };
   const pct = g => { const s=g.subtasks||[]; return s.length?Math.round(s.filter(x=>x.done).length/s.length*100):0; };
   return html`
     <div class="page fade-up">
@@ -1041,7 +1141,10 @@ const PageGoals = () => {
                     ${g.due&&html`<span style="font-size:11px;color:rgba(196,176,154,0.4)">📅 ${fmtDate(g.due)}</span>`}
                   </div>
                 </div>
-                <button onClick=${()=>sync(goals.filter(x=>x.id!==g.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.2);padding:4px;flex-shrink:0"><${Ic} n="trash" s=${14}/></button>
+                <div style="display:flex;gap:2px;flex-shrink:0">
+                  <button onClick=${()=>openEditGoal(g)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.3);padding:4px"><${Ic} n="settings" s=${13}/></button>
+                  <button onClick=${()=>sync(goals.filter(x=>x.id!==g.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.2);padding:4px"><${Ic} n="trash" s=${13}/></button>
+                </div>
               </div>
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
                 <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${p}%`,background:`linear-gradient(90deg,${cc}99,${cc})`}}/></div>
@@ -1053,6 +1156,7 @@ const PageGoals = () => {
                     <div class=${'check-box'+(s.done?' done':'')} style="width:18px;height:18px;border-radius:5px" onClick=${()=>toggleSub(g.id,s.id)}>${s.done&&html`<${Ic} n="check" s=${11} c="#fff"/>`}</div>
                     <p style=${{fontSize:12,flex:1,color:s.done?'rgba(196,176,154,0.35)':'rgba(200,240,200,0.85)',textDecoration:s.done?'line-through':'none'}}>${s.title}</p>
                     ${s.due&&html`<span style="font-size:10px;color:rgba(196,176,154,0.35)">📅 ${fmtDate(s.due)}</span>`}
+                    <button onClick=${()=>openEditSub(g.id,s)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.28)"><${Ic} n="settings" s=${12}/></button>
                     <button onClick=${()=>delSub(g.id,s.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.18)"><${Ic} n="trash" s=${12}/></button>
                   </div>
                 `)}
@@ -1081,6 +1185,28 @@ const PageGoals = () => {
           <textarea value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Descripción o motivación" rows="2" style="resize:none"/>
           <p style="font-size:11px;color:rgba(196,176,154,0.4)">💡 Después podrás agregar pasos que calculan el % automáticamente.</p>
           <button class="btn-p" style="width:100%;justify-content:center" onClick=${addGoal}>Crear meta</button>
+        </div>
+      <//>
+      <${Modal} open=${!!editGoal} onClose=${()=>setEditGoal(null)} title="Editar meta">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${eGoal.title||''} onInput=${e=>setEGoal({...eGoal,title:e.target.value})} placeholder="¿Cuál es tu meta?" autoFocus/>
+          <div><label class="lbl">Categoría</label><select value=${eGoal.category||'Personal'} onChange=${e=>setEGoal({...eGoal,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
+          <div><label class="lbl">Fecha límite</label><input type="date" value=${eGoal.due||''} onInput=${e=>setEGoal({...eGoal,due:e.target.value})}/></div>
+          <textarea value=${eGoal.note||''} onInput=${e=>setEGoal({...eGoal,note:e.target.value})} placeholder="Descripción o motivación" rows="2" style="resize:none"/>
+          <div style="display:flex;gap:8px">
+            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{sync(goals.filter(x=>x.id!==eGoal.id));setEditGoal(null);}}>Eliminar</button>
+            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditGoal}>Guardar cambios</button>
+          </div>
+        </div>
+      <//>
+      <${Modal} open=${!!editSub} onClose=${()=>setEditSub(null)} title="Editar paso">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input value=${eSub.title||''} onInput=${e=>setESub({...eSub,title:e.target.value})} placeholder="Descripción del paso" autoFocus/>
+          <div><label class="lbl">Fecha límite</label><input type="date" value=${eSub.due||''} onInput=${e=>setESub({...eSub,due:e.target.value})}/></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{delSub(eSub.gid,eSub.id);setEditSub(null);}}>Eliminar</button>
+            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditSub}>Guardar cambios</button>
+          </div>
         </div>
       <//>
     </div>
