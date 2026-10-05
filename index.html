@@ -4,20 +4,20 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ritual. — negocio</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     /* ── PINKY design tokens ── */
     :root{
-      --bg:        #FFF1F7;
-      --surface:   #FFFFFF;
-      --surface-2: #FFF7FB;
-      --line:      #F8D3E4;
-      --ink:       #3A1128;
-      --ink-2:     #7A4A62;
-      --ink-3:     #B58BA1;
-      --pink:      #EC4899;
-      --pink-deep: #DB2777;
-      --pink-soft: #FCE7F3;
+      --bg:        #FFF9FA;
+      --surface:   rgba(255,255,255,0.52);
+      --surface-2: rgba(255,255,255,0.55);
+      --line:      rgba(255,255,255,0.85);
+      --ink:       #3D0F1C;
+      --ink-2:     #7A3F4E;
+      --ink-3:     #A26B7B;
+      --pink:      #FF4D6D;
+      --pink-deep: #F0345A;
+      --pink-soft: rgba(255,92,122,0.15);
       --violet:    #7C5CD6;
       --violet-soft:#EEE9FB;
       --good:      #0E9467;
@@ -28,15 +28,18 @@
       --warn-soft: #FDF3DC;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Inter',sans-serif;overflow-x:hidden;min-height:100vh;color:var(--ink);background:var(--bg);}
+    body{font-family:'Montserrat',sans-serif;overflow-x:hidden;min-height:100vh;color:var(--ink);background:var(--bg);}
 
     /* ══ BACKGROUND ══ */
     .bg-scene{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--bg);pointer-events:none;}
-    .bg-scene::before{content:'';position:absolute;inset:0;background:
-      radial-gradient(ellipse 42% 50% at 85% 8%, rgba(236,72,153,0.22) 0%, transparent 62%),
-      radial-gradient(ellipse 36% 44% at 8% 92%, rgba(244,114,182,0.20) 0%, transparent 60%),
-      radial-gradient(ellipse 30% 36% at 60% 60%, rgba(124,92,214,0.08) 0%, transparent 60%);
-    }
+    .blob{position:absolute;border-radius:42% 58% 63% 37% / 45% 40% 60% 55%;}
+    .blob.b1{width:54vmax;height:50vmax;right:-14vmax;top:-18vmax;background:#FF6B8A;opacity:.9;}
+    .blob.b2{width:40vmax;height:42vmax;right:6vmax;top:-6vmax;background:#FF3D62;opacity:.55;border-radius:58% 42% 38% 62% / 52% 60% 40% 48%;}
+    .blob.b3{width:46vmax;height:44vmax;left:-14vmax;bottom:-16vmax;background:#FF5C7A;opacity:.85;border-radius:60% 40% 45% 55% / 40% 55% 45% 60%;}
+    .blob.b4{width:30vmax;height:30vmax;left:30vw;top:42vh;background:#FF8FA8;opacity:.55;border-radius:50% 50% 38% 62% / 60% 42% 58% 40%;}
+    .blob.d1{width:34px;height:22px;right:38vw;top:9vh;background:#FF4D6D;border-radius:50%;}
+    .blob.d2{width:16px;height:12px;right:35vw;top:5vh;background:#FF4D6D;border-radius:50%;}
+    .blob.d3{width:40px;height:30px;left:34vw;bottom:8vh;background:#FF4D6D;border-radius:50%;}
 
     /* ══ SHELL ══ */
     .sidebar{
@@ -50,19 +53,19 @@
       background:var(--surface);
       border:1px solid var(--line);
       border-radius:18px;padding:18px;
-      box-shadow:0 6px 24px rgba(219,39,119,0.07);
+      box-shadow:0 6px 24px rgba(240,52,90,0.07);
       transition:border-color .2s ease, box-shadow .2s ease;
     }
     .card.click{cursor:pointer;}
-    .card.click:hover{border-color:#F3A9CB;box-shadow:0 8px 28px rgba(219,39,119,0.13);}
+    .card.click:hover{border-color:rgba(240,52,90,0.35);box-shadow:0 8px 28px rgba(240,52,90,0.13);}
     .nav-item{
       display:flex;align-items:center;gap:10px;padding:10px 12px;
       border-radius:12px;font-size:13px;font-weight:500;
       color:var(--ink-2);cursor:pointer;transition:all .15s ease;
-      border:1px solid transparent;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;
+      border:1px solid transparent;background:none;width:100%;text-align:left;font-family:'Montserrat',sans-serif;
     }
     .nav-item:hover{background:var(--pink-soft);color:var(--pink-deep);}
-    .nav-item.active{background:var(--pink-soft);color:var(--pink-deep);border-color:#F6BFD8;font-weight:600;}
+    .nav-item.active{background:var(--pink-soft);color:var(--pink-deep);border-color:rgba(240,52,90,0.22);font-weight:600;}
     .bottom-nav{
       display:none;position:fixed;bottom:0;left:0;right:0;z-index:30;
       padding:8px 6px env(safe-area-inset-bottom,14px);
@@ -74,7 +77,7 @@
       flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
       padding:6px 2px;border-radius:12px;font-size:10px;font-weight:500;
       color:var(--ink-3);cursor:pointer;transition:all .18s ease;
-      border:none;background:none;font-family:'Inter',sans-serif;
+      border:none;background:none;font-family:'Montserrat',sans-serif;
     }
     .bnav-item.active{color:var(--pink-deep);font-weight:600;}
     .main-content{min-height:100vh;max-width:1080px;padding-bottom:40px;}
@@ -94,32 +97,32 @@
     input,textarea,select{
       background:var(--surface-2);border:1px solid var(--line);
       color:var(--ink);border-radius:12px;padding:11px 14px;width:100%;outline:none;
-      font-family:'Inter',sans-serif;font-size:13px;transition:all .2s;
+      font-family:'Montserrat',sans-serif;font-size:13px;transition:all .2s;
     }
-    input:focus,textarea:focus,select:focus{border-color:var(--pink);background:#fff;box-shadow:0 0 0 3px rgba(236,72,153,0.15);}
+    input:focus,textarea:focus,select:focus{border-color:var(--pink);background:#fff;box-shadow:0 0 0 3px rgba(255,77,109,0.15);}
     input::placeholder,textarea::placeholder{color:var(--ink-3);}
 
     /* Buttons */
     .btn-p{
-      background:linear-gradient(135deg,#F472B6 0%,#DB2777 100%);color:#fff;
+      background:linear-gradient(135deg,#FF7A93 0%,#F0345A 100%);color:#fff;
       border:none;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;
       cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;
-      font-family:'Inter',sans-serif;box-shadow:0 6px 16px rgba(219,39,119,0.28);
+      font-family:'Montserrat',sans-serif;box-shadow:0 6px 16px rgba(240,52,90,0.28);
     }
-    .btn-p:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(219,39,119,0.38);}
+    .btn-p:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(240,52,90,0.38);}
     .btn-p:active{transform:translateY(0);}
     .btn-g{
       background:var(--pink-soft);color:var(--pink-deep);
-      border:1px solid #F6BFD8;border-radius:999px;
+      border:1px solid rgba(240,52,90,0.22);border-radius:999px;
       padding:10px 16px;font-size:13px;font-weight:500;
-      cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;
+      cursor:pointer;transition:all .2s;font-family:'Montserrat',sans-serif;
       display:inline-flex;align-items:center;gap:7px;
     }
-    .btn-g:hover{background:#FBD5E8;}
+    .btn-g:hover{background:rgba(255,77,109,0.24);}
     .btn-d{
       background:var(--bad-soft);color:var(--bad);border:1px solid #F7C2CC;
       border-radius:999px;padding:10px 14px;font-size:13px;font-weight:500;
-      cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;
+      cursor:pointer;font-family:'Montserrat',sans-serif;transition:all .2s;
       display:inline-flex;align-items:center;justify-content:center;
     }
     .btn-d:hover{background:#FAD3DA;}
@@ -128,13 +131,13 @@
 
     .check-box{
       width:22px;height:22px;border-radius:50%;
-      border:1.5px solid #F0A6C8;background:#fff;
+      border:1.5px solid rgba(240,52,90,0.38);background:#fff;
       display:flex;align-items:center;justify-content:center;cursor:pointer;
       transition:all .2s;flex-shrink:0;
     }
     .check-box.done{background:var(--pink-deep);border-color:var(--pink-deep);}
     .prog-track{height:7px;background:var(--pink-soft);border-radius:4px;overflow:hidden;}
-    .prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#F472B6 0%,#DB2777 100%);transition:width .5s ease;}
+    .prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#FF7A93 0%,#F0345A 100%);transition:width .5s ease;}
 
     /* Modal */
     .modal-bg{
@@ -163,14 +166,14 @@
     .tab-pill{
       padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;
       border:1px solid var(--line);background:#fff;color:var(--ink-2);
-      transition:all .15s;font-family:'Inter',sans-serif;white-space:nowrap;
+      transition:all .15s;font-family:'Montserrat',sans-serif;white-space:nowrap;
     }
     .tab-pill.active{background:var(--pink-deep);color:#fff;border-color:var(--pink-deep);}
     .seg{display:grid;grid-template-columns:1fr 1fr;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
-    .seg button{padding:11px;border:none;cursor:pointer;font-weight:600;font-size:13px;background:var(--surface-2);color:var(--ink-2);font-family:'Inter',sans-serif;}
+    .seg button{padding:11px;border:none;cursor:pointer;font-weight:600;font-size:13px;background:var(--surface-2);color:var(--ink-2);font-family:'Montserrat',sans-serif;}
     .seg button.on{background:var(--pink-deep);color:#fff;}
 
-    ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-thumb{background:#F3B6D2;border-radius:2px;}
+    ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-thumb{background:rgba(240,52,90,0.3);border-radius:2px;}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
     .fade-up{animation:fadeUp .28s cubic-bezier(.4,0,.2,1);}
 
@@ -196,23 +199,51 @@
     .ellip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .chip{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .num{font-variant-numeric:tabular-nums;}
-    .list-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #FBE4EE;}
+    .list-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(240,52,90,0.10);}
     .list-row:last-child{border-bottom:none;}
     .readonly .page .btn-p,.readonly .page .btn-g,.readonly .page .add-dash,
     .readonly .page [aria-label="Editar"],.readonly .page [aria-label^="Quitar"]{display:none!important;}
     .readonly .page .check-box{pointer-events:none;}
     .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;
       padding:10px 16px;border-radius:999px;font-size:12px;font-weight:500;box-shadow:0 10px 30px rgba(58,17,40,0.35);max-width:calc(100vw - 32px);text-align:center;}
+    /* ══ LIQUID GLASS ══ */
+    .card,.sidebar,.bottom-nav,.modal-box,.tab-pill,.auth-card{
+      backdrop-filter:blur(26px) saturate(170%);-webkit-backdrop-filter:blur(26px) saturate(170%);
+    }
+    .card{border-radius:24px;border:1px solid rgba(255,255,255,0.85);
+      box-shadow:0 12px 40px rgba(240,52,90,0.13), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(255,255,255,0.35);}
+    .card.click:hover{border-color:#fff;}
+    .sidebar{background:rgba(255,255,255,0.42);border-right:1px solid rgba(255,255,255,0.8);}
+    .bottom-nav{background:rgba(255,255,255,0.62);border-top:1px solid rgba(255,255,255,0.85);}
+    .modal-bg{background:rgba(120,20,45,0.22);}
+    .modal-box{background:rgba(255,255,255,0.82);border:1px solid rgba(255,255,255,0.95);box-shadow:0 30px 80px rgba(160,20,55,0.3), inset 0 1px 0 #fff;}
+    .modal-header-sticky{border-bottom:1px solid rgba(240,52,90,0.12);}
+    input,textarea,select{background:rgba(255,255,255,0.72);border:1px solid rgba(240,52,90,0.2);}
+    .tab-pill{background:rgba(255,255,255,0.55);border-color:rgba(255,255,255,0.9);}
+    .nav-item{border-radius:999px;padding:10px 16px;}
+    .nav-item:hover{background:rgba(255,255,255,0.6);}
+    .nav-item.active{background:#fff;color:var(--pink-deep);font-weight:700;border-color:transparent;box-shadow:0 8px 22px rgba(240,52,90,0.18);}
+    .h1{font-weight:300;font-size:28px;letter-spacing:.3px;}
+    .h3{font-weight:600;letter-spacing:.2px;}
+    .over{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--ink-2);}
+    .badge{text-transform:uppercase;letter-spacing:.8px;font-size:9.5px;font-weight:700;}
+    .b-pink{background:#fff;color:var(--pink-deep);}
+    .btn-p{letter-spacing:.3px;}
+    .logo-word{font-size:20px;font-weight:300;letter-spacing:1px;color:var(--ink);}
+    .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
+    .auth-card{width:100%;max-width:400px;padding:34px 28px;border-radius:30px;background:rgba(255,255,255,0.5);
+      border:1px solid rgba(255,255,255,0.9);box-shadow:0 30px 80px rgba(240,52,90,0.22), inset 0 1px 0 #fff;text-align:center;}
+    .glass-pill{display:inline-block;background:#fff;color:var(--pink-deep);font-weight:700;letter-spacing:2px;font-size:22px;padding:4px 16px;border-radius:10px;}
     .bar{width:14px;border-radius:4px 4px 0 0;transition:height .5s;}
   </style>
 </head>
 <body>
-<div class="bg-scene"></div>
+<div class="bg-scene"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div><div class="blob d1"></div><div class="blob d2"></div><div class="blob d3"></div></div>
 <div id="root" style="position:relative;z-index:1;min-height:100vh;"></div>
 
 <script type="module">
 import { h, render } from 'https://esm.sh/preact@10.23.1';
-import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.23.1/hooks';
+import { useState, useEffect } from 'https://esm.sh/preact@10.23.1/hooks';
 import htm from 'https://esm.sh/htm@3.1.1';
 const html = htm.bind(h);
 
@@ -244,7 +275,7 @@ const FCATS = {
   income:['Ventas','Servicios','Anticipo','Abono','Comisiones','Inversión','Otro ingreso'],
   expense:['Insumos','Renta','Nómina','Marketing','Servicios','Software','Transporte','Impuestos','Equipo','Otro gasto'],
 };
-const C_INC = '#DB2777', C_EXP = '#7C5CD6';
+const C_INC = '#F0345A', C_EXP = '#7C5CD6';
 const P_STATUS = {propuesta:{l:'Propuesta',b:'b-warn'},curso:{l:'En curso',b:'b-pink'},pausa:{l:'En pausa',b:'b-mute'},listo:{l:'Terminado',b:'b-good'}};
 const A_STATUS = {pendiente:{l:'Pendiente',b:'b-pink'},hecha:{l:'Realizada',b:'b-good'},cancelada:{l:'Cancelada',b:'b-mute'}};
 
@@ -311,7 +342,7 @@ const FormActions = ({isEdit,onDelete,onSave,label}) => html`
 const CardHead = ({title,action,onAction}) => html`
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <p class="h3">${title}</p>
-    ${action&&html`<button onClick=${onAction} style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--pink-deep);font-family:Inter,sans-serif">${action}</button>`}
+    ${action&&html`<button onClick=${onAction} style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--pink-deep);font-family:Montserrat,sans-serif">${action}</button>`}
   </div>`;
 
 const TABS = [
@@ -364,7 +395,7 @@ const PageHome = ({db,setTab,biz,openSettings}) => {
     <div class="page fade-up">
       <div class="page-header">
         <div class="col">
-          <p class="muted" style="text-transform:capitalize">${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})}</p>
+          <p class="over">${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})}</p>
           <h1 class="h1">${biz||'Mi negocio'} 🎀</h1>
         </div>
         <button class="icon-btn mobile-only" onClick=${openSettings} aria-label="Ajustes"><${Ic} n="settings" s=${20}/></button>
@@ -399,13 +430,13 @@ const PageHome = ({db,setTab,biz,openSettings}) => {
               </div>
             </div>
             <div style="position:relative;height:150px;border-bottom:1px solid var(--line)">
-              <div style="position:absolute;left:0;right:0;top:0;border-top:1px dashed #FBE4EE"/>
-              <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed #FBE4EE"/>
+              <div style="position:absolute;left:0;right:0;top:0;border-top:1px dashed rgba(240,52,90,0.10)"/>
+              <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed rgba(240,52,90,0.10)"/>
               <span class="tiny num" style="position:absolute;left:0;top:2px">${fmtMoney(maxV)}</span>
               <div style="position:absolute;inset:0;display:flex;align-items:flex-end">
                 ${months.map(m=>html`
                   <div onMouseEnter=${()=>setHov(m)} onMouseLeave=${()=>setHov(null)} onClick=${()=>setHov(m)}
-                       style=${{flex:1,height:'100%',display:'flex',alignItems:'flex-end',justifyContent:'center',gap:2,cursor:'default',borderRadius:8,background:shown.ym===m.ym?'rgba(236,72,153,0.06)':'transparent'}}>
+                       style=${{flex:1,height:'100%',display:'flex',alignItems:'flex-end',justifyContent:'center',gap:2,cursor:'default',borderRadius:8,background:shown.ym===m.ym?'rgba(255,77,109,0.06)':'transparent'}}>
                     <div class="bar" style=${{background:C_INC,height:`${m.inc?Math.max(3,m.inc/maxV*140):0}px`}}/>
                     <div class="bar" style=${{background:C_EXP,height:`${m.exp?Math.max(3,m.exp/maxV*140):0}px`}}/>
                   </div>
@@ -762,11 +793,11 @@ const PageProjects = ({db,put}) => {
                     <input value=${taskText} onInput=${e=>setTaskText(e.target.value)} placeholder="Nueva tarea…" autoFocus style="flex:1;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addTask(p.id);if(e.key==='Escape')setAddFor(null);}}/>
                     <button class="btn-p" style="padding:8px 14px" onClick=${()=>addTask(p.id)}>+</button>
                   </div>`:html`
-                  <button class="add-dash" onClick=${()=>{setAddFor(p.id);setTaskText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed #F0A6C8;background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif">
+                  <button class="add-dash" onClick=${()=>{setAddFor(p.id);setTaskText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed rgba(240,52,90,0.38);background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Montserrat,sans-serif">
                     <${Ic} n="plus" s=${12}/> Agregar tarea
                   </button>`}
               </div>
-              ${p.note&&html`<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px solid #FBE4EE">${p.note}</p>`}
+              ${p.note&&html`<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(240,52,90,0.10)">${p.note}</p>`}
             </div>`;
         })}
       </div>
@@ -841,11 +872,11 @@ const PageGoals = ({db,put}) => {
                       <input value=${stepText} onInput=${e=>setStepText(e.target.value)} placeholder="Nuevo paso…" autoFocus style="flex:1;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addStep(g.id);if(e.key==='Escape')setAddFor(null);}}/>
                       <button class="btn-p" style="padding:8px 14px" onClick=${()=>addStep(g.id)}>+</button>
                     </div>`:html`
-                    <button class="add-dash" onClick=${()=>{setAddFor(g.id);setStepText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed #F0A6C8;background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif">
+                    <button class="add-dash" onClick=${()=>{setAddFor(g.id);setStepText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed rgba(240,52,90,0.38);background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Montserrat,sans-serif">
                       <${Ic} n="plus" s=${12}/> Agregar paso
                     </button>`}
                 </div>`}
-              ${g.note&&html`<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px solid #FBE4EE">${g.note}</p>`}
+              ${g.note&&html`<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(240,52,90,0.10)">${g.note}</p>`}
             </div>`;
         })}
       </div>
@@ -872,40 +903,18 @@ const PageGoals = ({db,put}) => {
 // ══════════════════════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════
-const Settings = ({open,onClose,biz,setBiz,session,canEdit}) => {
+const Settings = ({open,onClose,biz,setBiz,session}) => {
   const [name,setName] = useState(biz);
-  const [email,setEmail] = useState('');
-  const [pass,setPass] = useState('');
-  const [err,setErr] = useState('');
-  const [busy,setBusy] = useState(false);
-  const login = async () => {
-    if(!sb||!email||!pass)return;
-    setBusy(true);
-    const {error} = await sb.auth.signInWithPassword({email:email.trim(),password:pass});
-    setBusy(false); setPass('');
-    setErr(error?'Correo o contraseña incorrectos.':'');
-  };
   return html`
     <${Modal} open=${open} onClose=${onClose} title="Ajustes">
       <div class="stack" style="gap:14px">
-        ${canEdit&&html`
-          <div><label class="lbl">Nombre del negocio</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo se llama tu negocio?"/></div>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{setBiz(name.trim());onClose();}}>Guardar ajustes</button>
-        `}
+        <div><label class="lbl">Nombre del negocio</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo se llama tu negocio?"/></div>
+        <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{setBiz(name.trim());onClose();}}>Guardar ajustes</button>
         ${!SUPA_KEY&&html`<p class="tiny">Tus registros se guardan solo en este navegador.</p>`}
-        ${SUPA_KEY&&session&&html`
-          <div style="padding-top:12px;border-top:1px solid var(--line)">
-            <p class="muted" style="margin-bottom:10px">☁ Sesión iniciada como <b style="color:var(--ink)">${session.user.email}</b>. Todo se guarda en la nube.</p>
-            <button class="btn-g" style="width:100%;justify-content:center" onClick=${()=>sb.auth.signOut()}>Cerrar sesión</button>
-          </div>`}
-        ${SUPA_KEY&&!session&&html`
-          <div class="stack" style="gap:10px">
-            <p class="muted">Estás viendo en modo solo lectura. Inicia sesión para registrar y editar.</p>
-            <div><label class="lbl">Correo</label><input type="email" autocomplete="username" value=${email} onInput=${e=>setEmail(e.target.value)}/></div>
-            <div><label class="lbl">Contraseña</label><input type="password" autocomplete="current-password" value=${pass} onInput=${e=>setPass(e.target.value)} onKeyDown=${e=>{if(e.key==='Enter')login();}}/></div>
-            ${err&&html`<p class="tiny" style="color:var(--bad)">${err}</p>`}
-            ${!sb&&html`<p class="tiny" style="color:var(--bad)">No se pudo conectar con la nube. Revisa tu internet y recarga.</p>`}
-            <button class="btn-p" style="width:100%;justify-content:center" disabled=${busy||!sb} onClick=${login}>${busy?'Entrando…':'Iniciar sesión'}</button>
+        ${session&&html`
+          <div style="padding-top:12px;border-top:1px solid rgba(240,52,90,0.12)">
+            <p class="muted" style="margin-bottom:10px">☁ Sesión iniciada como <b style="color:var(--ink)">${session.user.email}</b>. Todo se guarda en tu cuenta.</p>
+            <button class="btn-g" style="width:100%;justify-content:center" onClick=${()=>{onClose();sb.auth.signOut();}}>Cerrar sesión</button>
           </div>`}
       </div>
     <//>
@@ -913,75 +922,134 @@ const Settings = ({open,onClose,biz,setBiz,session,canEdit}) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
+// AUTH  (iniciar sesión / crear cuenta — cada cuenta tiene su propio negocio)
+// ══════════════════════════════════════════════════════════════════════════
+const Splash = ({text,children}) => html`
+  <div class="auth-wrap"><div class="auth-card fade-up">
+    <p class="logo-word" style="font-size:30px;margin-bottom:10px">ritual.</p>
+    <p class="muted">${text}</p>${children}
+  </div></div>`;
+const AuthScreen = () => {
+  const [mode,setMode] = useState('in');
+  const [email,setEmail] = useState('');
+  const [pass,setPass] = useState('');
+  const [msg,setMsg] = useState(null);
+  const [busy,setBusy] = useState(false);
+  const isUp = mode==='up';
+  const go = async () => {
+    if(!sb){ setMsg({t:'No se pudo conectar con la nube. Revisa tu internet y recarga.'}); return; }
+    if(!email.trim()||pass.length<6){ setMsg({t:'Escribe tu correo y una contraseña de al menos 6 caracteres.'}); return; }
+    setBusy(true); setMsg(null);
+    const cred = {email:email.trim(),password:pass};
+    const {data,error} = isUp ? await sb.auth.signUp(cred) : await sb.auth.signInWithPassword(cred);
+    setBusy(false);
+    if(error){
+      const m = (error.message||'').toLowerCase();
+      setMsg({t: m.includes('already')?'Ese correo ya tiene cuenta. Inicia sesión.'
+        : m.includes('rate')||error.status===429?'Demasiados intentos. Espera unos minutos.'
+        : m.includes('not confirmed')?'Falta confirmar tu correo: abre el enlace que te enviamos.'
+        : m.includes('signups not allowed')||m.includes('disabled')?'El registro de cuentas nuevas está desactivado.'
+        : isUp?'No se pudo crear la cuenta: '+error.message:'Correo o contraseña incorrectos.'});
+      return;
+    }
+    if(isUp&&!data.session){ setMsg({ok:true,t:'¡Cuenta creada! Te enviamos un correo: abre el enlace para confirmarla y luego inicia sesión aquí.'}); setMode('in'); setPass(''); }
+  };
+  return html`
+    <div class="auth-wrap">
+      <div class="auth-card fade-up">
+        <p class="over" style="margin-bottom:10px">- tu negocio -</p>
+        <span class="glass-pill">RITUAL</span>
+        <p style="font-size:26px;font-weight:300;letter-spacing:2px;margin:6px 0 22px">${isUp?'crear cuenta':'bienvenida'}</p>
+        <div class="seg" style="margin-bottom:14px">
+          ${[['in','Iniciar sesión'],['up','Crear cuenta']].map(([k,l])=>html`<button class=${mode===k?'on':''} onClick=${()=>{setMode(k);setMsg(null);}}>${l}</button>`)}
+        </div>
+        <div class="stack" style="gap:10px;text-align:left">
+          <div><label class="lbl">Correo</label><input type="email" autocomplete="username" value=${email} onInput=${e=>setEmail(e.target.value)} placeholder="tu@correo.com"/></div>
+          <div><label class="lbl">Contraseña</label><input type="password" autocomplete=${isUp?'new-password':'current-password'} value=${pass} onInput=${e=>setPass(e.target.value)} placeholder=${isUp?'Mínimo 6 caracteres':''} onKeyDown=${e=>{if(e.key==='Enter')go();}}/></div>
+          ${msg&&html`<p class="tiny" style=${{color:msg.ok?'var(--good)':'var(--bad)',fontWeight:500}}>${msg.t}</p>`}
+          <button class="btn-p" style="width:100%;justify-content:center;margin-top:4px" disabled=${busy} onClick=${go}>${busy?'Un momento…':isUp?'Crear mi cuenta':'Entrar'}</button>
+          ${isUp&&html`<p class="tiny" style="text-align:center">Cada cuenta tiene su propio negocio. Nadie más ve tus registros.</p>`}
+        </div>
+      </div>
+    </div>`;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
 // APP ROOT  — all data lives in `db`; `put` is the single write path
 // ══════════════════════════════════════════════════════════════════════════
+const EMPTY = {txns:[],appts:[],projects:[],goals:[]};
 const App = () => {
   const [tab,setTab] = useState('home');
   const [showSet,setShowSet] = useState(false);
-  const [biz,setBizS] = useState(()=>load('ritual-name',''));
-  const [db,setDb] = useState(()=>({txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[])}));
-  const [session,setSession] = useState(null);
-  const [cloud,setCloud] = useState(sb?'cargando':(SUPA_KEY?'error':'local'));
+  const [biz,setBizS] = useState(()=>SUPA_KEY?'':load('ritual-name',''));
+  const [db,setDb] = useState(()=>SUPA_KEY?EMPTY:{txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[])});
+  const [session,setSession] = useState(SUPA_KEY&&sb?undefined:null);   // undefined = revisando sesión
+  const [cloud,setCloud] = useState(SUPA_KEY?'cargando':'local');
   const [toast,setToast] = useState('');
-  const cloudEmpty = useRef(false);
-  const flash = m => { setToast(m); setTimeout(()=>setToast(''),3500); };
-  const canEdit = !SUPA_KEY || !!session;
-  const pushCloud = async (k,v) => {
-    if(!sb)return;
-    const {error} = await sb.from('ritual_data').upsert({key:k,value:v,updated_at:new Date().toISOString()});
-    if(error){ setCloud('error'); flash(error.code==='42501'?'La nube rechazó el guardado: tu correo no tiene permiso de edición.':'No se pudo guardar en la nube: '+(error.message||'revisa tu conexión')); } else setCloud('ok');
-  };
-  const guard = () => { if(canEdit)return true; flash('Inicia sesión en Ajustes para editar.'); return false; };
-  const put = (k,v) => { if(!guard())return; setDb(d=>({...d,[k]:v})); save(k,v); pushCloud(k,v); };
-  const setBiz = v => { if(!guard())return; setBizS(v); save('ritual-name',v); pushCloud('name',v); };
+  const flash = m => { setToast(m); setTimeout(()=>setToast(''),4000); };
+  const uidNow = session&&session.user.id;
 
-  // La nube manda: al abrir se descarga todo y se guarda una copia local.
+  const pushCloud = async (k,v) => {
+    if(!sb||!uidNow)return;
+    const {error} = await sb.from('ritual_data').upsert({owner:uidNow,key:k,value:v,updated_at:new Date().toISOString()},{onConflict:'owner,key'});
+    if(error) flash('No se pudo guardar en la nube: '+(error.message||'revisa tu conexión'));
+  };
+  const put = (k,v) => { setDb(d=>({...d,[k]:v})); if(SUPA_KEY) pushCloud(k,v); else save(k,v); };
+  const setBiz = v => { setBizS(v); if(SUPA_KEY) pushCloud('name',v); else save('ritual-name',v); };
+
   useEffect(()=>{
     if(!sb)return;
-    sb.auth.getSession().then(({data})=>setSession(data.session));
-    const {data:sub} = sb.auth.onAuthStateChange((_e,ses)=>setSession(ses));
-    sb.from('ritual_data').select('key,value').then(({data,error})=>{
-      if(error){ setCloud('error'); return; }
-      if(!data.length){ cloudEmpty.current=true; setCloud('ok'); return; }
-      const m = Object.fromEntries(data.map(r=>[r.key,r.value]));
-      setDb(d=>{ const n={...d}; KEYS.forEach(k=>{ if(Array.isArray(m[k])){ n[k]=m[k]; save(k,m[k]); } }); return n; });
-      if(typeof m.name==='string'){ setBizS(m.name); save('ritual-name',m.name); }
-      setCloud('ok');
-    });
+    sb.auth.getSession().then(({data})=>setSession(data.session||null));
+    const {data:sub} = sb.auth.onAuthStateChange((_e,ses)=>setSession(ses||null));
     return ()=>sub.subscription.unsubscribe();
   },[]);
-  // Primera vez: si la nube está vacía, sube lo que ya había en este navegador.
+  // Cada cuenta carga solo sus propios registros.
   useEffect(()=>{
-    if(!sb||!session||!cloudEmpty.current)return;
-    cloudEmpty.current=false;
-    KEYS.forEach(k=>{ if(db[k].length) pushCloud(k,db[k]); });
-    if(biz) pushCloud('name',biz);
-  },[session,cloud]);
-  const status = cloud==='local' ? 'Guardado solo en este navegador'
-    : !canEdit ? '👀 Solo lectura'
-    : cloud==='error' ? '⚠ No se está guardando en la nube'
-    : cloud==='cargando' ? 'Cargando…' : '☁ Guardado en la nube';
+    if(!sb)return;
+    setDb(EMPTY); setBizS(''); setTab('home'); setCloud('cargando');
+    if(!uidNow)return;
+    let dead=false;
+    sb.from('ritual_data').select('key,value').eq('owner',uidNow).then(({data,error})=>{
+      if(dead)return;
+      if(error){ setCloud('error'); return; }
+      const m = Object.fromEntries(data.map(r=>[r.key,r.value]));
+      const n = {...EMPTY}; KEYS.forEach(k=>{ if(Array.isArray(m[k])) n[k]=m[k]; });
+      setDb(n); setBizS(typeof m.name==='string'?m.name:''); setCloud('ok');
+    });
+    return ()=>{dead=true;};
+  },[uidNow]);
+
+  if(SUPA_KEY){
+    if(session===undefined) return html`<${Splash} text="Cargando…"/>`;
+    if(!session) return html`<${AuthScreen}/>`;
+    if(cloud==='cargando') return html`<${Splash} text="Cargando tus registros…"/>`;
+    if(cloud==='error') return html`<${Splash} text="No se pudieron cargar tus registros. Para no perder nada, la app no te deja editar hasta que carguen.">
+      <div class="stack" style="margin-top:16px">
+        <button class="btn-p" style="justify-content:center" onClick=${()=>location.reload()}>Reintentar</button>
+        <button class="btn-g" style="justify-content:center" onClick=${()=>sb.auth.signOut()}>Cerrar sesión</button>
+      </div><//>`;
+  }
 
   const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,projects:PageProjects,goals:PageGoals};
   const Page  = pages[tab]||PageHome;
 
   return html`
-    <div class=${canEdit?'':'readonly'} style="min-height:100vh">
+    <div style="min-height:100vh">
       <nav class="sidebar">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;padding:0 6px">
-          <div style="width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#F472B6,#DB2777);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(219,39,119,0.3)"><span style="font-size:16px;color:#fff">✦</span></div>
-          <span style="font-size:18px;font-weight:700;color:var(--pink-deep);letter-spacing:-0.3px">ritual.</span>
+          <div style="width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#FF7A93,#F0345A);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(240,52,90,0.3)"><span style="font-size:16px;color:#fff">✦</span></div>
+          <span class="logo-word">ritual.</span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1">
           ${TABS.map(t=>html`
             <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>setTab(t.id)}>
               <${Ic} n=${t.icon} s=${16}/>${t.label}
             </button>
           `)}
         </div>
-        <p class="tiny" style="padding:0 12px">${status}</p>
+        <p class="tiny ellip" style="padding:0 14px">${session?'☁ '+session.user.email:'Guardado solo en este navegador'}</p>
         <button class="nav-item" style="margin-top:8px" onClick=${()=>setShowSet(true)}>
-          <${Ic} n="settings" s=${16}/>${canEdit?'Ajustes':'Iniciar sesión'}
+          <${Ic} n="settings" s=${16}/>Ajustes
         </button>
       </nav>
 
@@ -998,7 +1066,7 @@ const App = () => {
         `)}
       </nav>
 
-      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} session=${session} canEdit=${canEdit}/>`}
+      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} session=${session}/>`}
       ${toast&&html`<div class="toast">${toast}</div>`}
     </div>
   `;
