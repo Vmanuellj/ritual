@@ -234,6 +234,31 @@
     .auth-card{width:100%;max-width:400px;padding:34px 28px;border-radius:30px;background:rgba(255,255,255,0.5);
       border:1px solid rgba(255,255,255,0.9);box-shadow:0 30px 80px rgba(240,52,90,0.22), inset 0 1px 0 #fff;text-align:center;}
     .glass-pill{display:inline-block;background:#fff;color:var(--pink-deep);font-weight:700;letter-spacing:2px;font-size:22px;padding:4px 16px;border-radius:10px;}
+    .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+    .cal-head{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-3);text-align:center;padding:4px 0;}
+    .cal-day{min-height:86px;border-radius:14px;background:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.85);padding:6px;cursor:pointer;
+      text-align:left;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:3px;overflow:hidden;min-width:0;}
+    .cal-day:hover{background:rgba(255,255,255,0.8);}
+    .cal-day.sel{background:#fff;border-color:var(--pink-deep);box-shadow:0 6px 18px rgba(240,52,90,0.18);}
+    .cal-num{font-size:11px;font-weight:600;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .cal-day.today .cal-num{background:var(--pink-deep);color:#fff;}
+    .cal-chips{display:flex;flex-direction:column;gap:3px;min-width:0;width:100%;}
+    .cal-chip{font-size:10px;font-weight:500;padding:2px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .cal-chip.a{background:rgba(240,52,90,0.16);}
+    .cal-chip.p{background:var(--violet-soft);color:#4B32A8;}
+    .cal-chip.bare{height:6px;padding:0;font-size:0;border-radius:3px;background:rgba(124,92,214,0.35);}
+    .cal-layout{display:grid;grid-template-columns:1.8fr 1fr;gap:16px;align-items:start;}
+    @media(max-width:1100px){.cal-layout{grid-template-columns:1fr;}}
+    .cal-more{font-size:9px;color:var(--ink-3);padding-left:4px;}
+    .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;}
+    @media(max-width:767px){
+      .cal{gap:4px;}
+      .cal-day{min-height:54px;padding:4px 2px;align-items:center;border-radius:10px;}
+      .cal-chips{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:3px;}
+      .cal-chip,.cal-chip.bare{font-size:0;padding:0;width:7px;height:7px;border-radius:50%;}
+      .cal-chip.a{background:var(--pink-deep);} .cal-chip.p{background:var(--violet);}
+      .cal-more{display:none;}
+    }
     .bar{width:14px;border-radius:4px 4px 0 0;transition:height .5s;}
   </style>
 </head>
@@ -276,16 +301,26 @@ const FCATS = {
   expense:['Insumos','Renta','Nómina','Marketing','Servicios','Software','Transporte','Impuestos','Equipo','Otro gasto'],
 };
 const C_INC = '#F0345A', C_EXP = '#7C5CD6';
-const P_STATUS = {propuesta:{l:'Propuesta',b:'b-warn'},curso:{l:'En curso',b:'b-pink'},pausa:{l:'En pausa',b:'b-mute'},listo:{l:'Terminado',b:'b-good'}};
+const P_STATUS = {propuesta:{l:'Por iniciar',b:'b-warn'},curso:{l:'Activo',b:'b-pink'},pausa:{l:'En pausa',b:'b-mute'},listo:{l:'Terminado',b:'b-good'}};
 const A_STATUS = {pendiente:{l:'Pendiente',b:'b-pink'},hecha:{l:'Realizada',b:'b-good'},cancelada:{l:'Cancelada',b:'b-mute'}};
 
 const apptPaid = (txns,id) => txns.filter(t=>t.apptId===id&&t.type==='income').reduce((s,t)=>s+(Number(t.amount)||0),0);
 const apptOwed = (txns,a) => a.status==='cancelada' ? 0 : Math.max(0,(Number(a.price)||0)-apptPaid(txns,a.id));
-const taskPct = p => { const t=p.tasks||[]; return t.length?Math.round(t.filter(x=>x.done).length/t.length*100):(p.status==='listo'?100:0); };
-const goalPct = g => {
-  if(g.kind==='monto'){ const t=Number(g.target)||0; return t?Math.min(100,Math.round((Number(g.current)||0)/t*100)):0; }
-  const s=g.subtasks||[]; return s.length?Math.round(s.filter(x=>x.done).length/s.length*100):0;
+const projOf = (db,id) => db.projects.find(p=>p.id===id);
+const apptName = (db,a) => (projOf(db,a.projectId)||{}).name || a.title || 'Cita';
+// Avance del proyecto: por ventas (suma de precios de sus citas) o por cantidad de citas.
+const projStats = (db,p) => {
+  const ap = db.appts.filter(a=>a.projectId===p.id&&a.status!=='cancelada');
+  const ids = new Set(ap.map(a=>a.id));
+  const mine = db.txns.filter(t=>t.projectId===p.id||ids.has(t.apptId));
+  const sold = ap.reduce((s,a)=>s+(Number(a.price)||0),0);
+  const count = ap.length, target = Number(p.goalTarget)||0;
+  const val = p.goalKind==='citas'?count:sold;
+  return {count,sold,paid:sum(mine,'income'),spent:sum(mine,'expense'),target,pct:target?Math.min(100,Math.round(val/target*100)):0};
 };
+const goalText = (p,st) => !st.target ? 'Sin meta definida' : p.goalKind==='citas' ? `${st.count} de ${st.target} citas` : `${fmtMoney(st.sold)} de ${fmtMoney(st.target)} en ventas`;
+const projRange = p => { const a=p.start||p.end||p.due||'', b=p.end||p.due||p.start||''; return a?[a,b]:null; };
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
 
 // ── ICONS ─────────────────────────────────────────────────────────────────
 const ICON = {
@@ -348,18 +383,31 @@ const CardHead = ({title,action,onAction}) => html`
 const TABS = [
   {id:'home',    label:'Dashboard', icon:'home'},
   {id:'finance', label:'Finanzas',  icon:'finance'},
-  {id:'appts',   label:'Citas',     icon:'cal'},
+  {id:'appts',   label:'Citas',     icon:'clock'},
   {id:'projects',label:'Proyectos', icon:'proj'},
-  {id:'goals',   label:'Objetivos', icon:'goal'},
+  {id:'cal',     label:'Calendario',icon:'cal'},
 ];
 
 // ══════════════════════════════════════════════════════════════════════════
 // PAGE: DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
+const chartBuckets = per => {
+  const now = new Date();
+  if(per==='año') return Array.from({length:5},(_,i)=>now.getFullYear()-4+i).map(y=>({id:String(y),l:String(y),full:`Año ${y}`,from:`${y}-01-01`,to:`${y}-12-31`}));
+  if(per==='semana'){
+    const mon = addDays(now,-((now.getDay()+6)%7));
+    return Array.from({length:8},(_,i)=>addDays(mon,-7*(7-i))).map(st=>{
+      const from=dKey(st), to=dKey(addDays(st,6));
+      return {id:from,l:`${st.getDate()} ${st.toLocaleDateString('es-MX',{month:'short'}).replace('.','')}`,full:`Semana del ${fmtDate(from)} al ${fmtDate(to)}`,from,to};
+    });
+  }
+  const mo = todayKey().slice(0,7);
+  return Array.from({length:6},(_,i)=>shiftMonth(mo,i-5)).map(ym=>({id:ym,l:new Date(ym+'-15T12:00:00').toLocaleDateString('es-MX',{month:'short'}).replace('.',''),full:fmtMonth(ym),from:ym+'-01',to:ym+'-31'}));
+};
 const PageHome = ({db,setTab,biz,openSettings}) => {
   const today = todayKey();
   const mo = today.slice(0,7);
-  const {txns,appts,projects,goals} = db;
+  const {txns,appts,projects} = db;
   const inMo = txns.filter(t=>(t.date||'').startsWith(mo));
   const prev = txns.filter(t=>(t.date||'').startsWith(shiftMonth(mo,-1)));
   const inc = sum(inMo,'income'), exp = sum(inMo,'expense'), net = inc-exp;
@@ -367,28 +415,25 @@ const PageHome = ({db,setTab,biz,openSettings}) => {
   const delta = (a,b) => b ? Math.round((a-b)/b*100) : null;
   const margin = inc ? Math.round(net/inc*100) : null;
 
-  const months = Array.from({length:6},(_,i)=>shiftMonth(mo,i-5)).map(ym=>{
-    const l=txns.filter(t=>(t.date||'').startsWith(ym));
-    return {ym,l:new Date(ym+'-15T12:00:00').toLocaleDateString('es-MX',{month:'short'}).replace('.',''),inc:sum(l,'income'),exp:sum(l,'expense')};
-  });
-  const maxV = Math.max(...months.flatMap(m=>[m.inc,m.exp]),1);
+  const [per,setPer] = useState('mes');
   const [hov,setHov] = useState(null);
-  const shown = hov ?? months[5];
+  const series = chartBuckets(per).map(k=>{ const l=txns.filter(t=>(t.date||'')>=k.from&&(t.date||'')<=k.to); return {...k,inc:sum(l,'income'),exp:sum(l,'expense')}; });
+  const maxV = Math.max(...series.flatMap(m=>[m.inc,m.exp]),1);
+  const shown = series.find(m=>m.id===hov) || series[series.length-1];
 
   const upcoming = appts.filter(a=>a.status!=='cancelada'&&a.status!=='hecha'&&a.date>=today)
     .sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).slice(0,5);
   const active = projects.filter(p=>p.status==='curso'||p.status==='propuesta').slice(0,5);
-  const openGoals = [...goals].sort((a,b)=>goalPct(a)-goalPct(b)).filter(g=>goalPct(g)<100).slice(0,4);
   const byCat={}; inMo.filter(t=>t.type==='expense').forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
   const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
-
   const debtors = appts.filter(a=>apptOwed(txns,a)>0);
   const owedTotal = debtors.reduce((s,a)=>s+apptOwed(txns,a),0);
+
   const kpis = [
     {l:'Ingresos del mes', v:fmtMoney(inc), d:delta(inc,pInc), goodUp:true, i:'up', bg:'var(--pink-soft)', c:C_INC},
     {l:'Gastos del mes',   v:fmtMoney(exp), d:delta(exp,pExp), goodUp:false, i:'down', bg:'var(--violet-soft)', c:C_EXP},
     {l:'Utilidad',         v:fmtMoney(net), sub:margin===null?'Sin ingresos aún':`Margen ${margin}%`, i:'finance', bg:net>=0?'var(--good-soft)':'var(--bad-soft)', c:net>=0?'var(--good)':'var(--bad)'},
-    {l:'Por cobrar',       v:fmtMoney(owedTotal), sub:debtors.length?`${debtors.length} cita${debtors.length===1?'':'s'} con saldo`:'Nadie te debe', i:'cal', bg:'var(--warn-soft)', c:'var(--warn)', t:'appts'},
+    {l:'Por cobrar',       v:fmtMoney(owedTotal), sub:debtors.length?`${debtors.length} cita${debtors.length===1?'':'s'} con saldo`:'Nadie te debe', i:'cal', bg:'var(--warn-soft)', c:'var(--warn)'},
   ];
 
   return html`
@@ -419,24 +464,27 @@ const PageHome = ({db,setTab,biz,openSettings}) => {
       <div class="cols2">
         <div class="stack" style="gap:16px">
           <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-              <div>
-                <p class="h3">Ingresos vs gastos</p>
-                <p class="tiny">Últimos 6 meses · ${fmtMonth(shown.ym)}</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+              <p class="h3">Ingresos vs gastos</p>
+              <div class="rowx" style="gap:6px">
+                ${[['semana','Semanal'],['mes','Mensual'],['año','Anual']].map(([v,l])=>html`<button class=${'tab-pill'+(per===v?' active':'')} style="padding:5px 12px;font-size:11px" onClick=${()=>{setPer(v);setHov(null);}}>${l}</button>`)}
               </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+              <p class="tiny" style="text-transform:capitalize">${shown.full}</p>
               <div style="display:flex;gap:14px;flex-wrap:wrap">
                 <span class="muted rowx" style="gap:6px"><span style=${{width:10,height:10,borderRadius:3,background:C_INC}}/>Ingresos <b class="num" style="color:var(--ink)">${fmtMoney(shown.inc)}</b></span>
                 <span class="muted rowx" style="gap:6px"><span style=${{width:10,height:10,borderRadius:3,background:C_EXP}}/>Gastos <b class="num" style="color:var(--ink)">${fmtMoney(shown.exp)}</b></span>
               </div>
             </div>
-            <div style="position:relative;height:150px;border-bottom:1px solid var(--line)">
-              <div style="position:absolute;left:0;right:0;top:0;border-top:1px dashed rgba(240,52,90,0.10)"/>
-              <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed rgba(240,52,90,0.10)"/>
+            <div style="position:relative;height:150px;border-bottom:1px solid rgba(240,52,90,0.18)">
+              <div style="position:absolute;left:0;right:0;top:0;border-top:1px dashed rgba(240,52,90,0.14)"/>
+              <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed rgba(240,52,90,0.14)"/>
               <span class="tiny num" style="position:absolute;left:0;top:2px">${fmtMoney(maxV)}</span>
               <div style="position:absolute;inset:0;display:flex;align-items:flex-end">
-                ${months.map(m=>html`
-                  <div onMouseEnter=${()=>setHov(m)} onMouseLeave=${()=>setHov(null)} onClick=${()=>setHov(m)}
-                       style=${{flex:1,height:'100%',display:'flex',alignItems:'flex-end',justifyContent:'center',gap:2,cursor:'default',borderRadius:8,background:shown.ym===m.ym?'rgba(255,77,109,0.06)':'transparent'}}>
+                ${series.map(m=>html`
+                  <div onMouseEnter=${()=>setHov(m.id)} onMouseLeave=${()=>setHov(null)} onClick=${()=>setHov(m.id)}
+                       style=${{flex:1,height:'100%',display:'flex',alignItems:'flex-end',justifyContent:'center',gap:2,cursor:'default',borderRadius:8,background:shown.id===m.id?'rgba(255,255,255,0.55)':'transparent'}}>
                     <div class="bar" style=${{background:C_INC,height:`${m.inc?Math.max(3,m.inc/maxV*140):0}px`}}/>
                     <div class="bar" style=${{background:C_EXP,height:`${m.exp?Math.max(3,m.exp/maxV*140):0}px`}}/>
                   </div>
@@ -444,28 +492,28 @@ const PageHome = ({db,setTab,biz,openSettings}) => {
               </div>
             </div>
             <div style="display:flex;margin-top:6px">
-              ${months.map(m=>html`<span class="tiny" style=${{flex:1,textAlign:'center',fontWeight:shown.ym===m.ym?600:400,color:shown.ym===m.ym?'var(--ink)':'var(--ink-3)'}}>${m.l}</span>`)}
+              ${series.map(m=>html`<span class="tiny" style=${{flex:1,textAlign:'center',fontSize:10,fontWeight:shown.id===m.id?600:400,color:shown.id===m.id?'var(--ink)':'var(--ink-3)'}}>${m.l}</span>`)}
             </div>
           </div>
 
           <div class="card">
-            <${CardHead} title="Proyectos activos" action="Ver todos" onAction=${()=>setTab('projects')}/>
-            ${active.length===0&&html`<p class="muted" style="padding:10px 0">Aún no hay proyectos en curso.</p>`}
-            ${active.map(p=>{const pc=taskPct(p);return html`
+            <${CardHead} title="Proyectos y sus metas" action="Ver todos" onAction=${()=>setTab('projects')}/>
+            ${active.length===0&&html`<p class="muted" style="padding:10px 0">Aún no hay proyectos activos.</p>`}
+            ${active.map(p=>{const st=projStats(db,p);return html`
               <div class="list-row">
                 <div style="flex:1;min-width:0">
                   <p class="ellip" style="font-size:13px;font-weight:600">${p.name}</p>
-                  <p class="tiny ellip">${p.client||'Sin cliente'}${p.due?` · entrega ${fmtDate(p.due)}`:''}</p>
+                  <p class="tiny ellip">${goalText(p,st)}</p>
                 </div>
-                <div class="prog-track" style="width:80px"><div class="prog-fill" style=${{width:`${pc}%`}}/></div>
-                <span class="num muted" style="min-width:34px;text-align:right;font-weight:600">${pc}%</span>
+                <div class="prog-track" style="width:80px"><div class="prog-fill" style=${{width:`${st.pct}%`}}/></div>
+                <span class="num muted" style="min-width:34px;text-align:right;font-weight:600">${st.pct}%</span>
               </div>`;})}
           </div>
         </div>
 
         <div class="stack" style="gap:16px">
           <div class="card">
-            <${CardHead} title="Próximas citas" action="Agenda" onAction=${()=>setTab('appts')}/>
+            <${CardHead} title="Próximas citas" action="Calendario" onAction=${()=>setTab('cal')}/>
             ${upcoming.length===0&&html`<p class="muted" style="padding:10px 0">No tienes citas pendientes.</p>`}
             ${upcoming.map(a=>html`
               <div class="list-row">
@@ -474,24 +522,11 @@ const PageHome = ({db,setTab,biz,openSettings}) => {
                   <span style="font-size:9px;font-weight:600;color:var(--pink-deep);text-transform:uppercase">${new Date(a.date+'T12:00:00').toLocaleDateString('es-MX',{month:'short'}).replace('.','')}</span>
                 </div>
                 <div style="flex:1;min-width:0">
-                  <p class="ellip" style="font-size:13px;font-weight:600">${a.title}</p>
+                  <p class="ellip" style="font-size:13px;font-weight:600">${apptName(db,a)}</p>
                   <p class="tiny ellip">${a.date===today?'Hoy':fmtDate(a.date)}${a.time?` · ${a.time}`:''}${a.client?` · ${a.client}`:''}</p>
                 </div>
                 ${apptOwed(txns,a)>0&&html`<span class="badge b-warn num">Falta ${fmtMoney(apptOwed(txns,a))}</span>`}
               </div>`)}
-          </div>
-
-          <div class="card">
-            <${CardHead} title="Objetivos" action="Ver todos" onAction=${()=>setTab('goals')}/>
-            ${openGoals.length===0&&html`<p class="muted" style="padding:10px 0">${goals.length?'¡Todos tus objetivos están cumplidos! 🎉':'Define tu primer objetivo.'}</p>`}
-            ${openGoals.map(g=>{const pc=goalPct(g);return html`
-              <div style="padding:8px 0">
-                <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">
-                  <span class="ellip" style="font-size:13px;font-weight:500">${g.title}</span>
-                  <span class="num muted" style="font-weight:600">${pc}%</span>
-                </div>
-                <div class="prog-track"><div class="prog-fill" style=${{width:`${pc}%`}}/></div>
-              </div>`;})}
           </div>
 
           <div class="card">
@@ -608,26 +643,28 @@ const PageFinance = ({db,put}) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: CITAS
+// PAGE: CITAS  (cada cita pertenece a un proyecto; pagos → Finanzas)
 // ══════════════════════════════════════════════════════════════════════════
-const PageAppts = ({db,put}) => {
+const PageAppts = ({db,put,setTab}) => {
   const today = todayKey();
-  const {appts,txns} = db;
+  const {appts,txns,projects} = db;
   const [f,setF] = useState(null);
   const [pay,setPay] = useState(null);
   const [onlyDebt,setOnlyDebt] = useState(false);
-  const blank = {title:'',client:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
+  const blank = {projectId:'',title:'',client:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
+  const name = a => apptName(db,a);
   const paid = a => apptPaid(txns,a.id);
   const owed = a => apptOwed(txns,a);
-  const payTxn = (a,amount,category,date) => ({id:uid(),type:'income',amount:Number(amount),category,note:[a.title,a.client].filter(Boolean).join(' — '),date,apptId:a.id,projectId:''});
+  const payTxn = (a,amount,category,date) => ({id:uid(),type:'income',amount:Number(amount),category,note:[name(a),a.client].filter(Boolean).join(' — '),date,apptId:a.id,projectId:a.projectId||''});
   const saveF = () => {
-    if(!f.title.trim()||!f.date)return;
+    if(!f.date)return;
     const {abono,...rest} = f;
     const item = {...rest,id:f.id||uid(),price:Number(f.price)||0};
     put('appts',f.id?appts.map(x=>x.id===item.id?item:x):[...appts,item]);
     if(!f.id&&Number(abono)>0) put('txns',[payTxn(item,abono,'Anticipo',today),...txns]);
     setF(null);
   };
+  const pickProject = id => { const p=projects.find(x=>x.id===id); setF({...f,projectId:id,price:f.price||(p&&p.price?String(p.price):'')}); };
   const savePay = () => { if(!(Number(pay.amount)>0))return; put('txns',[payTxn(pay.appt,pay.amount,paid(pay.appt)>0?'Abono':'Anticipo',pay.date),...txns]); setPay(null); };
   const delPay = id => put('txns',txns.filter(t=>t.id!==id));
   const owedTotal = appts.reduce((s,a)=>s+owed(a),0);
@@ -641,6 +678,7 @@ const PageAppts = ({db,put}) => {
     ['Anteriores', asc.filter(a=>a.date<today).reverse().slice(0,15)],
   ].filter(g=>g[1].length);
   const pending = appts.filter(a=>a.status==='pendiente'&&a.date>=today).length;
+  const options = f ? projects.filter(p=>p.status!=='listo'||p.id===f.projectId) : [];
 
   return html`
     <div class="page fade-up">
@@ -651,18 +689,18 @@ const PageAppts = ({db,put}) => {
       <div class="rowx" style="margin-bottom:16px">
         ${[[false,'Todas'],[true,'Me deben']].map(([v,l])=>html`<button class=${'tab-pill'+(onlyDebt===v?' active':'')} onClick=${()=>setOnlyDebt(v)}>${l}</button>`)}
       </div>
-      ${appts.length===0&&html`<${Empty} emo="📅" title="Tu agenda está vacía" text="Agenda tu primera cita con un cliente."/>`}
+      ${appts.length===0&&html`<${Empty} emo="📅" title="Tu agenda está vacía" text="Agenda tu primera cita y asígnala a un proyecto."/>`}
       ${appts.length>0&&groups.length===0&&html`<${Empty} emo="💖" title="Nadie te debe" text="Todas tus citas están liquidadas."/>`}
-      ${groups.map(([name,items])=>html`
+      ${groups.map(([gname,items])=>html`
         <div style="margin-bottom:20px">
-          <p class="muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.6px;font-size:11px;margin-bottom:8px">${name}</p>
+          <p class="over" style="margin-bottom:8px">${gname}</p>
           <div class="cards">
             ${items.map(a=>{const st=A_STATUS[a.status]||A_STATUS.pendiente;const off=a.status!=='pendiente';return html`
-              <div class="card" style=${{display:'flex',gap:12,alignItems:'flex-start',opacity:off?0.7:1}}>
+              <div class="card" style=${{display:'flex',gap:12,alignItems:'flex-start',opacity:off?0.75:1}}>
                 <div class=${'check-box'+(a.status==='hecha'?' done':'')} style="margin-top:2px" onClick=${()=>toggle(a)} title="Marcar como realizada">${a.status==='hecha'&&html`<${Ic} n="check" s=${13} c="#fff"/>`}</div>
                 <div style="flex:1;min-width:0">
                   <div class="rowx" style="justify-content:space-between;gap:8px">
-                    <p class="ellip" style=${{fontSize:14,fontWeight:600,textDecoration:a.status==='cancelada'?'line-through':'none'}}>${a.title}</p>
+                    <p class="ellip" style=${{fontSize:14,fontWeight:600,textDecoration:a.status==='cancelada'?'line-through':'none'}}>${name(a)}</p>
                     <span class=${'badge '+st.b}>${st.l}</span>
                   </div>
                   <div class="stack" style="gap:4px;margin-top:8px">
@@ -686,7 +724,14 @@ const PageAppts = ({db,put}) => {
 
       <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar cita':'Nueva cita'}>
         ${f&&html`<div class="stack" style="gap:12px">
-          <div><label class="lbl">Motivo</label><input value=${f.title} onInput=${e=>setF({...f,title:e.target.value})} placeholder="Ej. Reunión de propuesta" autoFocus/></div>
+          <div>
+            <label class="lbl">Proyecto</label>
+            <select value=${f.projectId||''} onChange=${e=>pickProject(e.target.value)}>
+              <option value="">${f.title?`Sin proyecto (${f.title})`:'Sin proyecto'}</option>
+              ${options.map(p=>html`<option value=${p.id}>${p.name}</option>`)}
+            </select>
+            ${projects.length===0&&html`<p class="tiny" style="margin-top:6px">Aún no tienes proyectos. <a href="#" style="color:var(--pink-deep);font-weight:600" onClick=${e=>{e.preventDefault();setF(null);setTab('projects');}}>Crea uno</a> para poder elegirlo aquí.</p>`}
+          </div>
           <div><label class="lbl">Cliente</label><input value=${f.client} onInput=${e=>setF({...f,client:e.target.value})} placeholder="Nombre del cliente"/></div>
           <div class="grid2">
             <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
@@ -716,7 +761,7 @@ const PageAppts = ({db,put}) => {
 
       <${Modal} open=${!!pay} onClose=${()=>setPay(null)} title="Agregar pago">
         ${pay&&html`<div class="stack" style="gap:12px">
-          <p class="muted"><b style="color:var(--ink)">${pay.appt.title}</b>${pay.appt.client?` · ${pay.appt.client}`:''} — falta <b class="num" style="color:var(--ink)">${fmtMoney(owed(pay.appt))}</b></p>
+          <p class="muted"><b style="color:var(--ink)">${name(pay.appt)}</b>${pay.appt.client?` · ${pay.appt.client}`:''} — falta <b class="num" style="color:var(--ink)">${fmtMoney(owed(pay.appt))}</b></p>
           <div class="grid2">
             <div><label class="lbl">Monto del pago</label><input type="number" inputmode="decimal" min="0" value=${pay.amount} onInput=${e=>setPay({...pay,amount:e.target.value})} autoFocus/></div>
             <div><label class="lbl">Fecha</label><input type="date" value=${pay.date} onInput=${e=>setPay({...pay,date:e.target.value})}/></div>
@@ -730,73 +775,53 @@ const PageAppts = ({db,put}) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: PROYECTOS  (tasks drive % progress, money linked from Finanzas)
+// PAGE: PROYECTOS  (promoción o conjunto de trabajos con meta por ventas o citas)
 // ══════════════════════════════════════════════════════════════════════════
 const PageProjects = ({db,put}) => {
-  const {projects,txns} = db;
+  const today = todayKey();
+  const {projects} = db;
   const [f,setF] = useState(null);
   const [filter,setFilter] = useState('activos');
-  const [addFor,setAddFor] = useState(null);
-  const [taskText,setTaskText] = useState('');
-  const blank = {name:'',client:'',status:'curso',budget:'',due:'',note:'',tasks:[]};
-  const saveF = () => { if(!f.name.trim())return; put('projects',upsert(projects,{...f,budget:Number(f.budget)||0})); setF(null); };
+  const blank = {name:'',status:'curso',start:today,end:'',goalKind:'ventas',goalTarget:'',price:'',note:''};
+  const saveF = () => { if(!f.name.trim())return; put('projects',upsert(projects,{...f,goalTarget:Number(f.goalTarget)||0,price:Number(f.price)||0})); setF(null); };
   const del = id => put('projects',projects.filter(x=>x.id!==id));
-  const patch = (id,fn) => put('projects',projects.map(p=>p.id===id?fn(p):p));
-  const addTask = id => { if(!taskText.trim())return; patch(id,p=>({...p,tasks:[...(p.tasks||[]),{id:uid(),title:taskText.trim(),done:false}]})); setTaskText(''); };
-  const toggleTask = (id,tid) => patch(id,p=>({...p,tasks:p.tasks.map(t=>t.id===tid?{...t,done:!t.done}:t)}));
-  const delTask = (id,tid) => patch(id,p=>({...p,tasks:p.tasks.filter(t=>t.id!==tid)}));
   const list = projects.filter(p=>filter==='todos'||(filter==='activos'?p.status!=='listo':p.status==='listo'));
 
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 class="h1">Proyectos</h2><p class="muted">${projects.filter(p=>p.status==='curso').length} en curso · ${projects.filter(p=>p.status==='listo').length} terminados</p></div>
+        <div class="col"><h2 class="h1">Proyectos</h2><p class="muted">${projects.filter(p=>p.status==='curso').length} activos · ${projects.filter(p=>p.status==='listo').length} terminados</p></div>
         <button class="btn-p" onClick=${()=>setF({...blank})}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
       </div>
       <div class="rowx" style="margin-bottom:16px;overflow-x:auto">
         ${[['activos','Activos'],['listos','Terminados'],['todos','Todos']].map(([v,l])=>html`<button class=${'tab-pill'+(filter===v?' active':'')} onClick=${()=>setFilter(v)}>${l}</button>`)}
       </div>
-      ${list.length===0&&html`<${Empty} emo="💼" title="Sin proyectos aquí" text="Crea un proyecto y agrega tareas para medir su avance."/>`}
+      ${list.length===0&&html`<${Empty} emo="💼" title="Sin proyectos aquí" text="Crea una promoción o un conjunto de trabajos, ponle una meta y asígnale citas."/>`}
       <div class="cards">
         ${list.map(p=>{
-          const pc=taskPct(p); const st=P_STATUS[p.status]||P_STATUS.curso;
-          const mine=txns.filter(t=>t.projectId===p.id); const pin=sum(mine,'income'), pout=sum(mine,'expense');
+          const st=projStats(db,p); const ps=P_STATUS[p.status]||P_STATUS.curso; const r=projRange(p);
           return html`
             <div class="card">
               <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px">
                 <div style="min-width:0">
-                  <p style="font-size:15px;font-weight:600">${p.name}</p>
-                  <p class="tiny" style="margin-top:2px">${p.client||'Sin cliente'}${p.due?` · entrega ${fmtDate(p.due)}`:''}</p>
+                  <p style="font-size:15px;font-weight:600">${st.target>0&&st.pct>=100?'⭐ ':''}${p.name}</p>
+                  <p class="tiny" style="margin-top:2px;text-transform:capitalize">${r?(r[0]===r[1]?fmtDate(r[0]):`${fmtDate(r[0])} → ${fmtDate(r[1])}`):'Sin fechas'}</p>
                 </div>
                 <div class="rowx" style="gap:2px;flex-shrink:0">
-                  <span class=${'badge '+st.b}>${st.l}</span>
-                  <button class="icon-btn" onClick=${()=>setF({...blank,...p,budget:p.budget?String(p.budget):''})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
+                  <span class=${'badge '+ps.b}>${ps.l}</span>
+                  <button class="icon-btn" onClick=${()=>setF({...blank,...p,end:p.end||p.due||'',goalKind:p.goalKind||'ventas',goalTarget:p.goalTarget?String(p.goalTarget):'',price:p.price?String(p.price):''})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
                 </div>
               </div>
-              <div class="rowx" style="margin-bottom:12px">
-                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${pc}%`}}/></div>
-                <span class="num" style="font-size:14px;font-weight:700;min-width:40px;text-align:right">${pc}%</span>
+              <p class="over" style="margin-bottom:6px">${p.goalKind==='citas'?'Meta por citas':'Meta por ventas'}</p>
+              <div class="rowx" style="margin-bottom:4px">
+                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${st.pct}%`}}/></div>
+                <span class="num" style="font-size:16px;font-weight:700;min-width:44px;text-align:right">${st.pct}%</span>
               </div>
-              ${(p.budget>0||mine.length>0)&&html`
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;padding:10px;background:var(--surface-2);border-radius:12px">
-                  ${[['Presupuesto',p.budget],['Cobrado',pin],['Gastado',pout]].map(([l,v])=>html`<div><p class="tiny">${l}</p><p class="num" style="font-size:13px;font-weight:600">${fmtMoney(v)}</p></div>`)}
-                </div>`}
-              <div class="stack" style="gap:6px">
-                ${(p.tasks||[]).map(t=>html`
-                  <div class="rowx" style="padding:7px 10px;background:var(--surface-2);border-radius:10px">
-                    <div class=${'check-box'+(t.done?' done':'')} style="width:18px;height:18px;border-radius:6px" onClick=${()=>toggleTask(p.id,t.id)}>${t.done&&html`<${Ic} n="check" s=${11} c="#fff"/>`}</div>
-                    <p style=${{fontSize:12,flex:1,color:t.done?'var(--ink-3)':'var(--ink)',textDecoration:t.done?'line-through':'none'}}>${t.title}</p>
-                    <button class="icon-btn" style="padding:2px" onClick=${()=>delTask(p.id,t.id)} aria-label="Quitar tarea"><${Ic} n="x" s=${12}/></button>
-                  </div>`)}
-                ${addFor===p.id?html`
-                  <div class="rowx" style="gap:6px">
-                    <input value=${taskText} onInput=${e=>setTaskText(e.target.value)} placeholder="Nueva tarea…" autoFocus style="flex:1;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addTask(p.id);if(e.key==='Escape')setAddFor(null);}}/>
-                    <button class="btn-p" style="padding:8px 14px" onClick=${()=>addTask(p.id)}>+</button>
-                  </div>`:html`
-                  <button class="add-dash" onClick=${()=>{setAddFor(p.id);setTaskText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed rgba(240,52,90,0.38);background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Montserrat,sans-serif">
-                    <${Ic} n="plus" s=${12}/> Agregar tarea
-                  </button>`}
+              <p class="muted num" style="margin-bottom:12px">${goalText(p,st)}</p>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:var(--surface-2);border-radius:12px">
+                ${[['Citas',st.count],['Vendido',fmtMoney(st.sold)],['Cobrado',fmtMoney(st.paid)]].map(([l,v])=>html`<div><p class="tiny">${l}</p><p class="num" style="font-size:13px;font-weight:700">${v}</p></div>`)}
               </div>
+              ${st.spent>0&&html`<p class="tiny num" style="margin-top:8px">Gastado en este proyecto: ${fmtMoney(st.spent)}</p>`}
               ${p.note&&html`<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(240,52,90,0.10)">${p.note}</p>`}
             </div>`;
         })}
@@ -804,13 +829,22 @@ const PageProjects = ({db,put}) => {
 
       <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar proyecto':'Nuevo proyecto'}>
         ${f&&html`<div class="stack" style="gap:12px">
-          <div><label class="lbl">Nombre</label><input value=${f.name} onInput=${e=>setF({...f,name:e.target.value})} placeholder="Nombre del proyecto" autoFocus/></div>
-          <div><label class="lbl">Cliente</label><input value=${f.client} onInput=${e=>setF({...f,client:e.target.value})} placeholder="¿Para quién es?"/></div>
+          <div><label class="lbl">Nombre</label><input value=${f.name} onInput=${e=>setF({...f,name:e.target.value})} placeholder="Ej. Promo sesiones navideñas" autoFocus/></div>
           <div class="grid2">
-            <div><label class="lbl">Estado</label><select value=${f.status} onChange=${e=>setF({...f,status:e.target.value})}>${Object.entries(P_STATUS).map(([k,v])=>html`<option value=${k}>${v.l}</option>`)}</select></div>
-            <div><label class="lbl">Entrega</label><input type="date" value=${f.due} onInput=${e=>setF({...f,due:e.target.value})}/></div>
+            <div><label class="lbl">Inicia</label><input type="date" value=${f.start||''} onInput=${e=>setF({...f,start:e.target.value})}/></div>
+            <div><label class="lbl">Termina</label><input type="date" value=${f.end||''} onInput=${e=>setF({...f,end:e.target.value})}/></div>
           </div>
-          <div><label class="lbl">Presupuesto</label><input type="number" inputmode="decimal" min="0" value=${f.budget} onInput=${e=>setF({...f,budget:e.target.value})} placeholder="0"/></div>
+          <div>
+            <label class="lbl">¿Cómo mides la meta?</label>
+            <div class="seg">
+              ${[['ventas','💰 Por ventas'],['citas','📅 Por citas']].map(([k,l])=>html`<button class=${f.goalKind===k?'on':''} onClick=${()=>setF({...f,goalKind:k})}>${l}</button>`)}
+            </div>
+          </div>
+          <div class="grid2">
+            <div><label class="lbl">${f.goalKind==='citas'?'Meta (número de citas)':'Meta (ventas en $)'}</label><input type="number" inputmode="decimal" min="0" value=${f.goalTarget} onInput=${e=>setF({...f,goalTarget:e.target.value})} placeholder="0"/></div>
+            <div><label class="lbl">Precio por cita (opcional)</label><input type="number" inputmode="decimal" min="0" value=${f.price} onInput=${e=>setF({...f,price:e.target.value})} placeholder="0"/></div>
+          </div>
+          <div><label class="lbl">Estado</label><select value=${f.status} onChange=${e=>setF({...f,status:e.target.value})}>${Object.entries(P_STATUS).map(([k,v])=>html`<option value=${k}>${v.l}</option>`)}</select></div>
           <textarea value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Notas" rows="2" style="resize:none"/>
           <${FormActions} isEdit=${!!f.id} label="Crear proyecto" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
         </div>`}
@@ -820,82 +854,97 @@ const PageProjects = ({db,put}) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: OBJETIVOS  (por pasos o por monto)
+// PAGE: CALENDARIO  (citas y proyectos por venir)
 // ══════════════════════════════════════════════════════════════════════════
-const PageGoals = ({db,put}) => {
-  const {goals} = db;
-  const [f,setF] = useState(null);
-  const [addFor,setAddFor] = useState(null);
-  const [stepText,setStepText] = useState('');
-  const blank = {title:'',kind:'pasos',target:'',current:'',due:'',note:'',subtasks:[]};
-  const saveF = () => { if(!f.title.trim())return; put('goals',upsert(goals,{...f,target:Number(f.target)||0,current:Number(f.current)||0})); setF(null); };
-  const del = id => put('goals',goals.filter(x=>x.id!==id));
-  const patch = (id,fn) => put('goals',goals.map(g=>g.id===id?fn(g):g));
-  const addStep = id => { if(!stepText.trim())return; patch(id,g=>({...g,subtasks:[...(g.subtasks||[]),{id:uid(),title:stepText.trim(),done:false}]})); setStepText(''); };
-  const done = goals.filter(g=>goalPct(g)>=100).length;
+const PageCalendar = ({db,setTab}) => {
+  const today = todayKey();
+  const {appts,projects,txns} = db;
+  const [ym,setYm] = useState(today.slice(0,7));
+  const [sel,setSel] = useState(today);
+  const [y,m] = ym.split('-').map(Number);
+  const offset = (new Date(y,m-1,1).getDay()+6)%7;
+  const nDays = new Date(y,m,0).getDate();
+  const cells = [...Array(offset).fill(null),...Array.from({length:nDays},(_,i)=>`${ym}-${pad(i+1)}`)];
+  const apptsOn = d => appts.filter(a=>a.date===d&&a.status!=='cancelada').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const projsOn = d => projects.filter(p=>{ const r=projRange(p); return r&&r[0]<=d&&d<=r[1]; });
+  const go = d => { setSel(d); setYm(d.slice(0,7)); };
+
+  const events = [
+    ...appts.filter(a=>a.status==='pendiente'&&a.date>=today).map(a=>({date:a.date,time:a.time||'',kind:'a',text:apptName(db,a),sub:a.client||''})),
+    ...projects.flatMap(p=>{ const r=projRange(p); if(!r||p.status==='listo')return []; return [
+      r[0]>=today?{date:r[0],time:'',kind:'p',text:p.name,sub:'Inicia el proyecto'}:null,
+      r[1]>=today&&r[1]!==r[0]?{date:r[1],time:'',kind:'p',text:p.name,sub:'Termina el proyecto'}:null,
+    ].filter(Boolean); }),
+  ].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,8);
+  const selA = apptsOn(sel), selP = projsOn(sel);
+  const longDate = d => { const t=new Date(d+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}); return t[0].toUpperCase()+t.slice(1); };
 
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 class="h1">Objetivos</h2><p class="muted">${done}/${goals.length} cumplidos</p></div>
-        <button class="btn-p" onClick=${()=>setF({...blank})}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
+        <div class="col"><h2 class="h1">Calendario</h2><p class="muted">Tus citas y proyectos por venir</p></div>
+        <div class="rowx" style="gap:14px">
+          <span class="muted rowx" style="gap:6px"><span class="dot" style="background:var(--pink-deep)"/>Citas</span>
+          <span class="muted rowx" style="gap:6px"><span class="dot" style="background:var(--violet)"/>Proyectos</span>
+        </div>
       </div>
-      ${goals.length===0&&html`<${Empty} emo="🎯" title="Define tu primer objetivo" text="Puede ser una meta de ventas en dinero o una lista de pasos."/>`}
-      <div class="cards">
-        ${goals.map(g=>{
-          const pc=goalPct(g); const isM=g.kind==='monto';
-          return html`
-            <div class="card">
-              <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px">
-                <div style="min-width:0">
-                  <p style="font-size:15px;font-weight:600">${pc>=100?'⭐ ':''}${g.title}</p>
-                  <p class="tiny" style="margin-top:2px">${isM?'Meta en dinero':'Meta por pasos'}${g.due?` · límite ${fmtDate(g.due)}`:''}</p>
-                </div>
-                <button class="icon-btn" onClick=${()=>setF({...blank,...g,kind:g.kind||'pasos',target:g.target?String(g.target):'',current:g.current?String(g.current):''})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
-              </div>
-              <div class="rowx" style="margin-bottom:10px">
-                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${pc}%`}}/></div>
-                <span class="num" style="font-size:16px;font-weight:700;min-width:44px;text-align:right">${pc}%</span>
-              </div>
-              ${isM?html`
-                <p class="muted num"><b style="color:var(--ink);font-size:14px">${fmtMoney(g.current)}</b> de ${fmtMoney(g.target)}</p>
-              `:html`
-                <div class="stack" style="gap:6px">
-                  ${(g.subtasks||[]).map(s=>html`
-                    <div class="rowx" style="padding:7px 10px;background:var(--surface-2);border-radius:10px">
-                      <div class=${'check-box'+(s.done?' done':'')} style="width:18px;height:18px;border-radius:6px" onClick=${()=>patch(g.id,x=>({...x,subtasks:x.subtasks.map(y=>y.id===s.id?{...y,done:!y.done}:y)}))}>${s.done&&html`<${Ic} n="check" s=${11} c="#fff"/>`}</div>
-                      <p style=${{fontSize:12,flex:1,color:s.done?'var(--ink-3)':'var(--ink)',textDecoration:s.done?'line-through':'none'}}>${s.title}</p>
-                      <button class="icon-btn" style="padding:2px" onClick=${()=>patch(g.id,x=>({...x,subtasks:x.subtasks.filter(y=>y.id!==s.id)}))} aria-label="Quitar paso"><${Ic} n="x" s=${12}/></button>
-                    </div>`)}
-                  ${addFor===g.id?html`
-                    <div class="rowx" style="gap:6px">
-                      <input value=${stepText} onInput=${e=>setStepText(e.target.value)} placeholder="Nuevo paso…" autoFocus style="flex:1;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addStep(g.id);if(e.key==='Escape')setAddFor(null);}}/>
-                      <button class="btn-p" style="padding:8px 14px" onClick=${()=>addStep(g.id)}>+</button>
-                    </div>`:html`
-                    <button class="add-dash" onClick=${()=>{setAddFor(g.id);setStepText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed rgba(240,52,90,0.38);background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Montserrat,sans-serif">
-                      <${Ic} n="plus" s=${12}/> Agregar paso
-                    </button>`}
-                </div>`}
-              ${g.note&&html`<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(240,52,90,0.10)">${g.note}</p>`}
-            </div>`;
-        })}
-      </div>
-
-      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar objetivo':'Nuevo objetivo'}>
-        ${f&&html`<div class="stack" style="gap:12px">
-          <div><label class="lbl">Objetivo</label><input value=${f.title} onInput=${e=>setF({...f,title:e.target.value})} placeholder="Ej. Vender $50,000 este mes" autoFocus/></div>
-          <div class="seg">
-            ${[['pasos','✅ Por pasos'],['monto','💰 Por monto']].map(([k,l])=>html`<button class=${f.kind===k?'on':''} onClick=${()=>setF({...f,kind:k})}>${l}</button>`)}
+      <div class="cal-layout">
+        <div class="card">
+          <div class="rowx" style="justify-content:space-between;margin-bottom:12px">
+            <div class="rowx" style="gap:2px">
+              <button class="icon-btn" onClick=${()=>setYm(shiftMonth(ym,-1))} aria-label="Mes anterior"><${Ic} n="left" s=${16}/></button>
+              <span style="font-size:15px;font-weight:600;min-width:140px;text-align:center">${fmtMonth(ym)}</span>
+              <button class="icon-btn" onClick=${()=>setYm(shiftMonth(ym,1))} aria-label="Mes siguiente"><${Ic} n="right" s=${16}/></button>
+            </div>
+            <button class="tab-pill" onClick=${()=>go(today)}>Hoy</button>
           </div>
-          ${f.kind==='monto'&&html`<div class="grid2">
-            <div><label class="lbl">Meta</label><input type="number" inputmode="decimal" min="0" value=${f.target} onInput=${e=>setF({...f,target:e.target.value})} placeholder="0"/></div>
-            <div><label class="lbl">Avance actual</label><input type="number" inputmode="decimal" min="0" value=${f.current} onInput=${e=>setF({...f,current:e.target.value})} placeholder="0"/></div>
-          </div>`}
-          <div><label class="lbl">Fecha límite</label><input type="date" value=${f.due} onInput=${e=>setF({...f,due:e.target.value})}/></div>
-          <textarea value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Notas" rows="2" style="resize:none"/>
-          <${FormActions} isEdit=${!!f.id} label="Crear objetivo" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
-        </div>`}
-      <//>
+          <div class="cal">
+            ${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d=>html`<div class="cal-head">${d}</div>`)}
+            ${cells.map(d=>{
+              if(!d) return html`<div/>`;
+              const mon=new Date(d+'T12:00:00').getDay()===1;
+              const items=[...projsOn(d).map(p=>({k:'p'+(d===projRange(p)[0]||mon?'':' bare'),t:p.name})),...apptsOn(d).map(a=>({k:'a',t:(a.time?a.time+' ':'')+apptName(db,a)}))];
+              return html`
+                <button class=${'cal-day'+(d===sel?' sel':'')+(d===today?' today':'')} onClick=${()=>setSel(d)}>
+                  <span class="cal-num">${Number(d.slice(8))}</span>
+                  <div class="cal-chips">
+                    ${items.slice(0,3).map(it=>html`<span class=${'cal-chip '+it.k} title=${it.t}>${it.t}</span>`)}
+                    ${items.length>3&&html`<span class="cal-more">+${items.length-3} más</span>`}
+                  </div>
+                </button>`;
+            })}
+          </div>
+        </div>
+
+        <div class="stack" style="gap:16px">
+          <div class="card">
+            <${CardHead} title=${sel===today?'Hoy':longDate(sel)} action="Ir a Citas" onAction=${()=>setTab('appts')}/>
+            ${selA.length===0&&selP.length===0&&html`<p class="muted" style="padding:8px 0">Nada agendado este día.</p>`}
+            ${selP.map(p=>{const st=projStats(db,p);return html`
+              <div class="list-row">
+                <span class="dot" style="background:var(--violet)"/>
+                <div style="flex:1;min-width:0"><p class="ellip" style="font-size:13px;font-weight:600">${p.name}</p><p class="tiny ellip">${goalText(p,st)}</p></div>
+                <span class="num muted" style="font-weight:600">${st.pct}%</span>
+              </div>`;})}
+            ${selA.map(a=>html`
+              <div class="list-row">
+                <span class="dot" style="background:var(--pink-deep)"/>
+                <div style="flex:1;min-width:0"><p class="ellip" style="font-size:13px;font-weight:600">${apptName(db,a)}</p><p class="tiny ellip">${a.time||'Sin hora'}${a.client?` · ${a.client}`:''}</p></div>
+                ${apptOwed(txns,a)>0?html`<span class="badge b-warn num">Falta ${fmtMoney(apptOwed(txns,a))}</span>`:a.status==='hecha'?html`<span class="badge b-good">Realizada</span>`:null}
+              </div>`)}
+          </div>
+          <div class="card">
+            <${CardHead} title="Lo que viene"/>
+            ${events.length===0&&html`<p class="muted" style="padding:8px 0">No hay nada próximo.</p>`}
+            ${events.map(e=>html`
+              <div class="list-row" style="cursor:pointer" onClick=${()=>go(e.date)}>
+                <span class="dot" style=${{background:e.kind==='a'?'var(--pink-deep)':'var(--violet)'}}/>
+                <div style="flex:1;min-width:0"><p class="ellip" style="font-size:13px;font-weight:600">${e.text}</p><p class="tiny ellip">${e.sub}</p></div>
+                <span class="tiny" style="text-transform:capitalize;white-space:nowrap">${e.date===today?'Hoy':fmtDate(e.date)}${e.time?` · ${e.time}`:''}</span>
+              </div>`)}
+          </div>
+        </div>
+      </div>
     </div>
   `;
 };
@@ -1030,7 +1079,7 @@ const App = () => {
       </div><//>`;
   }
 
-  const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,projects:PageProjects,goals:PageGoals};
+  const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,projects:PageProjects,cal:PageCalendar};
   const Page  = pages[tab]||PageHome;
 
   return html`
