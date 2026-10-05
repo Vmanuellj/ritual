@@ -960,12 +960,22 @@ const AuthScreen = () => {
     }
     if(isUp&&!data.session){ setMsg({ok:true,t:'¡Cuenta creada! Te enviamos un correo: abre el enlace para confirmarla y luego inicia sesión aquí.'}); setMode('in'); setPass(''); }
   };
+  const google = async () => {
+    if(!sb){ setMsg({t:'No se pudo conectar con la nube. Revisa tu internet y recarga.'}); return; }
+    const {error} = await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
+    if(error) setMsg({t:'No se pudo abrir el acceso con Google: '+error.message});
+  };
   return html`
     <div class="auth-wrap">
       <div class="auth-card fade-up">
         <img src="icon.svg" width="40" height="40" alt="" style="border-radius:10px;margin-bottom:14px"/>
         <p style="font-size:18px;font-weight:600;letter-spacing:-0.02em">${isUp?'Crea tu cuenta':'Inicia sesión en ritual.'}</p>
         <p class="muted" style="margin:4px 0 20px">Ingresos, citas y proyectos de tu negocio.</p>
+        <button class="btn-g" style="width:100%;min-height:38px;gap:10px" onClick=${google}>
+          <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.2C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.500-4.800 7.200l7.500 5.800c4.400-4.100 7.100-10.100 7.100-17.500z"/><path fill="#FBBC05" d="M10.500 28.600c-.5-1.400-.8-3-.8-4.600s.3-3.200.8-4.600l-7.900-6.200C.9 16.500 0 20.100 0 24s.9 7.500 2.600 10.800l7.900-6.200z"/><path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.500-5.800c-2.100 1.400-4.800 2.300-8.400 2.300-6.300 0-11.600-4.200-13.500-9.900l-7.900 6.200C6.500 42.600 14.600 48 24 48z"/></svg>
+          Continuar con Google
+        </button>
+        <div class="rowx" style="margin:14px 0;gap:10px"><div style="flex:1;height:1px;background:var(--line)"/><span class="tiny">o con tu correo</span><div style="flex:1;height:1px;background:var(--line)"/></div>
         <div class="seg" style="margin-bottom:14px">
           ${[['in','Iniciar sesión'],['up','Crear cuenta']].map(([k,l])=>html`<button class=${mode===k?'on':''} onClick=${()=>{setMode(k);setMsg(null);}}>${l}</button>`)}
         </div>
