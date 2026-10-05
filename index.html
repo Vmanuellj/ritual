@@ -1,330 +1,281 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ritual.</title>
+  <title>ritual. — negocio</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
-    /* ── LUMEN design system tokens (from Google Stitch) ── */
+    /* ── PINKY design tokens ── */
     :root{
-      --obsidian:   #050505;
-      --surface:    #131313;
-      --surf-mid:   #1c1b1b;
-      --surf-hi:    #2a2a2a;
-      --amber:      #FF9500;
-      --amber-soft: #ffb84d;
-      --amber-pale: #ffd49a;
-      --on-surface: #e5e2e1;
-      --on-muted:   #c4b09a;
-      --glass-border: rgba(255,184,77,0.18);
-      --glass-bg:     rgba(20,20,20,0.42);
-      --glass-blur:   blur(28px) saturate(180%) brightness(1.08);
+      --bg:        #FFF1F7;
+      --surface:   #FFFFFF;
+      --surface-2: #FFF7FB;
+      --line:      #F8D3E4;
+      --ink:       #3A1128;
+      --ink-2:     #7A4A62;
+      --ink-3:     #B58BA1;
+      --pink:      #EC4899;
+      --pink-deep: #DB2777;
+      --pink-soft: #FCE7F3;
+      --violet:    #7C5CD6;
+      --violet-soft:#EEE9FB;
+      --good:      #0E9467;
+      --good-soft: #E3F6EE;
+      --bad:       #D92D4B;
+      --bad-soft:  #FDE8EC;
+      --warn:      #B7791F;
+      --warn-soft: #FDF3DC;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Inter',sans-serif;overflow-x:hidden;min-height:100vh;color:var(--on-surface);}
+    body{font-family:'Inter',sans-serif;overflow-x:hidden;min-height:100vh;color:var(--ink);background:var(--bg);}
 
-    /* ══ BACKGROUND ══════════════════════════════════════════════════════════ */
-    .bg-scene{
-      position:fixed;inset:0;z-index:0;overflow:hidden;
-      background:var(--obsidian);
+    /* ══ BACKGROUND ══ */
+    .bg-scene{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--bg);pointer-events:none;}
+    .bg-scene::before{content:'';position:absolute;inset:0;background:
+      radial-gradient(ellipse 42% 50% at 85% 8%, rgba(236,72,153,0.22) 0%, transparent 62%),
+      radial-gradient(ellipse 36% 44% at 8% 92%, rgba(244,114,182,0.20) 0%, transparent 60%),
+      radial-gradient(ellipse 30% 36% at 60% 60%, rgba(124,92,214,0.08) 0%, transparent 60%);
     }
-    .bg-photo{
-      position:absolute;inset:0;
-      background-image:url(bg.avif);
-      background-size:cover;
-      background-position:center 30%;
-      background-repeat:no-repeat;
-      filter:brightness(0.15) saturate(0.5);
-    }
-    .bg-photo::after{
-      content:'';position:absolute;inset:0;
-      background:rgba(4,4,4,0.45);
-    }
-    /* Amber bokeh orbs — LUMEN signature (large, prominent) */
-    .bg-css{position:absolute;inset:0;pointer-events:none;}
-    .bg-css-base{position:absolute;inset:0;background:
-      radial-gradient(ellipse 40% 55% at 72% 14%, rgba(255,149,0,0.70) 0%, rgba(200,90,0,0.32) 28%, transparent 60%),
-      radial-gradient(ellipse 28% 42% at 88% 36%, rgba(255,184,77,0.52) 0%, rgba(180,80,0,0.22) 33%, transparent 58%),
-      radial-gradient(ellipse 22% 30% at 62% 52%, rgba(255,120,0,0.18) 0%, transparent 52%),
-      radial-gradient(ellipse 50% 65% at 76% 22%, rgba(30,14,0,0.75) 18%, transparent 68%);
-    }
-    /* Keep leaf/vein classes to avoid HTML errors but hide */
-    .css-leaf,.light-patch,.vein{display:none;}
-    .cl-1,.cl-2,.cl-3,.lp-1,.lp-2,.lp-3,.vn-1,.vn-2{display:none;}
 
-    /* ══ LUMEN LIQUID GLASS SYSTEM ══════════════════════════════════════════ */
+    /* ══ SHELL ══ */
     .sidebar{
       position:fixed;top:0;left:0;bottom:0;width:220px;z-index:30;
-      background:rgba(8,8,8,0.72);
-      backdrop-filter:blur(60px) saturate(160%) brightness(1.05);
-      -webkit-backdrop-filter:blur(60px) saturate(160%) brightness(1.05);
-      border-right:1px solid rgba(255,184,77,0.1);
+      background:rgba(255,255,255,0.78);
+      backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+      border-right:1px solid var(--line);
       display:flex;flex-direction:column;padding:24px 12px;
     }
-    /* LUMEN glass card — semi-transparent, bokeh bleeds through */
     .card{
-      background:rgba(12,10,8,0.58);
-      backdrop-filter:blur(22px) saturate(130%);
-      -webkit-backdrop-filter:blur(22px) saturate(130%);
-      border:1px solid rgba(255,255,255,0.07);
-      border-radius:14px;padding:18px;
-      box-shadow:0 4px 28px rgba(0,0,0,0.38);
-      transition:border-color .2s ease;
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:18px;padding:18px;
+      box-shadow:0 6px 24px rgba(219,39,119,0.07);
+      transition:border-color .2s ease, box-shadow .2s ease;
     }
-    .card:hover{border-color:rgba(255,184,77,0.14);}
-    .glass{
-      background:rgba(10,8,6,0.52);
-      backdrop-filter:blur(16px);
-      -webkit-backdrop-filter:blur(16px);
-      border:1px solid rgba(255,255,255,0.06);
-    }
-    .glass-hover:active{background:rgba(255,149,0,0.08);transition:all .12s ease;}
+    .card.click{cursor:pointer;}
+    .card.click:hover{border-color:#F3A9CB;box-shadow:0 8px 28px rgba(219,39,119,0.13);}
     .nav-item{
-      display:flex;align-items:center;gap:10px;padding:9px 12px;
-      border-radius:10px;font-size:13px;font-weight:500;
-      color:rgba(196,176,154,0.6);cursor:pointer;transition:all .15s ease;
-      border:0.5px solid transparent;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;
+      display:flex;align-items:center;gap:10px;padding:10px 12px;
+      border-radius:12px;font-size:13px;font-weight:500;
+      color:var(--ink-2);cursor:pointer;transition:all .15s ease;
+      border:1px solid transparent;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;
     }
-    .nav-item:hover{background:rgba(255,149,0,0.08);color:var(--amber-pale);}
-    .nav-item.active{
-      background:rgba(255,149,0,0.09);
-      color:var(--amber-soft);
-      border:1.5px dashed rgba(255,184,77,0.42);
-    }
-    /* Bottom nav */
+    .nav-item:hover{background:var(--pink-soft);color:var(--pink-deep);}
+    .nav-item.active{background:var(--pink-soft);color:var(--pink-deep);border-color:#F6BFD8;font-weight:600;}
     .bottom-nav{
       display:none;position:fixed;bottom:0;left:0;right:0;z-index:30;
-      padding:10px 6px env(safe-area-inset-bottom,16px);
-      background:rgba(5,5,5,0.82);
-      backdrop-filter:blur(60px) saturate(180%) brightness(1.05);
-      -webkit-backdrop-filter:blur(60px) saturate(180%) brightness(1.05);
-      border-top:1px solid rgba(255,184,77,0.1);
+      padding:8px 6px env(safe-area-inset-bottom,14px);
+      background:rgba(255,255,255,0.9);
+      backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+      border-top:1px solid var(--line);
     }
     .bnav-item{
       flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-      padding:6px 2px;border-radius:12px;font-size:9.5px;font-weight:500;
-      color:rgba(196,176,154,0.35);cursor:pointer;transition:all .18s ease;
-      border:none;background:none;font-family:'Inter',sans-serif;letter-spacing:0.01em;
+      padding:6px 2px;border-radius:12px;font-size:10px;font-weight:500;
+      color:var(--ink-3);cursor:pointer;transition:all .18s ease;
+      border:none;background:none;font-family:'Inter',sans-serif;
     }
-    .bnav-item.active{color:var(--amber-soft);}
-    .bnav-item.active svg{filter:drop-shadow(0 0 5px rgba(255,149,0,0.6));}
+    .bnav-item.active{color:var(--pink-deep);font-weight:600;}
+    .main-content{min-height:100vh;max-width:1080px;padding-bottom:40px;}
 
-    @media(min-width:768px){.main-content{margin-left:220px;}.bottom-nav{display:none!important;}.sidebar{display:flex;}}
+    @media(min-width:768px){.main-content{margin-left:220px;}.mobile-only{display:none!important;}}
     @media(max-width:767px){
       .sidebar{display:none;}
       .bottom-nav{display:flex;}
       .main-content{margin-left:0;padding-bottom:96px;}
-      .page{padding:18px 14px 0;}
-      .card{padding:14px;border-radius:18px;}
-      input,textarea,select{font-size:16px;}
+      .page{padding:18px 14px 0!important;}
+      .card{padding:14px;}
+      input,textarea,select{font-size:16px!important;}
       .btn-p,.btn-g{min-height:44px;}
-      .modal-bg{padding:12px 10px;}
-      .modal-box{max-height:calc(100vh - 100px);}
-      .modal-body{padding:14px 14px 20px;}
-      .modal-header-sticky{padding:16px 14px 12px;}
     }
 
-    /* Inputs — LUMEN style */
+    /* Inputs */
     input,textarea,select{
-      background:rgba(14,14,14,0.6);
-      border:1px solid rgba(255,184,77,0.15);
-      color:var(--on-surface);border-radius:10px;padding:11px 14px;width:100%;outline:none;
+      background:var(--surface-2);border:1px solid var(--line);
+      color:var(--ink);border-radius:12px;padding:11px 14px;width:100%;outline:none;
       font-family:'Inter',sans-serif;font-size:13px;transition:all .2s;
     }
-    input:focus,textarea:focus,select:focus{
-      border-color:rgba(255,149,0,0.5);
-      background:rgba(20,20,20,0.7);
-      box-shadow:0 0 0 3px rgba(255,149,0,0.1), 0 0 12px rgba(255,149,0,0.08);
-    }
-    input::placeholder,textarea::placeholder{color:rgba(196,176,154,0.3);}
-    select option{background:#131313;color:var(--on-surface);}
+    input:focus,textarea:focus,select:focus{border-color:var(--pink);background:#fff;box-shadow:0 0 0 3px rgba(236,72,153,0.15);}
+    input::placeholder,textarea::placeholder{color:var(--ink-3);}
 
-    /* Buttons — LUMEN amber */
+    /* Buttons */
     .btn-p{
-      background:rgba(255,149,0,0.85);color:#1a0a00;
-      border:1px solid rgba(255,184,77,0.5);
-      border-radius:12px;padding:10px 18px;font-size:13px;font-weight:700;
+      background:linear-gradient(135deg,#F472B6 0%,#DB2777 100%);color:#fff;
+      border:none;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;
       cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;
-      font-family:'Inter',sans-serif;
-      box-shadow:0 0 16px rgba(255,149,0,0.25),inset 0 1px 0 rgba(255,255,255,0.25);
+      font-family:'Inter',sans-serif;box-shadow:0 6px 16px rgba(219,39,119,0.28);
     }
-    .btn-p:hover{background:rgba(255,149,0,1);box-shadow:0 0 28px rgba(255,149,0,0.45),inset 0 1px 0 rgba(255,255,255,0.3);transform:translateY(-1px);}
-    .btn-p:active{transform:translateY(0);box-shadow:0 0 12px rgba(255,149,0,0.3);}
-    .btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+    .btn-p:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(219,39,119,0.38);}
+    .btn-p:active{transform:translateY(0);}
     .btn-g{
-      background:rgba(255,149,0,0.1);color:var(--amber-pale);
-      border:1px solid rgba(255,184,77,0.2);border-radius:12px;
-      padding:10px 18px;font-size:13px;font-weight:500;
+      background:var(--pink-soft);color:var(--pink-deep);
+      border:1px solid #F6BFD8;border-radius:999px;
+      padding:10px 16px;font-size:13px;font-weight:500;
       cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;
       display:inline-flex;align-items:center;gap:7px;
     }
-    .btn-g:hover{background:rgba(255,149,0,0.18);border-color:rgba(255,184,77,0.35);color:#fff;}
+    .btn-g:hover{background:#FBD5E8;}
     .btn-d{
-      background:rgba(255,69,58,0.12);color:#FF9F9A;
-      border:1px solid rgba(255,69,58,0.22);
-      border-radius:10px;padding:10px 14px;font-size:13px;font-weight:500;
-      cursor:pointer;font-family:'Inter',sans-serif;
-      transition:all .2s;
+      background:var(--bad-soft);color:var(--bad);border:1px solid #F7C2CC;
+      border-radius:999px;padding:10px 14px;font-size:13px;font-weight:500;
+      cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;
+      display:inline-flex;align-items:center;justify-content:center;
     }
-    .btn-d:hover{background:rgba(255,69,58,0.2);box-shadow:0 0 12px rgba(255,69,58,0.2);}
-    /* Checkbox — amber glow when done */
+    .btn-d:hover{background:#FAD3DA;}
+    .icon-btn{background:none;border:none;cursor:pointer;color:var(--ink-3);padding:6px;border-radius:8px;display:inline-flex;}
+    .icon-btn:hover{color:var(--pink-deep);background:var(--pink-soft);}
+
     .check-box{
       width:22px;height:22px;border-radius:50%;
-      border:1.5px solid rgba(255,184,77,0.3);background:rgba(14,14,14,0.5);
+      border:1.5px solid #F0A6C8;background:#fff;
       display:flex;align-items:center;justify-content:center;cursor:pointer;
       transition:all .2s;flex-shrink:0;
     }
-    .check-box.done{
-      background:rgba(255,149,0,0.85);border-color:var(--amber);
-      box-shadow:0 0 12px rgba(255,149,0,0.45),inset 0 1px 0 rgba(255,255,255,0.25);
-    }
-    /* Progress — amber gradient */
-    .prog-track{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;}
-    .prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--amber) 0%,var(--amber-pale) 100%);transition:width .5s ease;box-shadow:0 0 6px rgba(255,149,0,0.4);}
-    /* Modal — LUMEN frosted overlay */
+    .check-box.done{background:var(--pink-deep);border-color:var(--pink-deep);}
+    .prog-track{height:7px;background:var(--pink-soft);border-radius:4px;overflow:hidden;}
+    .prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#F472B6 0%,#DB2777 100%);transition:width .5s ease;}
+
+    /* Modal */
     .modal-bg{
-      position:fixed;inset:0;z-index:50;
-      display:flex;align-items:center;justify-content:center;
-      padding:20px 16px;
-      background:rgba(0,0,0,0.6);
-      backdrop-filter:blur(24px) saturate(140%);
-      -webkit-backdrop-filter:blur(24px) saturate(140%);
+      position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+      padding:20px 16px;background:rgba(90,20,55,0.28);
+      backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     }
     .modal-box{
-      background:rgba(10,10,10,0.88);
-      backdrop-filter:blur(60px) saturate(180%) brightness(1.08);
-      -webkit-backdrop-filter:blur(60px) saturate(180%) brightness(1.08);
-      border:1px solid rgba(255,184,77,0.16);
-      border-top:1px solid rgba(255,184,77,0.3);
-      box-shadow:0 0 60px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,184,77,0.1);
-      border-radius:22px;
-      width:100%;max-width:460px;
-      display:flex;flex-direction:column;
-      max-height:calc(100vh - 40px);
-      overflow:hidden;
+      background:#fff;border:1px solid var(--line);
+      box-shadow:0 24px 70px rgba(120,20,70,0.28);border-radius:24px;
+      width:100%;max-width:460px;display:flex;flex-direction:column;
+      max-height:calc(100vh - 40px);overflow:hidden;
     }
-    .modal-header-sticky{
-      flex-shrink:0;
-      padding:18px 20px 14px;
-      border-bottom:1px solid rgba(255,184,77,0.08);
-    }
-    .modal-body{
-      flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-      padding:16px 20px 20px;
-    }
-    .modal-handle{display:none;}
-    @media(max-width:767px){
-      .modal-bg{padding:12px 10px;}
-      .modal-box{border-radius:22px;max-height:calc(100vh - 100px);}
-      .modal-body{padding:14px 14px 20px;}
-      .modal-header-sticky{padding:16px 14px 12px;}
-    }
-    /* Badges — LUMEN amber tones */
-    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
-    .badge-g{background:rgba(255,149,0,0.15);color:var(--amber-soft);border:1px solid rgba(255,149,0,0.2);}
-    .badge-s{background:rgba(255,184,77,0.12);color:var(--amber-pale);border:1px solid rgba(255,184,77,0.18);}
-    .badge-r{background:rgba(255,69,58,0.15);color:#FF9F9A;border:1px solid rgba(255,69,58,0.2);}
-    /* Tabs */
+    .modal-header-sticky{flex-shrink:0;padding:18px 20px 14px;border-bottom:1px solid var(--line);}
+    .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 20px 20px;}
+    @media(max-width:767px){.modal-box{max-height:calc(100vh - 100px);}}
+
+    /* Badges & pills */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+    .b-pink{background:var(--pink-soft);color:var(--pink-deep);}
+    .b-violet{background:var(--violet-soft);color:#5B3FC4;}
+    .b-good{background:var(--good-soft);color:var(--good);}
+    .b-bad{background:var(--bad-soft);color:var(--bad);}
+    .b-warn{background:var(--warn-soft);color:var(--warn);}
+    .b-mute{background:#F5EEF2;color:var(--ink-2);}
     .tab-pill{
-      padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;
-      border:1px solid rgba(255,184,77,0.12);background:rgba(14,14,14,0.5);
-      color:rgba(196,176,154,0.5);transition:all .15s;font-family:'Inter',sans-serif;
+      padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;
+      border:1px solid var(--line);background:#fff;color:var(--ink-2);
+      transition:all .15s;font-family:'Inter',sans-serif;white-space:nowrap;
     }
-    .tab-pill.active{background:rgba(255,149,0,0.18);color:var(--amber-soft);border-color:rgba(255,149,0,0.35);box-shadow:0 0 10px rgba(255,149,0,0.12);}
-    /* Mood */
-    .mood-btn{
-      flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;
-      border-radius:12px;border:1px solid rgba(255,184,77,0.1);cursor:pointer;
-      transition:all .2s;background:rgba(14,14,14,0.4);font-family:'Inter',sans-serif;
-    }
-    .mood-btn.sel{background:rgba(255,149,0,0.15);border-color:rgba(255,149,0,0.3);box-shadow:0 0 14px rgba(255,149,0,0.1);}
-    /* Scrollbar */
-    ::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,184,77,0.2);border-radius:2px;}
-    /* Animations */
-    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-    .fade-up{animation:fadeUp .28s cubic-bezier(.4,0,.2,1) forwards;}
-    @keyframes spin-anim{to{transform:rotate(360deg)}}
-    .spin{animation:spin-anim 1s linear infinite;display:inline-block;}
+    .tab-pill.active{background:var(--pink-deep);color:#fff;border-color:var(--pink-deep);}
+    .seg{display:grid;grid-template-columns:1fr 1fr;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
+    .seg button{padding:11px;border:none;cursor:pointer;font-weight:600;font-size:13px;background:var(--surface-2);color:var(--ink-2);font-family:'Inter',sans-serif;}
+    .seg button.on{background:var(--pink-deep);color:#fff;}
+
+    ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-thumb{background:#F3B6D2;border-radius:2px;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+    .fade-up{animation:fadeUp .28s cubic-bezier(.4,0,.2,1);}
+
     /* Layout */
-    .page{padding:28px 24px 0;}
-    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
-    .row{display:flex;align-items:center;gap:8px;}
+    .page{padding:28px 28px 0;}
+    .page-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;}
+    .h1{font-size:22px;font-weight:700;letter-spacing:-0.3px;color:var(--ink);}
+    .h3{font-size:13px;font-weight:600;color:var(--ink);}
+    .muted{font-size:12px;color:var(--ink-2);}
+    .tiny{font-size:11px;color:var(--ink-3);}
     .col{display:flex;flex-direction:column;gap:4px;}
+    .stack{display:flex;flex-direction:column;gap:10px;}
+    .rowx{display:flex;align-items:center;gap:10px;}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-    label.lbl{font-size:11px;color:rgba(196,176,154,0.5);display:block;margin-bottom:5px;}
-    .empty-state{text-align:center;padding:48px 20px;}
-    .empty-state .emo{font-size:44px;margin-bottom:12px;}
-    .streak{color:var(--amber-soft);font-size:11px;}
-    .info-box{background:rgba(255,149,0,0.06);border:1px solid rgba(255,149,0,0.15);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;}
-    /* Sidebar logo */
-    .sidebar-logo{font-size:20px;font-weight:700;color:var(--amber-soft);letter-spacing:-0.5px;padding:4px 12px 20px;}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+    .cols2{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start;}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start;}
+    @media(max-width:980px){.kpis{grid-template-columns:1fr 1fr;}.cols2{grid-template-columns:1fr;}}
+    @media(max-width:420px){.cards{grid-template-columns:1fr;}}
+    label.lbl{font-size:11px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:5px;}
+    .empty-state{text-align:center;padding:36px 20px;}
+    .empty-state .emo{font-size:38px;margin-bottom:10px;}
+    .ellip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .chip{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .num{font-variant-numeric:tabular-nums;}
+    .list-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #FBE4EE;}
+    .list-row:last-child{border-bottom:none;}
+    .bar{width:14px;border-radius:4px 4px 0 0;transition:height .5s;}
   </style>
 </head>
 <body>
-<div class="bg-scene">
-  <div class="bg-photo"></div>
-  <div class="bg-css"><div class="bg-css-base"></div></div>
-</div>
+<div class="bg-scene"></div>
 <div id="root" style="position:relative;z-index:1;min-height:100vh;"></div>
 
 <script type="module">
 import { h, render } from 'https://esm.sh/preact@10.23.1';
-import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.23.1/hooks';
+import { useState } from 'https://esm.sh/preact@10.23.1/hooks';
 import htm from 'https://esm.sh/htm@3.1.1';
 const html = htm.bind(h);
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
-const todayKey = () => new Date().toISOString().split('T')[0];
+const pad = n => String(n).padStart(2,'0');
+const dKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayKey = () => dKey(new Date());
 const load = (k,fb) => { try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;} };
-const save = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+const save = (k,v) => { try{localStorage.setItem(k,JSON.stringify(v));}catch{} };
 const uid  = () => Date.now()+Math.random().toString(36).slice(2,6);
-const fmtDate = d => new Date(d+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});
-const fmtMoney = n => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:0}).format(n||0);
-const CAT_COLORS = {Trabajo:'#6B9C7A',Personal:'#CC7700',Salud:'#9B7440',Aprendizaje:'#8B6535',Hogar:'#B58A4A',Otro:'#9A7A6B'};
-const CATS = Object.keys(CAT_COLORS);
-const MOODS = [{e:'😴',n:'Cansado',v:1},{e:'😐',n:'Normal',v:2},{e:'🙂',n:'Bien',v:3},{e:'😊',n:'Genial',v:4},{e:'🔥',n:'Imparable',v:5}];
+const fmtDate = d => new Date(d+'T12:00:00').toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'});
+const fmtMoney = n => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0);
+const fmtMonth = ym => { const s=new Date(ym+'-15T12:00:00').toLocaleDateString('es-MX',{month:'long',year:'numeric'}); return s[0].toUpperCase()+s.slice(1); };
+const shiftMonth = (ym,n) => { const [y,m]=ym.split('-').map(Number); const d=new Date(y,m-1+n,1); return `${d.getFullYear()}-${pad(d.getMonth()+1)}`; };
+const sum = (list,type) => list.filter(t=>t.type===type).reduce((s,t)=>s+(Number(t.amount)||0),0);
+const upsert = (list,item) => item.id ? list.map(x=>x.id===item.id?item:x) : [...list,{...item,id:uid()}];
 
-// ── ICONS (SVG innerHTML strings) ─────────────────────────────────────────
+const FCATS = {
+  income:['Ventas','Servicios','Anticipo','Abono','Comisiones','Inversión','Otro ingreso'],
+  expense:['Insumos','Renta','Nómina','Marketing','Servicios','Software','Transporte','Impuestos','Equipo','Otro gasto'],
+};
+const C_INC = '#DB2777', C_EXP = '#7C5CD6';
+const P_STATUS = {propuesta:{l:'Propuesta',b:'b-warn'},curso:{l:'En curso',b:'b-pink'},pausa:{l:'En pausa',b:'b-mute'},listo:{l:'Terminado',b:'b-good'}};
+const A_STATUS = {pendiente:{l:'Pendiente',b:'b-pink'},hecha:{l:'Realizada',b:'b-good'},cancelada:{l:'Cancelada',b:'b-mute'}};
+
+const apptPaid = (txns,id) => txns.filter(t=>t.apptId===id&&t.type==='income').reduce((s,t)=>s+(Number(t.amount)||0),0);
+const apptOwed = (txns,a) => a.status==='cancelada' ? 0 : Math.max(0,(Number(a.price)||0)-apptPaid(txns,a.id));
+const taskPct = p => { const t=p.tasks||[]; return t.length?Math.round(t.filter(x=>x.done).length/t.length*100):(p.status==='listo'?100:0); };
+const goalPct = g => {
+  if(g.kind==='monto'){ const t=Number(g.target)||0; return t?Math.min(100,Math.round((Number(g.current)||0)/t*100)):0; }
+  const s=g.subtasks||[]; return s.length?Math.round(s.filter(x=>x.done).length/s.length*100):0;
+};
+
+// ── ICONS ─────────────────────────────────────────────────────────────────
 const ICON = {
-  home: '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
-  habit:'<path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
-  task: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
-  food: '<path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>',
-  gym:  '<path d="M6 4v16M10 4v16M6 12h4M14 4v16M18 4v16M14 12h4"/>',
+  home: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
   finance:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',
+  cal:  '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  proj: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>',
   goal: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
-  stats:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
   plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/>',
   x:    '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
   check:'<polyline points="20 6 9 17 4 12"/>',
-  spark:'<path d="M12 3l1.09 3.26L17 7l-2.5 2.43.59 3.51L12 11.25 9.91 12.94l.59-3.51L8 7l3.91-.74z"/><path d="M5 3v4M3 5h4M19 17v4M17 19h4"/>',
-  info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
   up:   '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
   down: '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/>',
+  left: '<polyline points="15 18 9 12 15 6"/>',
+  right:'<polyline points="9 18 15 12 9 6"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  pin:  '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
+  user: '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>',
-  key:  '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>',
-  more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
 };
 const Ic = ({n,s=18,c='currentColor',sw=1.8}) => html`
   <svg width=${s} height=${s} viewBox="0 0 24 24" fill="none" stroke=${c} stroke-width=${sw} stroke-linecap="round" stroke-linejoin="round" dangerouslySetInnerHTML=${{__html:ICON[n]||''}}/>
 `;
 
-// ── MODAL ──────────────────────────────────────────────────────────────────
+// ── SHARED UI ─────────────────────────────────────────────────────────────
 const Modal = ({open,onClose,title,children}) => {
   if(!open) return null;
   return html`
     <div class="modal-bg" onClick=${onClose}>
       <div class="modal-box fade-up" onClick=${e=>e.stopPropagation()}>
-        <div class="modal-handle"/>
         <div class="modal-header-sticky">
           <div style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="font-size:16px;font-weight:600;color:#e5e2e1">${title}</h3>
-            <button onClick=${onClose} style="background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.15);border-radius:50%;cursor:pointer;color:rgba(196,176,154,0.7);padding:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <${Ic} n="x" s=${15}/>
-            </button>
+            <h3 style="font-size:16px;font-weight:600">${title}</h3>
+            <button class="icon-btn" onClick=${onClose} aria-label="Cerrar"><${Ic} n="x" s=${16}/></button>
           </div>
         </div>
         <div class="modal-body">${children}</div>
@@ -332,952 +283,573 @@ const Modal = ({open,onClose,title,children}) => {
     </div>
   `;
 };
+const Empty = ({emo,title,text}) => html`
+  <div class="card empty-state"><div class="emo">${emo}</div>
+    ${title&&html`<p class="h3" style="margin-bottom:4px">${title}</p>`}
+    <p class="muted">${text}</p>
+  </div>`;
+const FormActions = ({isEdit,onDelete,onSave,label}) => html`
+  <div style="display:flex;gap:8px;margin-top:4px">
+    ${isEdit&&html`<button class="btn-d" style="flex:1" onClick=${onDelete}>Eliminar</button>`}
+    <button class="btn-p" style="flex:2;justify-content:center" onClick=${onSave}>${isEdit?'Guardar cambios':label}</button>
+  </div>`;
+const CardHead = ({title,action,onAction}) => html`
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <p class="h3">${title}</p>
+    ${action&&html`<button onClick=${onAction} style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--pink-deep);font-family:Inter,sans-serif">${action}</button>`}
+  </div>`;
 
-// ── AI HELPER ─────────────────────────────────────────────────────────────
-const askAI = async (prompt, apiKey) => {
-  if(!apiKey) throw new Error('Sin API key. Configúrala en Ajustes.');
-  const res = await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
-    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,messages:[{role:'user',content:prompt}]})
-  });
-  if(!res.ok) throw new Error(`Error ${res.status}`);
-  const d = await res.json();
-  return d.content[0].text;
-};
-
-// ── NAV ────────────────────────────────────────────────────────────────────
 const TABS = [
-  {id:'home',   label:'Inicio',   icon:'home'},
-  {id:'habits', label:'Hábitos',  icon:'habit'},
-  {id:'tasks',  label:'Tareas',   icon:'task'},
-  {id:'finance',label:'Finanzas', icon:'finance'},
-  {id:'goals',  label:'Metas',    icon:'goal'},
-  {id:'food',   label:'Comidas',  icon:'food'},
-  {id:'gym',    label:'Gym',      icon:'gym'},
-  {id:'stats',  label:'Stats',    icon:'stats'},
+  {id:'home',    label:'Dashboard', icon:'home'},
+  {id:'finance', label:'Finanzas',  icon:'finance'},
+  {id:'appts',   label:'Citas',     icon:'cal'},
+  {id:'projects',label:'Proyectos', icon:'proj'},
+  {id:'goals',   label:'Objetivos', icon:'goal'},
 ];
-const BNAV = ['home','habits','tasks','finance','goals'];
-const SEC  = ['food','gym','stats'];
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: HOME
+// PAGE: DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
-const PageHome = ({setTab}) => {
+const PageHome = ({db,setTab,biz,openSettings}) => {
   const today = todayKey();
-  const habits = load('habits',[]);
-  const tasks  = load('tasks',[]);
-  const txns   = load('txns',[]);
-  const meals  = load('meals',{});
-  const logs   = load('workout-logs',[]);
-  const [mood,setMoodS] = useState(()=>load(`mood-${today}`,null));
-  const setMood = v => { setMoodS(v); save(`mood-${today}`,v); };
+  const mo = today.slice(0,7);
+  const {txns,appts,projects,goals} = db;
+  const inMo = txns.filter(t=>(t.date||'').startsWith(mo));
+  const prev = txns.filter(t=>(t.date||'').startsWith(shiftMonth(mo,-1)));
+  const inc = sum(inMo,'income'), exp = sum(inMo,'expense'), net = inc-exp;
+  const pInc = sum(prev,'income'), pExp = sum(prev,'expense');
+  const delta = (a,b) => b ? Math.round((a-b)/b*100) : null;
+  const margin = inc ? Math.round(net/inc*100) : null;
 
-  const doneH  = habits.filter(h=>(h.done||[]).includes(today)).length;
-  const doneT  = tasks.filter(t=>t.done&&t.due===today).length;
-  const totT   = tasks.filter(t=>t.due===today).length;
-  const mealN  = (meals[today]||[]).length;
-  const wod    = logs.find(l=>l.date===today);
-  const mo     = today.slice(0,7);
-  const inc    = txns.filter(t=>t.type==='income'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0);
-  const exp    = txns.filter(t=>t.type==='expense'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0);
-  const name   = load('ritual-name','');
-  const greet  = () => { const h=new Date().getHours(); return h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches'; };
+  const months = Array.from({length:6},(_,i)=>shiftMonth(mo,i-5)).map(ym=>{
+    const l=txns.filter(t=>(t.date||'').startsWith(ym));
+    return {ym,l:new Date(ym+'-15T12:00:00').toLocaleDateString('es-MX',{month:'short'}).replace('.',''),inc:sum(l,'income'),exp:sum(l,'expense')};
+  });
+  const maxV = Math.max(...months.flatMap(m=>[m.inc,m.exp]),1);
+  const [hov,setHov] = useState(null);
+  const shown = hov ?? months[5];
 
-  const widgets = [
-    {l:'Hábitos hoy', v:`${doneH}/${habits.length}`, pct:habits.length?doneH/habits.length:0, c:'#CC7700', t:'habits', i:'habit'},
-    {l:'Tareas hoy',  v:`${doneT}/${totT}`,  pct:totT?doneT/totT:0,  c:'#CC7700', t:'tasks',  i:'task'},
-    {l:'Comidas reg.',v:`${mealN}/3`,         pct:mealN/3,             c:'#9B7440', t:'food',   i:'food'},
-    {l:'Balance mes', v:fmtMoney(inc-exp),    pct:0,                   c:'#8B6535', t:'finance',i:'finance'},
+  const upcoming = appts.filter(a=>a.status!=='cancelada'&&a.status!=='hecha'&&a.date>=today)
+    .sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).slice(0,5);
+  const active = projects.filter(p=>p.status==='curso'||p.status==='propuesta').slice(0,5);
+  const openGoals = [...goals].sort((a,b)=>goalPct(a)-goalPct(b)).filter(g=>goalPct(g)<100).slice(0,4);
+  const byCat={}; inMo.filter(t=>t.type==='expense').forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
+  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const debtors = appts.filter(a=>apptOwed(txns,a)>0);
+  const owedTotal = debtors.reduce((s,a)=>s+apptOwed(txns,a),0);
+  const kpis = [
+    {l:'Ingresos del mes', v:fmtMoney(inc), d:delta(inc,pInc), goodUp:true, i:'up', bg:'var(--pink-soft)', c:C_INC},
+    {l:'Gastos del mes',   v:fmtMoney(exp), d:delta(exp,pExp), goodUp:false, i:'down', bg:'var(--violet-soft)', c:C_EXP},
+    {l:'Utilidad',         v:fmtMoney(net), sub:margin===null?'Sin ingresos aún':`Margen ${margin}%`, i:'finance', bg:net>=0?'var(--good-soft)':'var(--bad-soft)', c:net>=0?'var(--good)':'var(--bad)'},
+    {l:'Por cobrar',       v:fmtMoney(owedTotal), sub:debtors.length?`${debtors.length} cita${debtors.length===1?'':'s'} con saldo`:'Nadie te debe', i:'cal', bg:'var(--warn-soft)', c:'var(--warn)', t:'appts'},
   ];
 
   return html`
     <div class="page fade-up">
-      <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;color:rgba(196,176,154,0.6);margin-bottom:4px">${new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}</p>
-        <h1 style="font-size:22px;font-weight:700;color:#e5e2e1;margin-bottom:4px">${greet()}${name?`, ${name}`:''} 👋</h1>
-        <p style="font-size:13px;color:rgba(196,176,154,0.6)">¿Cómo está tu día?</p>
-      </div>
-
-      <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;font-weight:500;color:rgba(196,176,154,0.65);margin-bottom:10px">Estado de ánimo</p>
-        <div style="display:flex;gap:8px">
-          ${MOODS.map(m=>html`
-            <button class=${'mood-btn'+(mood===m.v?' sel':'')} onClick=${()=>setMood(m.v)}>
-              <span style="font-size:22px">${m.e}</span>
-              <span style="font-size:10px;color:rgba(180,220,180,0.6);font-weight:500">${m.n}</span>
-            </button>
-          `)}
+      <div class="page-header">
+        <div class="col">
+          <p class="muted" style="text-transform:capitalize">${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})}</p>
+          <h1 class="h1">${biz||'Mi negocio'} 🎀</h1>
         </div>
+        <button class="icon-btn mobile-only" onClick=${openSettings} aria-label="Ajustes"><${Ic} n="settings" s=${20}/></button>
       </div>
 
-      <div class="grid2" style="margin-bottom:20px">
-        ${widgets.map(w=>html`
-          <div class="card glass-hover" style="cursor:pointer" onClick=${()=>setTab(w.t)}>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-              <span style="font-size:11px;color:rgba(196,176,154,0.6);font-weight:500">${w.l}</span>
-              <${Ic} n=${w.i} s=${14} c=${w.c}/>
+      <div class="kpis">
+        ${kpis.map(k=>html`
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span class="muted" style="font-weight:500">${k.l}</span>
+              <div class="chip" style=${{background:k.bg,width:30,height:30,borderRadius:10}}><${Ic} n=${k.i} s=${15} c=${k.c}/></div>
             </div>
-            <p style="font-size:20px;font-weight:700;color:#e5e2e1;margin-bottom:8px">${w.v}</p>
-            ${w.pct>0&&html`<div class="prog-track"><div class="prog-fill" style=${{width:`${Math.round(w.pct*100)}%`,background:`linear-gradient(90deg,${w.c}99,${w.c})`}}/></div>`}
+            <p class="num" style="font-size:24px;font-weight:700;letter-spacing:-0.5px">${k.v}</p>
+            <p class="tiny" style="margin-top:4px">
+              ${k.sub || (k.d===null ? 'Sin datos del mes pasado' : html`<span style=${{fontWeight:600,color:(k.d>=0)===k.goodUp?'var(--good)':'var(--bad)'}}>${k.d>=0?'▲':'▼'} ${Math.abs(k.d)}%</span> vs mes pasado`)}
+            </p>
           </div>
         `)}
       </div>
 
-      ${wod&&html`
-        <div class="card" style="margin-bottom:20px;display:flex;align-items:center;gap:8px">
-          <${Ic} n="gym" s=${16} c="#CC7700"/>
-          <p style="font-size:13px;font-weight:600;color:#e5e2e1;flex:1">Gym hoy: ${wod.name}</p>
-          ${wod.done&&html`<span class="badge badge-g">✓ Listo</span>`}
-        </div>
-      `}
-
-      <div class="grid2">
-        ${[{t:'goals',l:'Mis metas',i:'goal'},{t:'stats',l:'Estadísticas',i:'stats'},{t:'gym',l:'Ver rutina',i:'gym'},{t:'finance',l:'Finanzas',i:'finance'}].map(a=>html`
-          <button class="btn-g" style="justify-content:center;gap:8px;width:100%" onClick=${()=>setTab(a.t)}>
-            <${Ic} n=${a.i} s=${14} c="rgba(210,240,210,0.85)"/>${a.l}
-          </button>
-        `)}
-      </div>
-    </div>
-  `;
-};
-
-// ══════════════════════════════════════════════════════════════════════════
-// PAGE: HABITS  (categories, frequency, schedule, presets, edit)
-// ══════════════════════════════════════════════════════════════════════════
-const HABIT_CATS = ['Salud','Conocimiento','Productividad','Mental','Fitness','Social','Finanzas','Creatividad'];
-const CAT_CLR  = {Salud:'#4CAF50',Conocimiento:'#2196F3',Productividad:'#FF9800',Mental:'#9C27B0',Fitness:'#F44336',Social:'#00BCD4',Finanzas:'#8BC34A',Creatividad:'#E91E63'};
-const FREQ_DAYS  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-const PRESET_HABITS = [
-  {name:'Beber 2L de agua',icon:'💧',category:'Salud',freq:'daily'},
-  {name:'Meditar 10 min',icon:'🧘',category:'Mental',freq:'daily'},
-  {name:'Leer 30 min',icon:'📚',category:'Conocimiento',freq:'daily'},
-  {name:'Ejercicio 30 min',icon:'💪',category:'Fitness',freq:'daily'},
-  {name:'Dormir 8h',icon:'🛏️',category:'Salud',freq:'daily'},
-  {name:'Journaling',icon:'✍️',category:'Mental',freq:'daily'},
-  {name:'Vitaminas',icon:'💊',category:'Salud',freq:'daily'},
-  {name:'Sin redes 1h',icon:'📵',category:'Mental',freq:'daily'},
-  {name:'Llamar a familia',icon:'📞',category:'Social',freq:'custom',days:['Dom']},
-  {name:'Revisar finanzas',icon:'💰',category:'Finanzas',freq:'custom',days:['Lun']},
-  {name:'Curso online',icon:'💻',category:'Conocimiento',freq:'custom',days:['Lun','Mié','Vie']},
-  {name:'Limpieza hogar',icon:'🧹',category:'Productividad',freq:'custom',days:['Sáb']},
-];
-const BLANK_HABIT = {name:'',icon:'✦',category:'Salud',freq:'daily',days:[],time:''};
-const PageHabits = () => {
-  const today = todayKey();
-  const todayDayName = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date().getDay()];
-  const [habits,setHabits] = useState(()=>load('habits',[]));
-  const [showAdd,setShowAdd] = useState(false);
-  const [showPresets,setShowPresets] = useState(false);
-  const [editHabit,setEditHabit] = useState(null);
-  const [filterCat,setFilterCat] = useState('Todas');
-  const [form,setForm] = useState(BLANK_HABIT);
-  const sync = h => { setHabits(h); save('habits',h); };
-  const isDueToday = h => h.freq==='daily' || (h.days||[]).includes(todayDayName);
-  const toggle = id => sync(habits.map(h=>{if(h.id!==id)return h;const done=h.done||[];return{...h,done:done.includes(today)?done.filter(d=>d!==today):[...done,today]};}));
-  const remove = id => sync(habits.filter(h=>h.id!==id));
-  const add = () => {
-    if(!form.name.trim())return;
-    const newH={...form,id:uid(),done:[]};
-    if(form.time){const tasks=load('tasks',[]);save('tasks',[...tasks,{id:uid(),title:form.icon+' '+form.name,category:'Personal',priority:'media',due:today,note:'Hábito '+form.time,done:false}]);}
-    sync([...habits,newH]);setForm(BLANK_HABIT);setShowAdd(false);
-  };
-  const openEdit = h => { setEditHabit(h); setForm({name:h.name,icon:h.icon,category:h.category,freq:h.freq,days:h.days||[],time:h.time||''}); };
-  const saveEdit = () => {
-    if(!form.name.trim())return;
-    sync(habits.map(h=>h.id===editHabit.id?{...h,...form}:h));
-    setEditHabit(null);setForm(BLANK_HABIT);
-  };
-  const addPreset = p => {if(!habits.find(h=>h.name===p.name))sync([...habits,{...p,id:uid(),done:[]}]);};
-  const streak = h => {let s=0;const d=new Date();while(true){const k=d.toISOString().split('T')[0];if(!(h.done||[]).includes(k))break;s++;d.setDate(d.getDate()-1);}return s;};
-  const toggleDay = d => setForm(f=>({...f,days:f.days.includes(d)?f.days.filter(x=>x!==d):[...f.days,d]}));
-  const dueToday=habits.filter(isDueToday);
-  const done=dueToday.filter(h=>(h.done||[]).includes(today)).length;
-  const pct=dueToday.length?Math.round(done/dueToday.length*100):0;
-  const filtered=habits.filter(h=>filterCat==='Todas'||h.category===filterCat);
-  const byCat={};filtered.forEach(h=>{if(!byCat[h.category])byCat[h.category]=[];byCat[h.category].push(h);});
-  const ICONS=['✦','💧','📚','🏃','🧘','🍎','💊','✍️','🌞','🎯','💪','🎵','🛏️','🧹','💻','📵','📞','💰','🎨','🧠'];
-  const HabitForm = () => html`
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <input value=${form.name} onInput=${e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Nombre del hábito" autoFocus/>
-      <div><label class="lbl">Ícono</label><div style="display:flex;flex-wrap:wrap;gap:6px">${ICONS.map(ic=>html`<button onClick=${()=>setForm(f=>({...f,icon:ic}))} style=${{width:34,height:34,borderRadius:8,border:`1.5px solid ${form.icon===ic?'#FF9500':'rgba(255,255,255,0.15)'}`,background:form.icon===ic?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.06)',cursor:'pointer',fontSize:17}}>${ic}</button>`)}</div></div>
-      <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm(f=>({...f,category:e.target.value}))}>${HABIT_CATS.map(c=>html`<option>${c}</option>`)}</select></div>
-      <div><label class="lbl">Frecuencia</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          ${[['daily','Diario'],['custom','Días específicos']].map(([v,l])=>html`
-            <button onClick=${()=>setForm(f=>({...f,freq:v,days:v==='daily'?[]:f.days}))} style=${{padding:'8px 4px',borderRadius:10,border:`1px solid ${form.freq===v?'#FF9500':'rgba(255,255,255,0.13)'}`,background:form.freq===v?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.05)',color:form.freq===v?'#ffb84d':'rgba(196,176,154,0.6)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${l}</button>
-          `)}
-        </div>
-      </div>
-      ${form.freq==='custom'&&html`
-        <div><label class="lbl">Días</label><div style="display:flex;gap:5px;flex-wrap:wrap">
-          ${FREQ_DAYS.map(d=>html`<button onClick=${()=>toggleDay(d)} style=${{padding:'6px 10px',borderRadius:8,border:`1px solid ${form.days.includes(d)?'#FF9500':'rgba(255,255,255,0.12)'}`,background:form.days.includes(d)?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.05)',color:form.days.includes(d)?'#ffb84d':'rgba(196,176,154,0.5)',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
-        </div></div>
-      `}
-      <div><label class="lbl">Horario (opcional — se agrega a tareas)</label><input type="time" value=${form.time} onInput=${e=>setForm(f=>({...f,time:e.target.value}))} style="color:#e5e2e1"/></div>
-    </div>
-  `;
-  return html`
-    <div class="page fade-up">
-      <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#e5e2e1">Hábitos</h2><p style="font-size:12px;color:rgba(196,176,154,0.6)">${done}/${dueToday.length} hoy · ${pct}%</p></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn-g" style="padding:10px 12px" onClick=${()=>setShowPresets(true)}><${Ic} n="spark" s=${15} c="rgba(196,176,154,0.7)"/></button>
-          <button class="btn-p" onClick=${()=>{setForm(BLANK_HABIT);setShowAdd(true);}}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:12px;color:rgba(196,176,154,0.6)">Progreso hoy</span><span style="font-size:20px;font-weight:700;color:#ffb84d">${pct}%</span></div>
-        <div class="prog-track"><div class="prog-fill" style=${{width:`${pct}%`}}/></div>
-      </div>
-      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
-        ${['Todas',...HABIT_CATS].map(c=>html`<button class=${'tab-pill'+(filterCat===c?' active':'')} onClick=${()=>setFilterCat(c)} style="white-space:nowrap;flex-shrink:0">${c}</button>`)}
-      </div>
-      ${Object.entries(byCat).map(([cat,hs])=>html`
-        <div style="margin-bottom:20px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-            <div style=${{width:8,height:8,borderRadius:'50%',background:CAT_CLR[cat]||'#fff',flexShrink:0}}/>
-            <span style="font-size:11px;font-weight:600;color:rgba(196,176,154,0.6);text-transform:uppercase;letter-spacing:0.8px">${cat}</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            ${hs.map(h=>{const isDone=(h.done||[]).includes(today);const due=isDueToday(h);const s=streak(h);return html`
-              <div class="card" style=${{display:'flex',alignItems:'center',gap:12,opacity:!due?0.45:isDone?0.7:1}}>
-                <div class=${'check-box'+(isDone?' done':'')} onClick=${()=>due&&toggle(h.id)}>${isDone&&html`<${Ic} n="check" s=${13} c="#fff"/>`}</div>
-                <span style="font-size:18px">${h.icon}</span>
-                <div style="flex:1;min-width:0">
-                  <p style=${{fontSize:'13px',fontWeight:500,color:isDone?'rgba(196,176,154,0.4)':'#E8F5E8',textDecoration:isDone?'line-through':'none'}}>${h.name}</p>
-                  <div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap">
-                    <span style="font-size:10px;color:rgba(196,176,154,0.4)">${h.freq==='daily'?'Diario':(h.days||[]).join('·')}</span>
-                    ${h.time&&html`<span style="font-size:10px;color:rgba(196,176,154,0.4)">⏰ ${h.time}</span>`}
-                    ${s>0&&html`<span class="streak">🔥 ${s}</span>`}
-                    ${!due&&html`<span style="font-size:10px;color:rgba(196,176,154,0.3)">No toca hoy</span>`}
-                  </div>
-                </div>
-                <button onClick=${()=>openEdit(h)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.35);padding:6px"><${Ic} n="settings" s=${14}/></button>
-                <button onClick=${()=>remove(h.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.2);padding:6px"><${Ic} n="trash" s=${14}/></button>
+      <div class="cols2">
+        <div class="stack" style="gap:16px">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+              <div>
+                <p class="h3">Ingresos vs gastos</p>
+                <p class="tiny">Últimos 6 meses · ${fmtMonth(shown.ym)}</p>
               </div>
-            `;})}
-          </div>
-        </div>
-      `)}
-      ${habits.length===0&&html`<div class="card empty-state"><div class="emo">✦</div><p style="color:rgba(196,176,154,0.4);font-size:13px">Crea un hábito o elige de los predefinidos ✨</p></div>`}
-      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nuevo hábito">
-        <${HabitForm}/>
-        <button class="btn-p" style="width:100%;justify-content:center;margin-top:14px" onClick=${add}>Crear hábito</button>
-      <//>
-      <${Modal} open=${!!editHabit} onClose=${()=>setEditHabit(null)} title="Editar hábito">
-        <${HabitForm}/>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
-          <button class="btn-d" style="justify-content:center" onClick=${()=>{remove(editHabit.id);setEditHabit(null);}}>Eliminar</button>
-          <button class="btn-p" style="justify-content:center" onClick=${saveEdit}>Guardar</button>
-        </div>
-      <//>
-      <${Modal} open=${showPresets} onClose=${()=>setShowPresets(false)} title="Hábitos recomendados">
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${PRESET_HABITS.map(p=>{const already=habits.find(h=>h.name===p.name);return html`
-            <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
-              <span style="font-size:18px">${p.icon}</span>
-              <div style="flex:1"><p style="font-size:13px;font-weight:500;color:#e5e2e1">${p.name}</p><p style="font-size:11px;color:rgba(196,176,154,0.4);margin-top:2px">${p.category} · ${p.freq==='daily'?'Diario':(p.days||[]).join(', ')}</p></div>
-              <button onClick=${()=>addPreset(p)} disabled=${!!already} class="btn-p" style="padding:6px 12px;font-size:12px;opacity:${already?0.4:1}">${already?'✓':'+'}</button>
-            </div>
-          `;})}
-        </div>
-      <//>
-    </div>
-  `;
-};
-
-// ══════════════════════════════════════════════════════════════════════════
-// PAGE: TASKS
-// ══════════════════════════════════════════════════════════════════════════
-const PageTasks = () => {
-  const today = todayKey();
-  const [tasks,setTasks] = useState(()=>load('tasks',[]));
-  const [filter,setFilter] = useState('hoy');
-  const [showAdd,setShowAdd] = useState(false);
-  const [editItem,setEditItem] = useState(null);
-  const [form,setForm] = useState({title:'',category:'Personal',priority:'media',due:today,note:''});
-  const [eform,setEform] = useState({});
-  const sync = t => { setTasks(t); save('tasks',t); };
-  const toggle = id => sync(tasks.map(t=>t.id===id?{...t,done:!t.done}:t));
-  const remove = id => sync(tasks.filter(t=>t.id!==id));
-  const add = () => { if(!form.title.trim())return; sync([...tasks,{...form,id:uid(),done:false}]); setForm({title:'',category:'Personal',priority:'media',due:today,note:''}); setShowAdd(false); };
-  const openEdit = t => { setEform({...t}); setEditItem(t); };
-  const saveEdit = () => { sync(tasks.map(t=>t.id===eform.id?{...eform}:t)); setEditItem(null); };
-  const PRIO = {alta:{c:'#B5614A',l:'Alta'},media:{c:'#CC7700',l:'Media'},baja:{c:'#6B9C7A',l:'Baja'}};
-  const list = tasks.filter(t=>{
-    if(filter==='hoy') return t.due===today&&!t.done;
-    if(filter==='pendientes') return !t.done;
-    if(filter==='completadas') return t.done;
-    return true;
-  }).sort((a,b)=>({alta:0,media:1,baja:2}[a.priority]-{alta:0,media:1,baja:2}[b.priority]));
-
-  return html`
-    <div class="page fade-up">
-      <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#e5e2e1">Tareas</h2><p style="font-size:12px;color:rgba(196,176,154,0.6)">${tasks.filter(t=>!t.done).length} pendientes</p></div>
-        <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nueva</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-        ${['hoy','pendientes','completadas','todas'].map(f=>html`<button class=${'tab-pill'+(filter===f?' active':'')} onClick=${()=>setFilter(f)} style="text-transform:capitalize">${f}</button>`)}
-      </div>
-      ${list.length===0&&html`<div class="card empty-state"><div class="emo">✓</div><p style="color:rgba(196,176,154,0.45);font-size:13px">Sin tareas aquí</p></div>`}
-      <div style="display:flex;flex-direction:column;gap:10px">
-        ${list.map(t=>html`
-          <div class="card" style=${{display:'flex',gap:12,alignItems:'flex-start',opacity:t.done?.65:1}}>
-            <div class=${'check-box'+(t.done?' done':'')} style="margin-top:2px" onClick=${()=>toggle(t.id)}>
-              ${t.done&&html`<${Ic} n="check" s=${13} c="#fff"/>`}
-            </div>
-            <div style="flex:1;min-width:0">
-              <p style=${{fontSize:'13px',fontWeight:500,color:t.done?'rgba(196,176,154,0.35)':'#E8F5E8',textDecoration:t.done?'line-through':'none'}}>${t.title}</p>
-              ${t.note&&html`<p style="font-size:11px;color:rgba(196,176,154,0.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note}</p>`}
-              <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
-                <span class="badge" style=${{background:CAT_COLORS[t.category]+'20',color:CAT_COLORS[t.category]}}>${t.category}</span>
-                <span style=${{fontSize:'11px',color:PRIO[t.priority].c,fontWeight:500}}>● ${PRIO[t.priority].l}</span>
-                ${t.due&&html`<span style="font-size:11px;color:rgba(196,176,154,0.45)">📅 ${fmtDate(t.due)}</span>`}
+              <div style="display:flex;gap:14px;flex-wrap:wrap">
+                <span class="muted rowx" style="gap:6px"><span style=${{width:10,height:10,borderRadius:3,background:C_INC}}/>Ingresos <b class="num" style="color:var(--ink)">${fmtMoney(shown.inc)}</b></span>
+                <span class="muted rowx" style="gap:6px"><span style=${{width:10,height:10,borderRadius:3,background:C_EXP}}/>Gastos <b class="num" style="color:var(--ink)">${fmtMoney(shown.exp)}</b></span>
               </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px">
-              <button onClick=${()=>openEdit(t)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.35);padding:4px"><${Ic} n="settings" s=${13}/></button>
-              <button onClick=${()=>remove(t.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.25);padding:4px"><${Ic} n="trash" s=${13}/></button>
-            </div>
-          </div>
-        `)}
-      </div>
-      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nueva tarea">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${form.title} onInput=${e=>setForm({...form,title:e.target.value})} placeholder="¿Qué hay que hacer?" autoFocus onKeyDown=${e=>e.key==='Enter'&&add()}/>
-          <div class="grid2">
-            <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
-            <div><label class="lbl">Prioridad</label><select value=${form.priority} onChange=${e=>setForm({...form,priority:e.target.value})}><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
-          </div>
-          <div><label class="lbl">Fecha límite</label><input type="date" value=${form.due} onInput=${e=>setForm({...form,due:e.target.value})}/></div>
-          <textarea value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Nota (opcional)" rows="2" style="resize:none"/>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Agregar tarea</button>
-        </div>
-      <//>
-      <${Modal} open=${!!editItem} onClose=${()=>setEditItem(null)} title="Editar tarea">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${eform.title||''} onInput=${e=>setEform({...eform,title:e.target.value})} placeholder="¿Qué hay que hacer?" autoFocus/>
-          <div class="grid2">
-            <div><label class="lbl">Categoría</label><select value=${eform.category||'Personal'} onChange=${e=>setEform({...eform,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
-            <div><label class="lbl">Prioridad</label><select value=${eform.priority||'media'} onChange=${e=>setEform({...eform,priority:e.target.value})}><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
-          </div>
-          <div><label class="lbl">Fecha límite</label><input type="date" value=${eform.due||''} onInput=${e=>setEform({...eform,due:e.target.value})}/></div>
-          <textarea value=${eform.note||''} onInput=${e=>setEform({...eform,note:e.target.value})} placeholder="Nota (opcional)" rows="2" style="resize:none"/>
-          <div style="display:flex;gap:8px">
-            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{remove(eform.id);setEditItem(null);}}>Eliminar</button>
-            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEdit}>Guardar cambios</button>
-          </div>
-        </div>
-      <//>
-    </div>
-  `;
-};
-
-// ══════════════════════════════════════════════════════════════════════════
-// PAGE: FOOD
-// ══════════════════════════════════════════════════════════════════════════
-const PageFood = () => {
-  const today = todayKey();
-  const [meals,setMeals] = useState(()=>load('meals',{}));
-  const [prefs,setPrefs] = useState(()=>load('food-prefs',{goal:'equilibrada',cals:2000,restrictions:''}));
-  const [showAdd,setShowAdd] = useState(false);
-  const [showPrefs,setShowPrefs] = useState(false);
-  const [aiLoad,setAiLoad] = useState(false);
-  const [aiErr,setAiErr] = useState('');
-  const [form,setForm] = useState({name:'',type:'desayuno',cals:'',note:''});
-  const apiKey = load('ritual-api-key','');
-  const todayM = meals[today]||[];
-  const [editMeal,setEditMeal] = useState(null);
-  const [eMeal,setEMeal] = useState({});
-  const syncM = m => { setMeals(m); save('meals',m); };
-  const add = () => { if(!form.name.trim())return; const m={...meals};m[today]=[...(m[today]||[]),{...form,id:uid(),cals:Number(form.cals)||0}];syncM(m);setForm({name:'',type:'desayuno',cals:'',note:''});setShowAdd(false); };
-  const del = id => { const m={...meals};m[today]=(m[today]||[]).filter(x=>x.id!==id);syncM(m); };
-  const openEditMeal = m => { setEMeal({...m,cals:String(m.cals)}); setEditMeal(m); };
-  const saveEditMeal = () => { const m={...meals};m[today]=(m[today]||[]).map(x=>x.id===eMeal.id?{...eMeal,cals:Number(eMeal.cals)||0}:x);syncM(m);setEditMeal(null); };
-  const totalCals = todayM.reduce((s,m)=>s+m.cals,0);
-  const TYPES = ['desayuno','almuerzo','cena','snack'];
-  const TIPO_ICO = {desayuno:'🌅',almuerzo:'☀️',cena:'🌙',snack:'🍎'};
-  const TIPO_COL = {desayuno:'#CC7700',almuerzo:'#9B7440',cena:'#8B6535',snack:'#6B9C7A'};
-
-  const genAI = async () => {
-    setAiLoad(true); setAiErr('');
-    try {
-      const txt = await askAI(`Genera un plan de comidas para hoy en español.
-Objetivo: ${prefs.goal}. Calorías: ${prefs.cals} kcal. Restricciones: ${prefs.restrictions||'ninguna'}.
-Responde SOLO con JSON válido sin texto adicional:
-{"desayuno":{"nombre":"...","calorias":000,"descripcion":"..."},"almuerzo":{"nombre":"...","calorias":000,"descripcion":"..."},"cena":{"nombre":"...","calorias":000,"descripcion":"..."},"snack":{"nombre":"...","calorias":000,"descripcion":"..."}}`, apiKey);
-      const m2 = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
-      const upd={...meals};
-      upd[today]=[...(upd[today]||[]),...Object.entries(m2).map(([t,v])=>({id:uid(),name:v.nombre,type:t,cals:v.calorias,note:v.descripcion}))];
-      syncM(upd);
-    } catch(e){ setAiErr(e.message); }
-    setAiLoad(false);
-  };
-
-  return html`
-    <div class="page fade-up">
-      <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#e5e2e1">Comidas</h2><p style="font-size:12px;color:rgba(196,176,154,0.6)">${totalCals} / ${prefs.cals} kcal hoy</p></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn-g" style="padding:10px 12px" onClick=${()=>setShowPrefs(true)}><${Ic} n="settings" s=${15} c="rgba(210,240,210,0.85)"/></button>
-          <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Añadir</button>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:20px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:rgba(196,176,154,0.6)">Calorías</span><span style="font-size:13px;font-weight:600;color:#e5e2e1">${totalCals} kcal</span></div>
-        <div class="prog-track"><div style=${{height:'100%',borderRadius:3,width:`${Math.min(100,Math.round(totalCals/prefs.cals*100))}%`,background:'linear-gradient(90deg,#9B744099,#9B7440)',transition:'width .5s'}}/></div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:11px;color:rgba(196,176,154,0.4)">0</span><span style="font-size:11px;color:rgba(196,176,154,0.4)">${prefs.cals} kcal objetivo</span></div>
-      </div>
-
-      ${!apiKey?html`
-        <div class="info-box" style="margin-bottom:20px">
-          <${Ic} n="info" s=${16} c="#CC7700"/>
-          <div><p style="font-size:13px;font-weight:500;color:#ffd49a;margin-bottom:4px">IA no configurada</p><p style="font-size:12px;color:rgba(196,176,154,0.6)">Agrega tu API key de Anthropic en Ajustes para generar planes.</p></div>
-        </div>
-      `:html`
-        <button class="btn-p" onClick=${genAI} disabled=${aiLoad} style="width:100%;justify-content:center;margin-bottom:20px;padding:12px">
-          ${aiLoad?html`<span class="spin">◌</span> Generando...`:html`<${Ic} n="spark" s=${16} c="#fff"/> Generar plan con IA`}
-        </button>
-      `}
-      ${aiErr&&html`<div style="margin-bottom:12px;padding:10px 14px;border-radius:10px;background:rgba(181,97,74,0.1);border:1px solid rgba(181,97,74,0.25);font-size:12px;color:#FF9F9A">${aiErr}</div>`}
-
-      ${TYPES.map(type=>html`
-        <div style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-            <span style="font-size:18px">${TIPO_ICO[type]}</span>
-            <span style="font-size:13px;font-weight:600;color:#e5e2e1;text-transform:capitalize">${type}</span>
-            <span style="font-size:11px;color:rgba(196,176,154,0.45);margin-left:auto">${todayM.filter(m=>m.type===type).reduce((s,m)=>s+m.cals,0)} kcal</span>
-          </div>
-          ${todayM.filter(m=>m.type===type).length===0&&html`<p style="font-size:12px;color:rgba(196,176,154,0.35);padding-left:26px">Sin registros</p>`}
-          ${todayM.filter(m=>m.type===type).map(m=>html`
-            <div class="card" style=${{marginBottom:8,display:'flex',gap:12,alignItems:'flex-start',borderLeft:`3px solid ${TIPO_COL[type]}`}}>
-              <div style="flex:1"><p style="font-size:13px;font-weight:500;color:#e5e2e1">${m.name}</p>${m.note&&html`<p style="font-size:11px;color:rgba(196,176,154,0.5);margin-top:3px">${m.note}</p>`}</div>
-              <div style="text-align:right;flex-shrink:0">
-                ${m.cals>0&&html`<p style=${{fontSize:'12px',fontWeight:600,color:TIPO_COL[type]}}>${m.cals} kcal</p>`}
-                <div style="display:flex;gap:2px;justify-content:flex-end;margin-top:4px">
-                  <button onClick=${()=>openEditMeal(m)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.35)"><${Ic} n="settings" s=${12}/></button>
-                  <button onClick=${()=>del(m.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.25)"><${Ic} n="trash" s=${12}/></button>
-                </div>
-              </div>
-            </div>
-          `)}
-        </div>
-      `)}
-
-      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Añadir comida">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${form.name} onInput=${e=>setForm({...form,name:e.target.value})} placeholder="Nombre del alimento" autoFocus/>
-          <div class="grid2">
-            <div><label class="lbl">Tipo</label><select value=${form.type} onChange=${e=>setForm({...form,type:e.target.value})}>${TYPES.map(t=>html`<option>${t}</option>`)}</select></div>
-            <div><label class="lbl">Calorías</label><input type="number" value=${form.cals} onInput=${e=>setForm({...form,cals:e.target.value})} placeholder="kcal"/></div>
-          </div>
-          <input value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Descripción (opcional)"/>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Guardar</button>
-        </div>
-      <//>
-      <${Modal} open=${!!editMeal} onClose=${()=>setEditMeal(null)} title="Editar comida">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${eMeal.name||''} onInput=${e=>setEMeal({...eMeal,name:e.target.value})} placeholder="Nombre del alimento" autoFocus/>
-          <div class="grid2">
-            <div><label class="lbl">Tipo</label><select value=${eMeal.type||'desayuno'} onChange=${e=>setEMeal({...eMeal,type:e.target.value})}>${TYPES.map(t=>html`<option>${t}</option>`)}</select></div>
-            <div><label class="lbl">Calorías</label><input type="number" value=${eMeal.cals||''} onInput=${e=>setEMeal({...eMeal,cals:e.target.value})} placeholder="kcal"/></div>
-          </div>
-          <input value=${eMeal.note||''} onInput=${e=>setEMeal({...eMeal,note:e.target.value})} placeholder="Descripción (opcional)"/>
-          <div style="display:flex;gap:8px">
-            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{del(eMeal.id);setEditMeal(null);}}>Eliminar</button>
-            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditMeal}>Guardar cambios</button>
-          </div>
-        </div>
-      <//>
-      <${Modal} open=${showPrefs} onClose=${()=>{save('food-prefs',prefs);setShowPrefs(false);}} title="Preferencias de comida">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div><label class="lbl">Objetivo</label><select value=${prefs.goal} onChange=${e=>setPrefs({...prefs,goal:e.target.value})}>${['equilibrada','pérdida de peso','ganancia muscular','vegana','vegetariana','keto','sin gluten'].map(g=>html`<option>${g}</option>`)}</select></div>
-          <div><label class="lbl">Calorías diarias</label><input type="number" value=${prefs.cals} onInput=${e=>setPrefs({...prefs,cals:Number(e.target.value)})}/></div>
-          <div><label class="lbl">Restricciones / alergias</label><input value=${prefs.restrictions} onInput=${e=>setPrefs({...prefs,restrictions:e.target.value})} placeholder="Ej: sin lactosa..."/></div>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{save('food-prefs',prefs);setShowPrefs(false);}}>Guardar</button>
-        </div>
-      <//>
-    </div>
-  `;
-};
-
-// ══════════════════════════════════════════════════════════════════════════
-// PAGE: GYM  (scientific preset routines by category)
-// ══════════════════════════════════════════════════════════════════════════
-const GYM_PRESETS = {
-  Running:[
-    {name:'5K Base',desc:'Calentamiento 5 min · Trote constante 25 min · Enfriamiento 5 min',dur:'35 min',lvl:'Principiante'},
-    {name:'Intervalos HIIT',desc:'1 min sprint + 2 min trote × 8 series · Enfriamiento 5 min',dur:'30 min',lvl:'Intermedio'},
-    {name:'Tempo Run',desc:'Calentamiento 10 min · 20 min al 85% FCmax · Enfriamiento 10 min',dur:'40 min',lvl:'Intermedio'},
-    {name:'Long Run',desc:'Trote suave 70 min manteniendo conversación posible',dur:'70 min',lvl:'Avanzado'},
-    {name:'Fartlek',desc:'30 min variando ritmo libremente: sprint, trote y caminata',dur:'30 min',lvl:'Todos'},
-  ],
-  Calistenia:[
-    {name:'Full Body Básico',desc:'Push-ups 3×10 · Sentadillas 3×15 · Plancha 3×30s · Dips 3×8',dur:'30 min',lvl:'Principiante'},
-    {name:'Upper Pull',desc:'Dominadas 4×6 · Remo invertido 3×10 · Curl bíceps 3×12',dur:'35 min',lvl:'Intermedio'},
-    {name:'Core & Glutes',desc:'Plancha 4×45s · Elevación piernas 3×15 · Glute bridge 3×20 · Dead bug 3×10',dur:'25 min',lvl:'Todos'},
-    {name:'Push Day',desc:'Push-ups declinadas 4×10 · Fondos 4×8 · Pike push-up 3×10 · Diamond 3×8',dur:'35 min',lvl:'Intermedio'},
-    {name:'Muscle-up Prog.',desc:'Dominadas explosivas 5×3 · Transición negativa 4×3 · Ring rows 3×10',dur:'40 min',lvl:'Avanzado'},
-  ],
-  Pesas:[
-    {name:'Push (Pecho/Hombro/Trícep)',desc:'Press banca 4×8 · Press militar 3×10 · Aperturas 3×12 · Ext. tríceps 3×12',dur:'50 min',lvl:'Intermedio'},
-    {name:'Pull (Espalda/Bíceps)',desc:'Jalón polea 4×8 · Remo barra 4×8 · Curl bíceps 3×12 · Face pull 3×15',dur:'50 min',lvl:'Intermedio'},
-    {name:'Leg Day',desc:'Sentadilla 4×8 · Prensa 3×12 · Ext. cuádriceps 3×15 · Curl femoral 3×12 · Pantorrillas 4×20',dur:'55 min',lvl:'Intermedio'},
-    {name:'Fuerza 5×5',desc:'Sentadilla 5×5 · Peso muerto 1×5 · Press banca 5×5 · Remo Pendlay 5×5',dur:'60 min',lvl:'Avanzado'},
-    {name:'Full Body Novato',desc:'Sentadilla goblet 3×12 · Press mancuernas 3×12 · Remo inclinado 3×12 · RDL 3×10',dur:'45 min',lvl:'Principiante'},
-  ],
-};
-const PageGym = () => {
-  const today = todayKey();
-  const [plans,setPlans]   = useState(()=>load('gym-plans',[]));
-  const [logs,setLogs]     = useState(()=>load('workout-logs',[]));
-  const [showPlan,setShowPlan] = useState(false);
-  const [showLog,setShowLog]   = useState(false);
-  const [showPresets,setShowPresets] = useState(false);
-  const [selPlan,setSelPlan] = useState(null);
-  const [pf,setPf] = useState({name:'',days:[],exercises:'',category:'Pesas'});
-  const [view,setView] = useState('hoy');
-  const [presetCat,setPresetCat] = useState('Running');
-  const DAYS=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  const todayDay=()=>{const d=new Date().getDay();return DAYS[d===0?6:d-1];};
-  const [editPlan,setEditPlan] = useState(null);
-  const [ePlan,setEPlan] = useState({});
-  const syncP=p=>{setPlans(p);save('gym-plans',p);};
-  const syncL=l=>{setLogs(l);save('workout-logs',l);};
-  const addPlan=()=>{if(!pf.name.trim())return;syncP([...plans,{...pf,id:uid()}]);setPf({name:'',days:[],exercises:'',category:'Pesas'});setShowPlan(false);};
-  const addPreset=r=>{syncP([...plans,{id:uid(),name:r.name,days:[todayDay()],exercises:r.desc,category:presetCat}]);};
-  const openEditPlan=p=>{setEPlan({...p,days:[...(p.days||[])]});setEditPlan(p);};
-  const saveEditPlan=()=>{syncP(plans.map(p=>p.id===ePlan.id?{...ePlan}:p));setEditPlan(null);};
-  const toggleEDay=d=>setEPlan({...ePlan,days:ePlan.days.includes(d)?ePlan.days.filter(x=>x!==d):[...ePlan.days,d]});
-  const logW=(plan,done)=>{syncL([...logs.filter(l=>l.date!==today),{date:today,planId:plan.id,name:plan.name,done,id:uid()}]);setShowLog(false);};
-  const toggleDay=d=>setPf({...pf,days:pf.days.includes(d)?pf.days.filter(x=>x!==d):[...pf.days,d]});
-  const todayPlans=plans.filter(p=>(p.days||[]).includes(todayDay()));
-  const todayLog=logs.find(l=>l.date===today);
-  const CAT_ICON={Running:'🏃',Calistenia:'💪',Pesas:'🏋️'};
-  const LVL_CLR={Principiante:'rgba(255,149,0,0.15)',Intermedio:'rgba(255,152,0,0.2)',Avanzado:'rgba(255,69,58,0.2)',Todos:'rgba(100,150,255,0.2)'};
-  const LVL_TXT={Principiante:'#FF9500',Intermedio:'#FFB74D',Avanzado:'#FF8A80',Todos:'#90CAF9'};
-  const week=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-d.getDay()+1+i);const k=d.toISOString().split('T')[0];const ld=logs.find(l=>l.date===k);return{k,day:DAYS[i],done:ld?.done,isToday:k===today};});
-  return html`
-    <div class="page fade-up">
-      <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#e5e2e1">Gym</h2><p style="font-size:12px;color:rgba(196,176,154,0.6)">${logs.filter(l=>l.done).length} entrenos totales</p></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn-g" style="padding:10px 12px" onClick=${()=>setShowPresets(true)}><${Ic} n="spark" s=${15} c="rgba(196,176,154,0.7)"/></button>
-          <button class="btn-p" onClick=${()=>setShowPlan(true)}><${Ic} n="plus" s=${15} c="#fff"/>Rutina</button>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:16px">
-        <p style="font-size:12px;font-weight:500;color:rgba(196,176,154,0.6);margin-bottom:12px">Esta semana</p>
-        <div style="display:flex;gap:6px">
-          ${week.map(d=>html`
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-              <span style=${{fontSize:10,color:d.isToday?'#ffb84d':'rgba(196,176,154,0.4)',fontWeight:d.isToday?600:400}}>${d.day}</span>
-              <div style=${{width:32,height:32,borderRadius:8,background:d.done===true?'rgba(255,149,0,0.7)':d.done===false?'rgba(255,69,58,0.3)':'rgba(255,255,255,0.07)',border:`1.5px solid ${d.isToday?'#FF9500':'rgba(255,255,255,0.1)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:d.done===true?'#fff':d.done===false?'#FF8A80':''}}>
-                ${d.done===true?'✓':d.done===false?'×':''}
-              </div>
-            </div>
-          `)}
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        ${['hoy','planes'].map(v=>html`<button class=${'tab-pill'+(view===v?' active':'')} onClick=${()=>setView(v)} style="text-transform:capitalize">${v}</button>`)}
-      </div>
-      ${view==='hoy'&&html`<div>
-        ${todayLog&&html`<div class="card" style=${{marginBottom:12,borderLeft:`3px solid ${todayLog.done?'#FF9500':'#FF8A80'}`}}><div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">${todayLog.done?'💪':'😴'}</span><div><p style="font-size:13px;font-weight:500;color:#e5e2e1">${todayLog.name}</p><p style=${{fontSize:11,color:todayLog.done?'#FF9500':'#FF8A80'}}>${todayLog.done?'Completado':'Saltado'}</p></div></div></div>`}
-        ${todayPlans.length===0&&!todayLog&&html`<div class="card empty-state"><div class="emo">🏖</div><p style="font-size:13px;color:rgba(196,176,154,0.4)">Día de descanso</p><button class="btn-g" style="margin-top:12px" onClick=${()=>setShowPresets(true)}>Ver rutinas ✨</button></div>`}
-        ${todayPlans.map(p=>html`
-          <div class="card glass-hover" style="margin-bottom:10px;cursor:pointer" onClick=${()=>{setSelPlan(p);setShowLog(true);}}>
-            <div style="display:flex;align-items:flex-start;justify-content:space-between">
-              <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span>${CAT_ICON[p.category]||'🏋️'}</span><p style="font-size:14px;font-weight:600;color:#e5e2e1">${p.name}</p></div><p style="font-size:11px;color:rgba(196,176,154,0.5);line-height:1.5">${p.exercises}</p></div>
-              <span class="badge badge-g">Hoy</span>
-            </div>
-          </div>
-        `)}
-      </div>`}
-      ${view==='planes'&&html`<div>
-        ${plans.length===0&&html`<div class="card empty-state"><div class="emo">📋</div><p style="color:rgba(196,176,154,0.4);font-size:13px">Sin rutinas aún</p><button class="btn-g" style="margin-top:12px" onClick=${()=>setShowPresets(true)}>Rutinas científicas ✨</button></div>`}
-        ${plans.map(p=>html`
-          <div class="card" style="margin-bottom:10px">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between">
-              <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span>${CAT_ICON[p.category]||'🏋️'}</span><p style="font-size:13px;font-weight:600;color:#e5e2e1">${p.name}</p></div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">${(p.days||[]).map(d=>html`<span class="badge badge-g" style="font-size:10px">${d}</span>`)}</div>${p.exercises&&html`<p style="font-size:11px;color:rgba(196,176,154,0.45);line-height:1.5">${p.exercises}</p>`}</div>
-              <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
-                <button onClick=${()=>openEditPlan(p)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.35);padding:4px"><${Ic} n="settings" s=${13}/></button>
-                <button onClick=${()=>syncP(plans.filter(x=>x.id!==p.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.25);padding:4px"><${Ic} n="trash" s=${13}/></button>
-              </div>
-            </div>
-          </div>
-        `)}
-      </div>`}
-      <${Modal} open=${showLog&&!!selPlan} onClose=${()=>setShowLog(false)} title=${`Registrar: ${selPlan?.name||''}`}>
-        <p style="font-size:12px;color:rgba(196,176,154,0.5);margin-bottom:16px;line-height:1.6">${selPlan?.exercises}</p>
-        <div class="grid2"><button class="btn-p" style="justify-content:center;padding:14px" onClick=${()=>logW(selPlan,true)}>💪 Completado</button><button class="btn-d" style="padding:14px;width:100%" onClick=${()=>logW(selPlan,false)}>😴 Saltar</button></div>
-      <//>
-      <${Modal} open=${showPresets} onClose=${()=>setShowPresets(false)} title="Rutinas científicas">
-        <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none">
-          ${Object.keys(GYM_PRESETS).map(cat=>html`<button class=${'tab-pill'+(presetCat===cat?' active':'')} onClick=${()=>setPresetCat(cat)} style="white-space:nowrap;flex-shrink:0">${CAT_ICON[cat]} ${cat}</button>`)}
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${(GYM_PRESETS[presetCat]||[]).map(r=>html`
-            <div class="card" style="padding:14px">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-                <p style="font-size:13px;font-weight:600;color:#e5e2e1">${r.name}</p>
-                <div style="display:flex;gap:5px;flex-shrink:0;margin-left:8px">
-                  <span class="badge badge-s" style="font-size:10px">${r.dur}</span>
-                  <span class="badge" style=${{background:LVL_CLR[r.lvl]||'rgba(255,255,255,0.08)',color:LVL_TXT[r.lvl]||'#E8F5E8',fontSize:10}}>${r.lvl}</span>
-                </div>
-              </div>
-              <p style="font-size:11px;color:rgba(196,176,154,0.5);line-height:1.6;margin-bottom:10px">${r.desc}</p>
-              <button class="btn-p" style="width:100%;justify-content:center;padding:8px;font-size:12px" onClick=${()=>{addPreset(r);setShowPresets(false);}}>+ Agregar a mis rutinas</button>
-            </div>
-          `)}
-        </div>
-      <//>
-      <${Modal} open=${!!editPlan} onClose=${()=>setEditPlan(null)} title="Editar rutina">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${ePlan.name||''} onInput=${e=>setEPlan({...ePlan,name:e.target.value})} placeholder="Nombre de la rutina" autoFocus/>
-          <div><label class="lbl">Categoría</label><div style="display:flex;gap:6px">
-            ${Object.keys(GYM_PRESETS).map(cat=>html`<button onClick=${()=>setEPlan({...ePlan,category:cat})} style=${{padding:'8px 12px',borderRadius:10,border:`1px solid ${ePlan.category===cat?'#FF9500':'rgba(255,255,255,0.12)'}`,background:ePlan.category===cat?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.05)',color:ePlan.category===cat?'#ffb84d':'rgba(196,176,154,0.5)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${CAT_ICON[cat]} ${cat}</button>`)}
-          </div></div>
-          <div><label class="lbl">Días</label><div style="display:flex;gap:5px;flex-wrap:wrap">
-            ${DAYS.map(d=>html`<button onClick=${()=>toggleEDay(d)} style=${{padding:'6px 10px',borderRadius:8,border:`1px solid ${(ePlan.days||[]).includes(d)?'#FF9500':'rgba(255,255,255,0.12)'}`,background:(ePlan.days||[]).includes(d)?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.05)',color:(ePlan.days||[]).includes(d)?'#ffb84d':'rgba(196,176,154,0.5)',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
-          </div></div>
-          <div><label class="lbl">Ejercicios</label><textarea value=${ePlan.exercises||''} onInput=${e=>setEPlan({...ePlan,exercises:e.target.value})} rows="4" style="resize:none"/></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{syncP(plans.filter(x=>x.id!==ePlan.id));setEditPlan(null);}}>Eliminar</button>
-            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditPlan}>Guardar cambios</button>
-          </div>
-        </div>
-      <//>
-      <${Modal} open=${showPlan} onClose=${()=>setShowPlan(false)} title="Nueva rutina propia">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${pf.name} onInput=${e=>setPf({...pf,name:e.target.value})} placeholder="Nombre (ej: Push Day)" autoFocus/>
-          <div><label class="lbl">Categoría</label><div style="display:flex;gap:6px">
-            ${Object.keys(GYM_PRESETS).map(cat=>html`<button onClick=${()=>setPf({...pf,category:cat})} style=${{padding:'8px 12px',borderRadius:10,border:`1px solid ${pf.category===cat?'#FF9500':'rgba(255,255,255,0.12)'}`,background:pf.category===cat?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.05)',color:pf.category===cat?'#ffb84d':'rgba(196,176,154,0.5)',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${CAT_ICON[cat]} ${cat}</button>`)}
-          </div></div>
-          <div><label class="lbl">Días</label><div style="display:flex;gap:5px;flex-wrap:wrap">
-            ${DAYS.map(d=>html`<button onClick=${()=>toggleDay(d)} style=${{padding:'6px 10px',borderRadius:8,border:`1px solid ${pf.days.includes(d)?'#FF9500':'rgba(255,255,255,0.12)'}`,background:pf.days.includes(d)?'rgba(255,149,0,0.15)':'rgba(255,255,255,0.05)',color:pf.days.includes(d)?'#ffb84d':'rgba(196,176,154,0.5)',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>${d}</button>`)}
-          </div></div>
-          <div><label class="lbl">Ejercicios</label><textarea value=${pf.exercises} onInput=${e=>setPf({...pf,exercises:e.target.value})} placeholder="Ej: Sentadillas 4×10..." rows="4" style="resize:none"/></div>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${addPlan}>Crear rutina</button>
-        </div>
-      <//>
-    </div>
-  `;
-};
-
-// ══════════════════════════════════════════════════════════════════════════
-// PAGE: FINANCE  (balance hero + grouped by day)
-// ══════════════════════════════════════════════════════════════════════════
-const PageFinance = () => {
-  const today = todayKey();
-  const mo = today.slice(0,7);
-  const [txns,setTxns] = useState(()=>load('txns',[]));
-  const [view,setView] = useState('mes');
-  const [showAdd,setShowAdd] = useState(false);
-  const [form,setForm] = useState({type:'expense',amount:'',category:'Comida',note:'',date:today});
-  const FCATS = {income:['Salario','Freelance','Negocio','Inversión','Otro'],expense:['Comida','Transporte','Entretenimiento','Salud','Ropa','Educación','Hogar','Suscripciones','Otro']};
-  const FCCOL = {'Salario':'#4CAF50','Freelance':'#8BC34A','Comida':'#FF7043','Transporte':'#42A5F5','Entretenimiento':'#AB47BC','Salud':'#26C6DA','Ropa':'#EC407A','Educación':'#7E57C2','Hogar':'#66BB6A','Suscripciones':'#FFA726','Inversión':'#FFD700','Negocio':'#CDDC39','Otro':'#78909C'};
-  const [editTxn,setEditTxn] = useState(null);
-  const [eform,setEform] = useState({});
-  const sync = t => { setTxns(t); save('txns',t); };
-  const add = () => { if(!form.amount)return; sync([{...form,id:uid(),amount:Number(form.amount)},...txns]); setForm({type:'expense',amount:'',category:'Comida',note:'',date:today}); setShowAdd(false); };
-  const openEditTxn = t => { setEform({...t,amount:String(t.amount)}); setEditTxn(t); };
-  const saveEditTxn = () => { sync(txns.map(t=>t.id===eform.id?{...eform,amount:Number(eform.amount)}:t)); setEditTxn(null); };
-  const pfx = view==='mes'?mo:today.slice(0,4);
-  const inP = txns.filter(t=>t.date.startsWith(pfx));
-  const inc = inP.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const exp = inP.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const bal = inc-exp;
-  const sorted=[...inP].sort((a,b)=>b.date.localeCompare(a.date));
-  const byDay={};sorted.forEach(t=>{if(!byDay[t.date])byDay[t.date]=[];byDay[t.date].push(t);});
-  const byCat={};inP.filter(t=>t.type==='expense').forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
-  const catList=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  return html`
-    <div class="page fade-up">
-      <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#e5e2e1">Finanzas</h2><p style="font-size:12px;color:rgba(196,176,154,0.6)">${view==='mes'?'Este mes':'Este año'}</p></div>
-        <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Movimiento</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        ${['mes','año'].map(v=>html`<button class=${'tab-pill'+(view===v?' active':'')} onClick=${()=>setView(v)}>${v==='mes'?'Este mes':'Este año'}</button>`)}
-      </div>
-      <div class="card" style=${{marginBottom:14,textAlign:'center',padding:'24px 18px',background:bal>=0?'rgba(255,149,0,0.14)':'rgba(255,69,58,0.15)',borderColor:bal>=0?'rgba(255,149,0,0.3)':'rgba(255,69,58,0.3)'}}>
-        <p style="font-size:11px;font-weight:500;color:rgba(196,176,154,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Balance ${view==='mes'?'del mes':'del año'}</p>
-        <p style=${{fontSize:38,fontWeight:700,color:bal>=0?'#FF9500':'#FF8A80',letterSpacing:'-1px'}}>${fmtMoney(bal)}</p>
-        <p style="font-size:12px;color:rgba(196,176,154,0.4);margin-top:6px">${bal>=0?'✓ En positivo':'⚠ En negativo'}</p>
-      </div>
-      <div class="grid2" style="margin-bottom:14px">
-        ${[{l:'Ingresos',v:inc,c:'#FF9500',i:'up'},{l:'Gastos',v:exp,c:'#FF8A80',i:'down'}].map(s=>html`
-          <div class="card" style="text-align:center;padding:14px 10px">
-            <div style="display:flex;justify-content:center;margin-bottom:6px"><${Ic} n=${s.i} s=${14} c=${s.c}/></div>
-            <p style="font-size:10px;color:rgba(196,176,154,0.5);margin-bottom:4px">${s.l}</p>
-            <p style=${{fontSize:15,fontWeight:700,color:s.c}}>${fmtMoney(s.v)}</p>
-          </div>
-        `)}
-      </div>
-      ${catList.length>0&&html`
-        <div class="card" style="margin-bottom:16px">
-          <p style="font-size:12px;font-weight:500;color:rgba(196,176,154,0.6);margin-bottom:12px">Top gastos</p>
-          ${catList.map(([cat,amt])=>html`
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-              <div style=${{width:8,height:8,borderRadius:'50%',background:FCCOL[cat]||'#78909C',flexShrink:0}}/>
-              <span style="font-size:12px;color:rgba(196,176,154,0.7);flex:1">${cat}</span>
-              <div class="prog-track" style="width:70px"><div style=${{height:'100%',borderRadius:3,background:FCCOL[cat]||'#78909C',width:`${Math.min(100,amt/exp*100)}%`}}/></div>
-              <span style="font-size:12px;font-weight:600;color:#e5e2e1;min-width:68px;text-align:right">${fmtMoney(amt)}</span>
-            </div>
-          `)}
-        </div>
-      `}
-      <p style="font-size:13px;font-weight:600;color:#e5e2e1;margin-bottom:10px">Movimientos</p>
-      ${Object.keys(byDay).length===0&&html`<div class="card empty-state"><div class="emo">💸</div><p style="color:rgba(196,176,154,0.4);font-size:13px">Sin movimientos</p></div>`}
-      ${Object.entries(byDay).map(([day,ts])=>{
-        const dInc=ts.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-        const dExp=ts.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-        return html`
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 4px">
-              <span style="font-size:12px;font-weight:600;color:rgba(196,176,154,0.6)">${day===today?'Hoy':fmtDate(day)}</span>
-              <span style=${{fontSize:11,color:dInc-dExp>=0?'#FF9500':'#FF8A80',fontWeight:500}}>${dInc>0?'+'+fmtMoney(dInc)+' ':''}${dExp>0?'- '+fmtMoney(dExp):''}</span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:7px">
-              ${ts.map(t=>html`
-                <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
-                  <div style=${{width:34,height:34,borderRadius:10,background:(FCCOL[t.category]||'#78909C')+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <${Ic} n=${t.type==='income'?'up':'down'} s=${15} c=${t.type==='income'?'#FF9500':'#FF8A80'}/>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <p style="font-size:13px;font-weight:500;color:#e5e2e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||t.category}</p>
-                    <p style="font-size:11px;color:rgba(196,176,154,0.4);margin-top:1px">${t.category}</p>
-                  </div>
-                  <div style="flex-shrink:0;text-align:right">
-                    <p style=${{fontSize:14,fontWeight:700,color:t.type==='income'?'#FF9500':'#FF8A80'}}>${t.type==='income'?'+':'-'}${fmtMoney(t.amount)}</p>
-                    <div style="display:flex;gap:2px;justify-content:flex-end;margin-top:2px">
-                      <button onClick=${()=>openEditTxn(t)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.3);padding:2px"><${Ic} n="settings" s=${12}/></button>
-                      <button onClick=${()=>sync(txns.filter(x=>x.id!==t.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.2);padding:2px"><${Ic} n="trash" s=${12}/></button>
-                    </div>
-                  </div>
-                </div>
-              `)}
-            </div>
-          </div>
-        `;
-      })}
-      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nuevo movimiento">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;border-radius:12px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.15)">
-            ${['income','expense'].map(tp=>html`<button onClick=${()=>setForm({...form,type:tp,category:tp==='income'?'Salario':'Comida'})} style=${{padding:10,border:'none',cursor:'pointer',fontWeight:600,fontSize:13,background:form.type===tp?(tp==='income'?'rgba(255,149,0,0.65)':'rgba(255,69,58,0.5)'):'rgba(255,255,255,0.06)',color:form.type===tp?'#fff':'rgba(196,176,154,0.6)',fontFamily:'Inter,sans-serif'}}>${tp==='income'?'💰 Ingreso':'💸 Gasto'}</button>`)}
-          </div>
-          <input type="number" value=${form.amount} onInput=${e=>setForm({...form,amount:e.target.value})} placeholder="Monto" autoFocus/>
-          <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${(FCATS[form.type]||[]).map(c=>html`<option>${c}</option>`)}</select></div>
-          <input value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Descripción (opcional)"/>
-          <div><label class="lbl">Fecha</label><input type="date" value=${form.date} onInput=${e=>setForm({...form,date:e.target.value})}/></div>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${add}>Guardar</button>
-        </div>
-      <//>
-      <${Modal} open=${!!editTxn} onClose=${()=>setEditTxn(null)} title="Editar movimiento">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;border-radius:12px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.15)">
-            ${['income','expense'].map(tp=>html`<button onClick=${()=>setEform({...eform,type:tp,category:tp==='income'?'Salario':'Comida'})} style=${{padding:10,border:'none',cursor:'pointer',fontWeight:600,fontSize:13,background:eform.type===tp?(tp==='income'?'rgba(255,149,0,0.65)':'rgba(255,69,58,0.5)'):'rgba(255,255,255,0.06)',color:eform.type===tp?'#fff':'rgba(196,176,154,0.6)',fontFamily:'Inter,sans-serif'}}>${tp==='income'?'💰 Ingreso':'💸 Gasto'}</button>`)}
-          </div>
-          <input type="number" value=${eform.amount||''} onInput=${e=>setEform({...eform,amount:e.target.value})} placeholder="Monto" autoFocus/>
-          <div><label class="lbl">Categoría</label><select value=${eform.category||''} onChange=${e=>setEform({...eform,category:e.target.value})}>${(FCATS[eform.type||'expense']||[]).map(c=>html`<option>${c}</option>`)}</select></div>
-          <input value=${eform.note||''} onInput=${e=>setEform({...eform,note:e.target.value})} placeholder="Descripción (opcional)"/>
-          <div><label class="lbl">Fecha</label><input type="date" value=${eform.date||''} onInput=${e=>setEform({...eform,date:e.target.value})}/></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{sync(txns.filter(x=>x.id!==eform.id));setEditTxn(null);}}>Eliminar</button>
-            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditTxn}>Guardar cambios</button>
-          </div>
-        </div>
-      <//>
-    </div>
-  `;
-};
-
-// ══════════════════════════════════════════════════════════════════════════
-// PAGE: GOALS  (subtasks drive % progress)
-// ══════════════════════════════════════════════════════════════════════════
-const PageGoals = () => {
-  const today = todayKey();
-  const [goals,setGoals] = useState(()=>load('goals',[]));
-  const [showAdd,setShowAdd] = useState(false);
-  const [addSubFor,setAddSubFor] = useState(null);
-  const [subForm,setSubForm] = useState({title:'',due:''});
-  const [form,setForm] = useState({title:'',category:'Personal',due:'',note:''});
-  const [editGoal,setEditGoal] = useState(null);
-  const [eGoal,setEGoal] = useState({});
-  const [editSub,setEditSub] = useState(null);
-  const [eSub,setESub] = useState({});
-  const sync = g => { setGoals(g); save('goals',g); };
-  const addGoal = () => { if(!form.title.trim())return; sync([...goals,{...form,id:uid(),subtasks:[]}]); setForm({title:'',category:'Personal',due:'',note:''}); setShowAdd(false); };
-  const addSub = gid => { if(!subForm.title.trim())return; sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:[...(g.subtasks||[]),{id:uid(),title:subForm.title,due:subForm.due,done:false}]})); setSubForm({title:'',due:''}); setAddSubFor(null); };
-  const toggleSub = (gid,sid) => sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:(g.subtasks||[]).map(s=>s.id===sid?{...s,done:!s.done}:s)}));
-  const delSub = (gid,sid) => sync(goals.map(g=>g.id!==gid?g:{...g,subtasks:(g.subtasks||[]).filter(s=>s.id!==sid)}));
-  const openEditGoal = g => { setEGoal({...g}); setEditGoal(g); };
-  const saveEditGoal = () => { sync(goals.map(g=>g.id===eGoal.id?{...g,...eGoal}:g)); setEditGoal(null); };
-  const openEditSub = (gid,s) => { setESub({...s,gid}); setEditSub(s); };
-  const saveEditSub = () => { sync(goals.map(g=>g.id!==eSub.gid?g:{...g,subtasks:(g.subtasks||[]).map(s=>s.id===eSub.id?{...eSub}:s)})); setEditSub(null); };
-  const pct = g => { const s=g.subtasks||[]; return s.length?Math.round(s.filter(x=>x.done).length/s.length*100):0; };
-  return html`
-    <div class="page fade-up">
-      <div class="page-header">
-        <div class="col"><h2 style="font-size:20px;font-weight:700;color:#e5e2e1">Metas</h2><p style="font-size:12px;color:rgba(196,176,154,0.6)">${goals.filter(g=>pct(g)>=100).length}/${goals.length} completadas</p></div>
-        <button class="btn-p" onClick=${()=>setShowAdd(true)}><${Ic} n="plus" s=${15} c="#fff"/>Nueva</button>
-      </div>
-      ${goals.length===0&&html`<div class="card empty-state"><div class="emo">🎯</div><p style="font-size:14px;font-weight:500;color:#e5e2e1;margin-bottom:6px">Define tu primera meta</p><p style="font-size:12px;color:rgba(196,176,154,0.4)">Agrega pasos para medir tu avance</p></div>`}
-      <div style="display:flex;flex-direction:column;gap:14px">
-        ${goals.map(g=>{
-          const p=pct(g); const done=p>=100; const subs=g.subtasks||[]; const cc=CAT_COLORS[g.category]||'#9A7A6B';
-          return html`
-            <div class="card" style=${{borderLeft:`3px solid ${done?'#FF9500':cc}`}}>
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
-                <div style="flex:1;min-width:0">
-                  <div style="display:flex;align-items:center;gap:8px">${done&&html`<span>⭐</span>`}<p style="font-size:14px;font-weight:600;color:#e5e2e1">${g.title}</p></div>
-                  <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-                    <span class="badge" style=${{background:cc+'22',color:cc,fontSize:10}}>${g.category}</span>
-                    ${g.due&&html`<span style="font-size:11px;color:rgba(196,176,154,0.4)">📅 ${fmtDate(g.due)}</span>`}
-                  </div>
-                </div>
-                <div style="display:flex;gap:2px;flex-shrink:0">
-                  <button onClick=${()=>openEditGoal(g)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.3);padding:4px"><${Ic} n="settings" s=${13}/></button>
-                  <button onClick=${()=>sync(goals.filter(x=>x.id!==g.id))} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.2);padding:4px"><${Ic} n="trash" s=${13}/></button>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${p}%`,background:`linear-gradient(90deg,${cc}99,${cc})`}}/></div>
-                <span style=${{fontSize:18,fontWeight:700,color:done?'#FF9500':cc,minWidth:44,textAlign:'right'}}>${p}%</span>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:6px">
-                ${subs.map(s=>html`
-                  <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.05);border-radius:10px;border:0.5px solid rgba(255,255,255,0.08)">
-                    <div class=${'check-box'+(s.done?' done':'')} style="width:18px;height:18px;border-radius:5px" onClick=${()=>toggleSub(g.id,s.id)}>${s.done&&html`<${Ic} n="check" s=${11} c="#fff"/>`}</div>
-                    <p style=${{fontSize:12,flex:1,color:s.done?'rgba(196,176,154,0.35)':'rgba(200,240,200,0.85)',textDecoration:s.done?'line-through':'none'}}>${s.title}</p>
-                    ${s.due&&html`<span style="font-size:10px;color:rgba(196,176,154,0.35)">📅 ${fmtDate(s.due)}</span>`}
-                    <button onClick=${()=>openEditSub(g.id,s)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.28)"><${Ic} n="settings" s=${12}/></button>
-                    <button onClick=${()=>delSub(g.id,s.id)} style="background:none;border:none;cursor:pointer;color:rgba(196,176,154,0.18)"><${Ic} n="trash" s=${12}/></button>
+            <div style="position:relative;height:150px;border-bottom:1px solid var(--line)">
+              <div style="position:absolute;left:0;right:0;top:0;border-top:1px dashed #FBE4EE"/>
+              <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed #FBE4EE"/>
+              <span class="tiny num" style="position:absolute;left:0;top:2px">${fmtMoney(maxV)}</span>
+              <div style="position:absolute;inset:0;display:flex;align-items:flex-end">
+                ${months.map(m=>html`
+                  <div onMouseEnter=${()=>setHov(m)} onMouseLeave=${()=>setHov(null)} onClick=${()=>setHov(m)}
+                       style=${{flex:1,height:'100%',display:'flex',alignItems:'flex-end',justifyContent:'center',gap:2,cursor:'default',borderRadius:8,background:shown.ym===m.ym?'rgba(236,72,153,0.06)':'transparent'}}>
+                    <div class="bar" style=${{background:C_INC,height:`${m.inc?Math.max(3,m.inc/maxV*140):0}px`}}/>
+                    <div class="bar" style=${{background:C_EXP,height:`${m.exp?Math.max(3,m.exp/maxV*140):0}px`}}/>
                   </div>
                 `)}
-                ${addSubFor===g.id?html`
-                  <div style="display:flex;gap:6px;margin-top:4px">
-                    <input value=${subForm.title} onInput=${e=>setSubForm({...subForm,title:e.target.value})} placeholder="Nuevo paso..." autoFocus style="flex:1;font-size:12px;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addSub(g.id);if(e.key==='Escape')setAddSubFor(null);}}/>
-                    <input type="date" value=${subForm.due} onInput=${e=>setSubForm({...subForm,due:e.target.value})} style="width:120px;font-size:11px;padding:8px 6px"/>
-                    <button class="btn-p" style="padding:8px 12px;font-size:12px" onClick=${()=>addSub(g.id)}>+</button>
-                  </div>
-                `:html`
-                  <button onClick=${()=>setAddSubFor(g.id)} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed rgba(196,176,154,0.2);background:none;color:rgba(196,176,154,0.4);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif;margin-top:2px">
-                    <${Ic} n="plus" s=${12} c="rgba(196,176,154,0.4)"/> Agregar paso
-                  </button>
-                `}
               </div>
-              ${g.note&&html`<p style="font-size:11px;color:rgba(196,176,154,0.4);margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(255,255,255,0.08)">${g.note}</p>`}
             </div>
-          `;
-        })}
+            <div style="display:flex;margin-top:6px">
+              ${months.map(m=>html`<span class="tiny" style=${{flex:1,textAlign:'center',fontWeight:shown.ym===m.ym?600:400,color:shown.ym===m.ym?'var(--ink)':'var(--ink-3)'}}>${m.l}</span>`)}
+            </div>
+          </div>
+
+          <div class="card">
+            <${CardHead} title="Proyectos activos" action="Ver todos" onAction=${()=>setTab('projects')}/>
+            ${active.length===0&&html`<p class="muted" style="padding:10px 0">Aún no hay proyectos en curso.</p>`}
+            ${active.map(p=>{const pc=taskPct(p);return html`
+              <div class="list-row">
+                <div style="flex:1;min-width:0">
+                  <p class="ellip" style="font-size:13px;font-weight:600">${p.name}</p>
+                  <p class="tiny ellip">${p.client||'Sin cliente'}${p.due?` · entrega ${fmtDate(p.due)}`:''}</p>
+                </div>
+                <div class="prog-track" style="width:80px"><div class="prog-fill" style=${{width:`${pc}%`}}/></div>
+                <span class="num muted" style="min-width:34px;text-align:right;font-weight:600">${pc}%</span>
+              </div>`;})}
+          </div>
+        </div>
+
+        <div class="stack" style="gap:16px">
+          <div class="card">
+            <${CardHead} title="Próximas citas" action="Agenda" onAction=${()=>setTab('appts')}/>
+            ${upcoming.length===0&&html`<p class="muted" style="padding:10px 0">No tienes citas pendientes.</p>`}
+            ${upcoming.map(a=>html`
+              <div class="list-row">
+                <div class="chip" style="background:var(--pink-soft);flex-direction:column;width:42px;height:42px">
+                  <span style="font-size:14px;font-weight:700;color:var(--pink-deep);line-height:1">${Number(a.date.slice(8))}</span>
+                  <span style="font-size:9px;font-weight:600;color:var(--pink-deep);text-transform:uppercase">${new Date(a.date+'T12:00:00').toLocaleDateString('es-MX',{month:'short'}).replace('.','')}</span>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <p class="ellip" style="font-size:13px;font-weight:600">${a.title}</p>
+                  <p class="tiny ellip">${a.date===today?'Hoy':fmtDate(a.date)}${a.time?` · ${a.time}`:''}${a.client?` · ${a.client}`:''}</p>
+                </div>
+                ${apptOwed(txns,a)>0&&html`<span class="badge b-warn num">Falta ${fmtMoney(apptOwed(txns,a))}</span>`}
+              </div>`)}
+          </div>
+
+          <div class="card">
+            <${CardHead} title="Objetivos" action="Ver todos" onAction=${()=>setTab('goals')}/>
+            ${openGoals.length===0&&html`<p class="muted" style="padding:10px 0">${goals.length?'¡Todos tus objetivos están cumplidos! 🎉':'Define tu primer objetivo.'}</p>`}
+            ${openGoals.map(g=>{const pc=goalPct(g);return html`
+              <div style="padding:8px 0">
+                <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">
+                  <span class="ellip" style="font-size:13px;font-weight:500">${g.title}</span>
+                  <span class="num muted" style="font-weight:600">${pc}%</span>
+                </div>
+                <div class="prog-track"><div class="prog-fill" style=${{width:`${pc}%`}}/></div>
+              </div>`;})}
+          </div>
+
+          <div class="card">
+            <${CardHead} title="En qué se va el dinero" action="Finanzas" onAction=${()=>setTab('finance')}/>
+            ${cats.length===0&&html`<p class="muted" style="padding:10px 0">Sin gastos registrados este mes.</p>`}
+            ${cats.map(([c,a])=>html`
+              <div class="rowx" style="margin-bottom:8px">
+                <span class="muted ellip" style="flex:1">${c}</span>
+                <div class="prog-track" style="width:80px;background:var(--violet-soft)"><div style=${{height:'100%',borderRadius:4,background:C_EXP,width:`${Math.min(100,a/exp*100)}%`}}/></div>
+                <span class="num" style="font-size:12px;font-weight:600;min-width:72px;text-align:right">${fmtMoney(a)}</span>
+              </div>`)}
+          </div>
+        </div>
       </div>
-      <${Modal} open=${showAdd} onClose=${()=>setShowAdd(false)} title="Nueva meta">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${form.title} onInput=${e=>setForm({...form,title:e.target.value})} placeholder="¿Cuál es tu meta?" autoFocus/>
-          <div><label class="lbl">Categoría</label><select value=${form.category} onChange=${e=>setForm({...form,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
-          <div><label class="lbl">Fecha límite</label><input type="date" value=${form.due} onInput=${e=>setForm({...form,due:e.target.value})}/></div>
-          <textarea value=${form.note} onInput=${e=>setForm({...form,note:e.target.value})} placeholder="Descripción o motivación" rows="2" style="resize:none"/>
-          <p style="font-size:11px;color:rgba(196,176,154,0.4)">💡 Después podrás agregar pasos que calculan el % automáticamente.</p>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${addGoal}>Crear meta</button>
+    </div>
+  `;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// PAGE: FINANCE  (ingresos y egresos)
+// ══════════════════════════════════════════════════════════════════════════
+const PageFinance = ({db,put}) => {
+  const today = todayKey();
+  const {txns,projects} = db;
+  const [ym,setYm] = useState(today.slice(0,7));
+  const [scope,setScope] = useState('mes');
+  const [kind,setKind] = useState('todos');
+  const [f,setF] = useState(null);
+  const blank = type => ({type,amount:'',category:FCATS[type][0],note:'',date:today,projectId:''});
+  const saveF = () => { if(!Number(f.amount))return; put('txns',upsert(txns,{...f,amount:Number(f.amount)})); setF(null); };
+  const del = id => put('txns',txns.filter(x=>x.id!==id));
+
+  const pfx = scope==='mes'?ym:ym.slice(0,4);
+  const inP = txns.filter(t=>(t.date||'').startsWith(pfx));
+  const inc = sum(inP,'income'), exp = sum(inP,'expense'), bal = inc-exp;
+  const list = inP.filter(t=>kind==='todos'||t.type===kind).sort((a,b)=>b.date.localeCompare(a.date));
+  const byDay={}; list.forEach(t=>{(byDay[t.date]=byDay[t.date]||[]).push(t);});
+  const cats = f ? [...new Set([...FCATS[f.type],f.category])] : [];
+  const pName = id => (projects.find(p=>p.id===id)||{}).name;
+
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 class="h1">Ingresos y egresos</h2><p class="muted">${scope==='mes'?fmtMonth(ym):`Año ${ym.slice(0,4)}`}</p></div>
+        <div class="rowx" style="gap:8px">
+          <button class="btn-g" onClick=${()=>setF(blank('expense'))}><${Ic} n="down" s=${14}/>Gasto</button>
+          <button class="btn-p" onClick=${()=>setF(blank('income'))}><${Ic} n="up" s=${14} c="#fff"/>Ingreso</button>
         </div>
-      <//>
-      <${Modal} open=${!!editGoal} onClose=${()=>setEditGoal(null)} title="Editar meta">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${eGoal.title||''} onInput=${e=>setEGoal({...eGoal,title:e.target.value})} placeholder="¿Cuál es tu meta?" autoFocus/>
-          <div><label class="lbl">Categoría</label><select value=${eGoal.category||'Personal'} onChange=${e=>setEGoal({...eGoal,category:e.target.value})}>${CATS.map(c=>html`<option>${c}</option>`)}</select></div>
-          <div><label class="lbl">Fecha límite</label><input type="date" value=${eGoal.due||''} onInput=${e=>setEGoal({...eGoal,due:e.target.value})}/></div>
-          <textarea value=${eGoal.note||''} onInput=${e=>setEGoal({...eGoal,note:e.target.value})} placeholder="Descripción o motivación" rows="2" style="resize:none"/>
-          <div style="display:flex;gap:8px">
-            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{sync(goals.filter(x=>x.id!==eGoal.id));setEditGoal(null);}}>Eliminar</button>
-            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditGoal}>Guardar cambios</button>
+      </div>
+
+      <div class="rowx" style="margin-bottom:16px;flex-wrap:wrap">
+        <div class="rowx" style="gap:2px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:2px">
+          <button class="icon-btn" onClick=${()=>setYm(shiftMonth(ym,scope==='mes'?-1:-12))} aria-label="Anterior"><${Ic} n="left" s=${16}/></button>
+          <span style="font-size:12px;font-weight:600;min-width:110px;text-align:center">${scope==='mes'?fmtMonth(ym):ym.slice(0,4)}</span>
+          <button class="icon-btn" onClick=${()=>setYm(shiftMonth(ym,scope==='mes'?1:12))} aria-label="Siguiente"><${Ic} n="right" s=${16}/></button>
+        </div>
+        ${[['mes','Mes'],['año','Año']].map(([v,l])=>html`<button class=${'tab-pill'+(scope===v?' active':'')} onClick=${()=>setScope(v)}>${l}</button>`)}
+      </div>
+
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+        ${[
+          {l:'Ingresos',v:inc,i:'up',bg:'var(--pink-soft)',c:C_INC},
+          {l:'Gastos',v:exp,i:'down',bg:'var(--violet-soft)',c:C_EXP},
+          {l:'Utilidad',v:bal,i:'finance',bg:bal>=0?'var(--good-soft)':'var(--bad-soft)',c:bal>=0?'var(--good)':'var(--bad)'},
+        ].map(s=>html`
+          <div class="card" style="padding:14px">
+            <div class="rowx" style="gap:8px;margin-bottom:6px"><div class="chip" style=${{background:s.bg,width:26,height:26,borderRadius:9}}><${Ic} n=${s.i} s=${13} c=${s.c}/></div><span class="muted">${s.l}</span></div>
+            <p class="num" style="font-size:19px;font-weight:700;letter-spacing:-0.3px">${fmtMoney(s.v)}</p>
+          </div>`)}
+      </div>
+
+      <div class="rowx" style="margin-bottom:14px;overflow-x:auto">
+        ${[['todos','Todos'],['income','Ingresos'],['expense','Gastos']].map(([v,l])=>html`<button class=${'tab-pill'+(kind===v?' active':'')} onClick=${()=>setKind(v)}>${l}</button>`)}
+      </div>
+
+      ${list.length===0&&html`<${Empty} emo="💸" title="Sin movimientos" text="Registra tu primer ingreso o gasto de este periodo."/>`}
+      ${Object.entries(byDay).map(([day,ts])=>html`
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;padding:0 4px">
+            <span class="muted" style="font-weight:600;text-transform:capitalize">${day===today?'Hoy':fmtDate(day)}</span>
+            <span class="tiny num">${fmtMoney(sum(ts,'income')-sum(ts,'expense'))}</span>
           </div>
-        </div>
-      <//>
-      <${Modal} open=${!!editSub} onClose=${()=>setEditSub(null)} title="Editar paso">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <input value=${eSub.title||''} onInput=${e=>setESub({...eSub,title:e.target.value})} placeholder="Descripción del paso" autoFocus/>
-          <div><label class="lbl">Fecha límite</label><input type="date" value=${eSub.due||''} onInput=${e=>setESub({...eSub,due:e.target.value})}/></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn-d" style="flex:1;justify-content:center" onClick=${()=>{delSub(eSub.gid,eSub.id);setEditSub(null);}}>Eliminar</button>
-            <button class="btn-p" style="flex:2;justify-content:center" onClick=${saveEditSub}>Guardar cambios</button>
+          <div class="card" style="padding:4px 16px">
+            ${ts.map(t=>html`
+              <div class="list-row">
+                <div class="chip" style=${{background:t.type==='income'?'var(--pink-soft)':'var(--violet-soft)'}}><${Ic} n=${t.type==='income'?'up':'down'} s=${15} c=${t.type==='income'?C_INC:C_EXP}/></div>
+                <div style="flex:1;min-width:0">
+                  <p class="ellip" style="font-size:13px;font-weight:500">${t.note||t.category}</p>
+                  <p class="tiny ellip">${t.category}${pName(t.projectId)?` · ${pName(t.projectId)}`:''}</p>
+                </div>
+                <p class="num" style="font-size:14px;font-weight:700;flex-shrink:0">${t.type==='income'?'+':'−'}${fmtMoney(t.amount)}</p>
+                <button class="icon-btn" onClick=${()=>setF({projectId:'',...t,amount:String(t.amount)})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
+              </div>`)}
           </div>
-        </div>
+        </div>`)}
+
+      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar movimiento':'Nuevo movimiento'}>
+        ${f&&html`<div class="stack" style="gap:12px">
+          <div class="seg">
+            ${[['income','💰 Ingreso'],['expense','💸 Gasto']].map(([tp,l])=>html`<button class=${f.type===tp?'on':''} onClick=${()=>setF({...f,type:tp,category:FCATS[tp][0]})}>${l}</button>`)}
+          </div>
+          <div><label class="lbl">Monto</label><input type="number" inputmode="decimal" min="0" value=${f.amount} onInput=${e=>setF({...f,amount:e.target.value})} placeholder="0" autoFocus/></div>
+          <div class="grid2">
+            <div><label class="lbl">Categoría</label><select value=${f.category} onChange=${e=>setF({...f,category:e.target.value})}>${cats.map(c=>html`<option value=${c}>${c}</option>`)}</select></div>
+            <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
+          </div>
+          <div><label class="lbl">Descripción</label><input value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Cliente, proveedor o concepto"/></div>
+          ${projects.length>0&&html`<div><label class="lbl">Proyecto (opcional)</label><select value=${f.projectId||''} onChange=${e=>setF({...f,projectId:e.target.value})}><option value="">Sin proyecto</option>${projects.map(p=>html`<option value=${p.id}>${p.name}</option>`)}</select></div>`}
+          <${FormActions} isEdit=${!!f.id} label="Guardar" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
+        </div>`}
       <//>
     </div>
   `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PAGE: STATS
+// PAGE: CITAS
 // ══════════════════════════════════════════════════════════════════════════
-const PageStats = () => {
+const PageAppts = ({db,put}) => {
   const today = todayKey();
-  const mo    = today.slice(0,7);
-  const habits = load('habits',[]);
-  const tasks  = load('tasks',[]);
-  const txns   = load('txns',[]);
-  const logs   = load('workout-logs',[]);
-  const last30 = Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);const k=d.toISOString().split('T')[0];const done=habits.filter(h=>(h.done||[]).includes(k)).length;return{k,pct:habits.length?done/habits.length:0,isToday:k===today};});
-  const hStreaks = habits.map(h=>{let mx=0,cur=0;[...new Set(h.done||[])].sort().forEach((d,i,a)=>{if(i===0){cur=1;}else{const diff=(new Date(d)-new Date(a[i-1]))/86400000;cur=diff===1?cur+1:1;}if(cur>mx)mx=cur;});return{name:h.name,icon:h.icon,s:mx};}).sort((a,b)=>b.s-a.s).slice(0,5);
-  const MNAMES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const mData=Array.from({length:6},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()-5+i);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;const inc=txns.filter(t=>t.type==='income'&&t.date.startsWith(k)).reduce((s,t)=>s+t.amount,0);const exp=txns.filter(t=>t.type==='expense'&&t.date.startsWith(k)).reduce((s,t)=>s+t.amount,0);return{l:MNAMES[d.getMonth()],inc,exp};});
-  const maxV=Math.max(...mData.flatMap(m=>[m.inc,m.exp]),1);
+  const {appts,txns} = db;
+  const [f,setF] = useState(null);
+  const [pay,setPay] = useState(null);
+  const [onlyDebt,setOnlyDebt] = useState(false);
+  const blank = {title:'',client:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
+  const paid = a => apptPaid(txns,a.id);
+  const owed = a => apptOwed(txns,a);
+  const payTxn = (a,amount,category,date) => ({id:uid(),type:'income',amount:Number(amount),category,note:[a.title,a.client].filter(Boolean).join(' — '),date,apptId:a.id,projectId:''});
+  const saveF = () => {
+    if(!f.title.trim()||!f.date)return;
+    const {abono,...rest} = f;
+    const item = {...rest,id:f.id||uid(),price:Number(f.price)||0};
+    put('appts',f.id?appts.map(x=>x.id===item.id?item:x):[...appts,item]);
+    if(!f.id&&Number(abono)>0) put('txns',[payTxn(item,abono,'Anticipo',today),...txns]);
+    setF(null);
+  };
+  const savePay = () => { if(!(Number(pay.amount)>0))return; put('txns',[payTxn(pay.appt,pay.amount,paid(pay.appt)>0?'Abono':'Anticipo',pay.date),...txns]); setPay(null); };
+  const delPay = id => put('txns',txns.filter(t=>t.id!==id));
+  const owedTotal = appts.reduce((s,a)=>s+owed(a),0);
+  const del = id => put('appts',appts.filter(x=>x.id!==id));
+  const toggle = a => put('appts',appts.map(x=>x.id===a.id?{...x,status:x.status==='hecha'?'pendiente':'hecha'}:x));
+  const key = a => a.date+(a.time||'');
+  const asc = appts.filter(a=>!onlyDebt||owed(a)>0).sort((a,b)=>key(a).localeCompare(key(b)));
+  const groups = [
+    ['Hoy', asc.filter(a=>a.date===today)],
+    ['Próximas', asc.filter(a=>a.date>today)],
+    ['Anteriores', asc.filter(a=>a.date<today).reverse().slice(0,15)],
+  ].filter(g=>g[1].length);
+  const pending = appts.filter(a=>a.status==='pendiente'&&a.date>=today).length;
 
   return html`
     <div class="page fade-up">
-      <h2 style="font-size:20px;font-weight:700;color:#e5e2e1;margin-bottom:20px">Estadísticas</h2>
-      <div class="grid2" style="margin-bottom:20px">
-        ${[
-          {l:'Hábitos activos',v:habits.length,c:'#CC7700'},
-          {l:'Tareas completadas',v:`${tasks.filter(t=>t.done).length}/${tasks.length}`,c:'#CC7700'},
-          {l:'Entrenos este mes',v:logs.filter(l=>l.date.startsWith(mo)&&l.done).length,c:'#9B7440'},
-          {l:'Balance mes',v:fmtMoney(txns.filter(t=>t.type==='income'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0)-txns.filter(t=>t.type==='expense'&&t.date.startsWith(mo)).reduce((s,t)=>s+t.amount,0)),c:'#8B6535'},
-        ].map(s=>html`<div class="card"><p style="font-size:11px;color:rgba(196,176,154,0.6);margin-bottom:6px">${s.l}</p><p style=${{fontSize:20,fontWeight:700,color:s.c}}>${s.v}</p></div>`)}
+      <div class="page-header">
+        <div class="col"><h2 class="h1">Citas</h2><p class="muted">${pending} pendiente${pending===1?'':'s'} · por cobrar <b class="num" style="color:var(--ink)">${fmtMoney(owedTotal)}</b></p></div>
+        <button class="btn-p" onClick=${()=>setF({...blank})}><${Ic} n="plus" s=${15} c="#fff"/>Nueva cita</button>
       </div>
-
-      <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;font-weight:500;color:rgba(196,176,154,0.6);margin-bottom:12px">Hábitos — últimos 30 días</p>
-        <div style="display:flex;flex-wrap:wrap;gap:3px">
-          ${last30.map((d,i)=>html`<div style=${{width:18,height:18,borderRadius:4,background:d.pct===0?'rgba(255,255,255,0.3)':`rgba(61,122,82,${0.15+d.pct*0.75})`,border:d.isToday?'1.5px solid #CC7700':'none'}} title=${`${d.k}: ${Math.round(d.pct*100)}%`}/>`)}
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;margin-top:10px">
-          <span style="font-size:10px;color:rgba(196,176,154,0.45)">Menos</span>
-          ${[0.15,0.35,0.55,0.75,0.9].map(p=>html`<div style=${{width:12,height:12,borderRadius:3,background:`rgba(61,122,82,${p})`}}/>`)}
-          <span style="font-size:10px;color:rgba(196,176,154,0.45)">Más</span>
-        </div>
+      <div class="rowx" style="margin-bottom:16px">
+        ${[[false,'Todas'],[true,'Me deben']].map(([v,l])=>html`<button class=${'tab-pill'+(onlyDebt===v?' active':'')} onClick=${()=>setOnlyDebt(v)}>${l}</button>`)}
       </div>
+      ${appts.length===0&&html`<${Empty} emo="📅" title="Tu agenda está vacía" text="Agenda tu primera cita con un cliente."/>`}
+      ${appts.length>0&&groups.length===0&&html`<${Empty} emo="💖" title="Nadie te debe" text="Todas tus citas están liquidadas."/>`}
+      ${groups.map(([name,items])=>html`
+        <div style="margin-bottom:20px">
+          <p class="muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.6px;font-size:11px;margin-bottom:8px">${name}</p>
+          <div class="cards">
+            ${items.map(a=>{const st=A_STATUS[a.status]||A_STATUS.pendiente;const off=a.status!=='pendiente';return html`
+              <div class="card" style=${{display:'flex',gap:12,alignItems:'flex-start',opacity:off?0.7:1}}>
+                <div class=${'check-box'+(a.status==='hecha'?' done':'')} style="margin-top:2px" onClick=${()=>toggle(a)} title="Marcar como realizada">${a.status==='hecha'&&html`<${Ic} n="check" s=${13} c="#fff"/>`}</div>
+                <div style="flex:1;min-width:0">
+                  <div class="rowx" style="justify-content:space-between;gap:8px">
+                    <p class="ellip" style=${{fontSize:14,fontWeight:600,textDecoration:a.status==='cancelada'?'line-through':'none'}}>${a.title}</p>
+                    <span class=${'badge '+st.b}>${st.l}</span>
+                  </div>
+                  <div class="stack" style="gap:4px;margin-top:8px">
+                    <span class="muted rowx" style="gap:6px;text-transform:capitalize"><${Ic} n="clock" s=${13} c="var(--ink-3)"/>${fmtDate(a.date)}${a.time?` · ${a.time}`:''}</span>
+                    ${a.client&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${13} c="var(--ink-3)"/>${a.client}</span>`}
+                    ${a.note&&html`<p class="tiny" style="margin-top:4px">${a.note}</p>`}
+                  </div>
+                  ${(a.price>0||paid(a)>0)&&html`
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;padding:10px;background:var(--surface-2);border-radius:12px">
+                      ${[['Precio',a.price],['Abonado',paid(a)],['Falta',owed(a)]].map(([l,v])=>html`<div><p class="tiny">${l}</p><p class="num" style="font-size:13px;font-weight:700">${fmtMoney(v)}</p></div>`)}
+                    </div>
+                    <div class="rowx" style="margin-top:8px;justify-content:space-between">
+                      ${a.status==='cancelada'?html`<span class="tiny">Cancelada, no se cobra</span>`:owed(a)>0?html`<span class="badge b-warn">Debe ${fmtMoney(owed(a))}</span>`:html`<span class="badge b-good">✓ Pagado</span>`}
+                      ${owed(a)>0&&html`<button class="btn-g" style="padding:6px 12px;font-size:12px;min-height:0" onClick=${()=>setPay({appt:a,amount:String(owed(a)),date:today})}><${Ic} n="plus" s=${12}/>Agregar pago</button>`}
+                    </div>`}
+                </div>
+                <button class="icon-btn" onClick=${()=>setF({...blank,...a})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
+              </div>`;})}
+          </div>
+        </div>`)}
 
-      ${hStreaks.length>0&&html`
-        <div class="card" style="margin-bottom:20px">
-          <p style="font-size:12px;font-weight:500;color:rgba(196,176,154,0.6);margin-bottom:12px">Mejores rachas</p>
-          ${hStreaks.map(h=>html`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">${h.icon}</span><span style="flex:1;font-size:12px;color:#e5e2e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.name}</span><span style="font-size:13px;font-weight:700;color:#A0E878">🔥 ${h.s}</span></div>`)}
-        </div>
-      `}
+      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar cita':'Nueva cita'}>
+        ${f&&html`<div class="stack" style="gap:12px">
+          <div><label class="lbl">Motivo</label><input value=${f.title} onInput=${e=>setF({...f,title:e.target.value})} placeholder="Ej. Reunión de propuesta" autoFocus/></div>
+          <div><label class="lbl">Cliente</label><input value=${f.client} onInput=${e=>setF({...f,client:e.target.value})} placeholder="Nombre del cliente"/></div>
+          <div class="grid2">
+            <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
+            <div><label class="lbl">Hora</label><input type="time" value=${f.time} onInput=${e=>setF({...f,time:e.target.value})}/></div>
+          </div>
+          <div class="grid2">
+            <div><label class="lbl">Precio</label><input type="number" inputmode="decimal" min="0" value=${f.price} onInput=${e=>setF({...f,price:e.target.value})} placeholder="0"/></div>
+            ${f.id?html`<div><label class="lbl">Falta por cobrar</label><input class="num" value=${fmtMoney(Math.max(0,(Number(f.price)||0)-apptPaid(txns,f.id)))} disabled/></div>`
+                  :html`<div><label class="lbl">Anticipo (si dejó)</label><input type="number" inputmode="decimal" min="0" value=${f.abono} onInput=${e=>setF({...f,abono:e.target.value})} placeholder="0 = sin anticipo"/></div>`}
+          </div>
+          ${!f.id&&Number(f.price)>0&&html`<p class="tiny">Falta por cobrar: <b class="num" style="color:var(--ink)">${fmtMoney(Math.max(0,Number(f.price)-(Number(f.abono)||0)))}</b>${Number(f.abono)>0?' · el anticipo se registra en Finanzas con fecha de hoy':''}</p>`}
+          ${f.id&&html`<div>
+            <label class="lbl">Pagos recibidos</label>
+            ${txns.filter(t=>t.apptId===f.id).length===0&&html`<p class="tiny">Sin pagos todavía.</p>`}
+            ${txns.filter(t=>t.apptId===f.id).map(t=>html`
+              <div class="list-row" style="padding:6px 0">
+                <span class="muted" style="flex:1;text-transform:capitalize">${fmtDate(t.date)} · ${t.category}</span>
+                <b class="num" style="font-size:13px">${fmtMoney(t.amount)}</b>
+                <button class="icon-btn" style="padding:2px" onClick=${()=>delPay(t.id)} aria-label="Quitar pago"><${Ic} n="x" s=${12}/></button>
+              </div>`)}
+          </div>`}
+          <div><label class="lbl">Estado</label><select value=${f.status} onChange=${e=>setF({...f,status:e.target.value})}>${Object.entries(A_STATUS).map(([k,v])=>html`<option value=${k}>${v.l}</option>`)}</select></div>
+          <textarea value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Notas" rows="2" style="resize:none"/>
+          <${FormActions} isEdit=${!!f.id} label="Agendar cita" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
+        </div>`}
+      <//>
 
-      <div class="card" style="margin-bottom:20px">
-        <p style="font-size:12px;font-weight:500;color:rgba(196,176,154,0.6);margin-bottom:16px">Ingresos vs Gastos</p>
-        <div style="display:flex;align-items:flex-end;gap:8px;height:100px">
-          ${mData.map(m=>html`
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-              <div style="width:100%;display:flex;gap:2px;align-items:flex-end;height:80px">
-                <div style=${{flex:1,borderRadius:'3px 3px 0 0',background:'rgba(61,122,82,0.7)',height:`${Math.max(2,(m.inc/maxV)*78)}px`,transition:'height .5s'}}/>
-                <div style=${{flex:1,borderRadius:'3px 3px 0 0',background:'rgba(181,97,74,0.65)',height:`${Math.max(2,(m.exp/maxV)*78)}px`,transition:'height .5s'}}/>
+      <${Modal} open=${!!pay} onClose=${()=>setPay(null)} title="Agregar pago">
+        ${pay&&html`<div class="stack" style="gap:12px">
+          <p class="muted"><b style="color:var(--ink)">${pay.appt.title}</b>${pay.appt.client?` · ${pay.appt.client}`:''} — falta <b class="num" style="color:var(--ink)">${fmtMoney(owed(pay.appt))}</b></p>
+          <div class="grid2">
+            <div><label class="lbl">Monto del pago</label><input type="number" inputmode="decimal" min="0" value=${pay.amount} onInput=${e=>setPay({...pay,amount:e.target.value})} autoFocus/></div>
+            <div><label class="lbl">Fecha</label><input type="date" value=${pay.date} onInput=${e=>setPay({...pay,date:e.target.value})}/></div>
+          </div>
+          <p class="tiny">Se acredita como ingreso en Finanzas.</p>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${savePay}>Registrar pago</button>
+        </div>`}
+      <//>
+    </div>
+  `;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// PAGE: PROYECTOS  (tasks drive % progress, money linked from Finanzas)
+// ══════════════════════════════════════════════════════════════════════════
+const PageProjects = ({db,put}) => {
+  const {projects,txns} = db;
+  const [f,setF] = useState(null);
+  const [filter,setFilter] = useState('activos');
+  const [addFor,setAddFor] = useState(null);
+  const [taskText,setTaskText] = useState('');
+  const blank = {name:'',client:'',status:'curso',budget:'',due:'',note:'',tasks:[]};
+  const saveF = () => { if(!f.name.trim())return; put('projects',upsert(projects,{...f,budget:Number(f.budget)||0})); setF(null); };
+  const del = id => put('projects',projects.filter(x=>x.id!==id));
+  const patch = (id,fn) => put('projects',projects.map(p=>p.id===id?fn(p):p));
+  const addTask = id => { if(!taskText.trim())return; patch(id,p=>({...p,tasks:[...(p.tasks||[]),{id:uid(),title:taskText.trim(),done:false}]})); setTaskText(''); };
+  const toggleTask = (id,tid) => patch(id,p=>({...p,tasks:p.tasks.map(t=>t.id===tid?{...t,done:!t.done}:t)}));
+  const delTask = (id,tid) => patch(id,p=>({...p,tasks:p.tasks.filter(t=>t.id!==tid)}));
+  const list = projects.filter(p=>filter==='todos'||(filter==='activos'?p.status!=='listo':p.status==='listo'));
+
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 class="h1">Proyectos</h2><p class="muted">${projects.filter(p=>p.status==='curso').length} en curso · ${projects.filter(p=>p.status==='listo').length} terminados</p></div>
+        <button class="btn-p" onClick=${()=>setF({...blank})}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
+      </div>
+      <div class="rowx" style="margin-bottom:16px;overflow-x:auto">
+        ${[['activos','Activos'],['listos','Terminados'],['todos','Todos']].map(([v,l])=>html`<button class=${'tab-pill'+(filter===v?' active':'')} onClick=${()=>setFilter(v)}>${l}</button>`)}
+      </div>
+      ${list.length===0&&html`<${Empty} emo="💼" title="Sin proyectos aquí" text="Crea un proyecto y agrega tareas para medir su avance."/>`}
+      <div class="cards">
+        ${list.map(p=>{
+          const pc=taskPct(p); const st=P_STATUS[p.status]||P_STATUS.curso;
+          const mine=txns.filter(t=>t.projectId===p.id); const pin=sum(mine,'income'), pout=sum(mine,'expense');
+          return html`
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px">
+                <div style="min-width:0">
+                  <p style="font-size:15px;font-weight:600">${p.name}</p>
+                  <p class="tiny" style="margin-top:2px">${p.client||'Sin cliente'}${p.due?` · entrega ${fmtDate(p.due)}`:''}</p>
+                </div>
+                <div class="rowx" style="gap:2px;flex-shrink:0">
+                  <span class=${'badge '+st.b}>${st.l}</span>
+                  <button class="icon-btn" onClick=${()=>setF({...blank,...p,budget:p.budget?String(p.budget):''})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
+                </div>
               </div>
-              <span style="font-size:9px;color:rgba(196,176,154,0.45)">${m.l}</span>
-            </div>
-          `)}
-        </div>
-        <div style="display:flex;gap:16px;margin-top:8px">
-          <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:rgba(61,122,82,0.7)"/><span style="font-size:10px;color:rgba(196,176,154,0.6)">Ingresos</span></div>
-          <div style="display:flex;gap:6px;align-items:center"><div style="width:10px;height:10px;border-radius:2px;background:rgba(181,97,74,0.65)"/><span style="font-size:10px;color:rgba(196,176,154,0.6)">Gastos</span></div>
-        </div>
+              <div class="rowx" style="margin-bottom:12px">
+                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${pc}%`}}/></div>
+                <span class="num" style="font-size:14px;font-weight:700;min-width:40px;text-align:right">${pc}%</span>
+              </div>
+              ${(p.budget>0||mine.length>0)&&html`
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;padding:10px;background:var(--surface-2);border-radius:12px">
+                  ${[['Presupuesto',p.budget],['Cobrado',pin],['Gastado',pout]].map(([l,v])=>html`<div><p class="tiny">${l}</p><p class="num" style="font-size:13px;font-weight:600">${fmtMoney(v)}</p></div>`)}
+                </div>`}
+              <div class="stack" style="gap:6px">
+                ${(p.tasks||[]).map(t=>html`
+                  <div class="rowx" style="padding:7px 10px;background:var(--surface-2);border-radius:10px">
+                    <div class=${'check-box'+(t.done?' done':'')} style="width:18px;height:18px;border-radius:6px" onClick=${()=>toggleTask(p.id,t.id)}>${t.done&&html`<${Ic} n="check" s=${11} c="#fff"/>`}</div>
+                    <p style=${{fontSize:12,flex:1,color:t.done?'var(--ink-3)':'var(--ink)',textDecoration:t.done?'line-through':'none'}}>${t.title}</p>
+                    <button class="icon-btn" style="padding:2px" onClick=${()=>delTask(p.id,t.id)} aria-label="Quitar tarea"><${Ic} n="x" s=${12}/></button>
+                  </div>`)}
+                ${addFor===p.id?html`
+                  <div class="rowx" style="gap:6px">
+                    <input value=${taskText} onInput=${e=>setTaskText(e.target.value)} placeholder="Nueva tarea…" autoFocus style="flex:1;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addTask(p.id);if(e.key==='Escape')setAddFor(null);}}/>
+                    <button class="btn-p" style="padding:8px 14px" onClick=${()=>addTask(p.id)}>+</button>
+                  </div>`:html`
+                  <button onClick=${()=>{setAddFor(p.id);setTaskText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed #F0A6C8;background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif">
+                    <${Ic} n="plus" s=${12}/> Agregar tarea
+                  </button>`}
+              </div>
+              ${p.note&&html`<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px solid #FBE4EE">${p.note}</p>`}
+            </div>`;
+        })}
       </div>
+
+      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar proyecto':'Nuevo proyecto'}>
+        ${f&&html`<div class="stack" style="gap:12px">
+          <div><label class="lbl">Nombre</label><input value=${f.name} onInput=${e=>setF({...f,name:e.target.value})} placeholder="Nombre del proyecto" autoFocus/></div>
+          <div><label class="lbl">Cliente</label><input value=${f.client} onInput=${e=>setF({...f,client:e.target.value})} placeholder="¿Para quién es?"/></div>
+          <div class="grid2">
+            <div><label class="lbl">Estado</label><select value=${f.status} onChange=${e=>setF({...f,status:e.target.value})}>${Object.entries(P_STATUS).map(([k,v])=>html`<option value=${k}>${v.l}</option>`)}</select></div>
+            <div><label class="lbl">Entrega</label><input type="date" value=${f.due} onInput=${e=>setF({...f,due:e.target.value})}/></div>
+          </div>
+          <div><label class="lbl">Presupuesto</label><input type="number" inputmode="decimal" min="0" value=${f.budget} onInput=${e=>setF({...f,budget:e.target.value})} placeholder="0"/></div>
+          <textarea value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Notas" rows="2" style="resize:none"/>
+          <${FormActions} isEdit=${!!f.id} label="Crear proyecto" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
+        </div>`}
+      <//>
+    </div>
+  `;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// PAGE: OBJETIVOS  (por pasos o por monto)
+// ══════════════════════════════════════════════════════════════════════════
+const PageGoals = ({db,put}) => {
+  const {goals} = db;
+  const [f,setF] = useState(null);
+  const [addFor,setAddFor] = useState(null);
+  const [stepText,setStepText] = useState('');
+  const blank = {title:'',kind:'pasos',target:'',current:'',due:'',note:'',subtasks:[]};
+  const saveF = () => { if(!f.title.trim())return; put('goals',upsert(goals,{...f,target:Number(f.target)||0,current:Number(f.current)||0})); setF(null); };
+  const del = id => put('goals',goals.filter(x=>x.id!==id));
+  const patch = (id,fn) => put('goals',goals.map(g=>g.id===id?fn(g):g));
+  const addStep = id => { if(!stepText.trim())return; patch(id,g=>({...g,subtasks:[...(g.subtasks||[]),{id:uid(),title:stepText.trim(),done:false}]})); setStepText(''); };
+  const done = goals.filter(g=>goalPct(g)>=100).length;
+
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 class="h1">Objetivos</h2><p class="muted">${done}/${goals.length} cumplidos</p></div>
+        <button class="btn-p" onClick=${()=>setF({...blank})}><${Ic} n="plus" s=${15} c="#fff"/>Nuevo</button>
+      </div>
+      ${goals.length===0&&html`<${Empty} emo="🎯" title="Define tu primer objetivo" text="Puede ser una meta de ventas en dinero o una lista de pasos."/>`}
+      <div class="cards">
+        ${goals.map(g=>{
+          const pc=goalPct(g); const isM=g.kind==='monto';
+          return html`
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px">
+                <div style="min-width:0">
+                  <p style="font-size:15px;font-weight:600">${pc>=100?'⭐ ':''}${g.title}</p>
+                  <p class="tiny" style="margin-top:2px">${isM?'Meta en dinero':'Meta por pasos'}${g.due?` · límite ${fmtDate(g.due)}`:''}</p>
+                </div>
+                <button class="icon-btn" onClick=${()=>setF({...blank,...g,kind:g.kind||'pasos',target:g.target?String(g.target):'',current:g.current?String(g.current):''})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
+              </div>
+              <div class="rowx" style="margin-bottom:10px">
+                <div class="prog-track" style="flex:1"><div class="prog-fill" style=${{width:`${pc}%`}}/></div>
+                <span class="num" style="font-size:16px;font-weight:700;min-width:44px;text-align:right">${pc}%</span>
+              </div>
+              ${isM?html`
+                <p class="muted num"><b style="color:var(--ink);font-size:14px">${fmtMoney(g.current)}</b> de ${fmtMoney(g.target)}</p>
+              `:html`
+                <div class="stack" style="gap:6px">
+                  ${(g.subtasks||[]).map(s=>html`
+                    <div class="rowx" style="padding:7px 10px;background:var(--surface-2);border-radius:10px">
+                      <div class=${'check-box'+(s.done?' done':'')} style="width:18px;height:18px;border-radius:6px" onClick=${()=>patch(g.id,x=>({...x,subtasks:x.subtasks.map(y=>y.id===s.id?{...y,done:!y.done}:y)}))}>${s.done&&html`<${Ic} n="check" s=${11} c="#fff"/>`}</div>
+                      <p style=${{fontSize:12,flex:1,color:s.done?'var(--ink-3)':'var(--ink)',textDecoration:s.done?'line-through':'none'}}>${s.title}</p>
+                      <button class="icon-btn" style="padding:2px" onClick=${()=>patch(g.id,x=>({...x,subtasks:x.subtasks.filter(y=>y.id!==s.id)}))} aria-label="Quitar paso"><${Ic} n="x" s=${12}/></button>
+                    </div>`)}
+                  ${addFor===g.id?html`
+                    <div class="rowx" style="gap:6px">
+                      <input value=${stepText} onInput=${e=>setStepText(e.target.value)} placeholder="Nuevo paso…" autoFocus style="flex:1;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addStep(g.id);if(e.key==='Escape')setAddFor(null);}}/>
+                      <button class="btn-p" style="padding:8px 14px" onClick=${()=>addStep(g.id)}>+</button>
+                    </div>`:html`
+                    <button onClick=${()=>{setAddFor(g.id);setStepText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed #F0A6C8;background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif">
+                      <${Ic} n="plus" s=${12}/> Agregar paso
+                    </button>`}
+                </div>`}
+              ${g.note&&html`<p class="tiny" style="margin-top:10px;padding-top:10px;border-top:1px solid #FBE4EE">${g.note}</p>`}
+            </div>`;
+        })}
+      </div>
+
+      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar objetivo':'Nuevo objetivo'}>
+        ${f&&html`<div class="stack" style="gap:12px">
+          <div><label class="lbl">Objetivo</label><input value=${f.title} onInput=${e=>setF({...f,title:e.target.value})} placeholder="Ej. Vender $50,000 este mes" autoFocus/></div>
+          <div class="seg">
+            ${[['pasos','✅ Por pasos'],['monto','💰 Por monto']].map(([k,l])=>html`<button class=${f.kind===k?'on':''} onClick=${()=>setF({...f,kind:k})}>${l}</button>`)}
+          </div>
+          ${f.kind==='monto'&&html`<div class="grid2">
+            <div><label class="lbl">Meta</label><input type="number" inputmode="decimal" min="0" value=${f.target} onInput=${e=>setF({...f,target:e.target.value})} placeholder="0"/></div>
+            <div><label class="lbl">Avance actual</label><input type="number" inputmode="decimal" min="0" value=${f.current} onInput=${e=>setF({...f,current:e.target.value})} placeholder="0"/></div>
+          </div>`}
+          <div><label class="lbl">Fecha límite</label><input type="date" value=${f.due} onInput=${e=>setF({...f,due:e.target.value})}/></div>
+          <textarea value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Notas" rows="2" style="resize:none"/>
+          <${FormActions} isEdit=${!!f.id} label="Crear objetivo" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
+        </div>`}
+      <//>
     </div>
   `;
 };
@@ -1285,91 +857,65 @@ const PageStats = () => {
 // ══════════════════════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════
-const Settings = ({open,onClose}) => {
-  const [key,setKey] = useState(()=>load('ritual-api-key',''));
-  const [name,setName] = useState(()=>load('ritual-name',''));
-  const saveAll = () => { save('ritual-api-key',key); save('ritual-name',name); onClose(); };
+const Settings = ({open,onClose,biz,setBiz}) => {
+  const [name,setName] = useState(biz);
   return html`
     <${Modal} open=${open} onClose=${onClose} title="Ajustes">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div><label class="lbl">Tu nombre</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo te llamas?"/></div>
-        <div>
-          <label class="lbl" style="display:flex;align-items:center;gap:6px"><${Ic} n="key" s=${13} c="#CC7700"/> Anthropic API Key (IA de comidas)</label>
-          <input type="password" value=${key} onInput=${e=>setKey(e.target.value)} placeholder="sk-ant-..."/>
-          <p style="font-size:11px;color:rgba(196,176,154,0.45);margin-top:6px">Se guarda solo en tu dispositivo. Necesaria para generar planes con IA.</p>
-        </div>
-        <button class="btn-p" style="width:100%;justify-content:center" onClick=${saveAll}>Guardar ajustes</button>
+      <div class="stack" style="gap:14px">
+        <div><label class="lbl">Nombre del negocio</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo se llama tu negocio?"/></div>
+        <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{setBiz(name.trim());onClose();}}>Guardar ajustes</button>
       </div>
     <//>
   `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// APP ROOT
+// APP ROOT  — all data lives in `db`; `put` is the single write path
 // ══════════════════════════════════════════════════════════════════════════
 const App = () => {
   const [tab,setTab] = useState('home');
   const [showSet,setShowSet] = useState(false);
-  const [showMore,setShowMore] = useState(false);
+  const [biz,setBizS] = useState(()=>load('ritual-name',''));
+  const [db,setDb] = useState(()=>({txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[])}));
+  const put = (k,v) => { setDb(d=>({...d,[k]:v})); save(k,v); };
+  const setBiz = v => { setBizS(v); save('ritual-name',v); };
 
-  const pages = {home:PageHome,habits:PageHabits,tasks:PageTasks,food:PageFood,gym:PageGym,finance:PageFinance,goals:PageGoals,stats:PageStats};
+  const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,projects:PageProjects,goals:PageGoals};
   const Page  = pages[tab]||PageHome;
 
   return html`
     <div style="min-height:100vh">
-      <!-- SIDEBAR desktop -->
       <nav class="sidebar">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;padding:0 6px">
-          <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,149,0,0.18);border:1px solid rgba(255,184,77,0.25);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(255,149,0,0.15)"><span style="font-size:16px">✦</span></div>
-          <span style="font-size:17px;font-weight:700;color:#ffb84d;letter-spacing:-0.3px">ritual.</span>
+          <div style="width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#F472B6,#DB2777);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(219,39,119,0.3)"><span style="font-size:16px;color:#fff">✦</span></div>
+          <span style="font-size:18px;font-weight:700;color:var(--pink-deep);letter-spacing:-0.3px">ritual.</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;flex:1">
           ${TABS.map(t=>html`
             <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>setTab(t.id)}>
-              <${Ic} n=${t.icon} s=${16} c=${tab===t.id?'#ffb84d':'rgba(196,176,154,0.45)'}/>
-              ${t.label}
+              <${Ic} n=${t.icon} s=${16}/>${t.label}
             </button>
           `)}
         </div>
         <button class="nav-item" style="margin-top:8px" onClick=${()=>setShowSet(true)}>
-          <${Ic} n="settings" s=${16} c="rgba(196,176,154,0.4)"/>Ajustes
+          <${Ic} n="settings" s=${16}/>Ajustes
         </button>
       </nav>
 
-      <!-- MAIN -->
-      <main class="main-content" style="min-height:100vh;max-width:640px;padding-bottom:40px;-webkit-overflow-scrolling:touch">
-        <${Page} setTab=${setTab}/>
+      <main class="main-content">
+        <${Page} key=${tab} db=${db} put=${put} setTab=${setTab} biz=${biz} openSettings=${()=>setShowSet(true)}/>
       </main>
 
-      <!-- BOTTOM NAV mobile -->
       <nav class="bottom-nav">
-        ${BNAV.map(id=>{const t=TABS.find(x=>x.id===id);return html`
-          <button class=${'bnav-item'+(tab===id?' active':'')} onClick=${()=>{setTab(id);setShowMore(false);}}>
-            <${Ic} n=${t.icon} s=${20} c=${tab===id?'#ffb84d':'rgba(196,176,154,0.4)'}/>
-            <span>${t.label}</span>
+        ${TABS.map(t=>html`
+          <button class=${'bnav-item'+(tab===t.id?' active':'')} onClick=${()=>setTab(t.id)}>
+            <${Ic} n=${t.icon} s=${20}/>
+            <span>${t.id==='home'?'Inicio':t.label}</span>
           </button>
-        `;})}
-        <button class=${'bnav-item'+(SEC.includes(tab)||showMore?' active':'')} onClick=${()=>setShowMore(!showMore)}>
-          <${Ic} n="more" s=${20} c=${SEC.includes(tab)||showMore?'#ffb84d':'rgba(196,176,154,0.4)'}/>
-          <span>Más</span>
-        </button>
+        `)}
       </nav>
 
-      <!-- MORE MENU mobile -->
-      ${showMore&&html`
-        <div style="position:fixed;bottom:80px;right:12px;z-index:40">
-          <div class="glass" style="border-radius:16px;padding:8px;display:flex;flex-direction:column;gap:4px;min-width:160px;box-shadow:0 8px 32px rgba(90,70,45,0.2)">
-            ${[...TABS.filter(t=>SEC.includes(t.id)),{id:'settings',label:'Ajustes',icon:'settings'}].map(t=>html`
-              <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>{if(t.id==='settings')setShowSet(true);else setTab(t.id);setShowMore(false);}}>
-                <${Ic} n=${t.icon} s=${15} c=${tab===t.id?'#ffb84d':'rgba(196,176,154,0.45)'}/>
-                ${t.label}
-              </button>
-            `)}
-          </div>
-        </div>
-      `}
-
-      <${Settings} open=${showSet} onClose=${()=>setShowSet(false)}/>
+      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz}/>`}
     </div>
   `;
 };
