@@ -3,9 +3,16 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ritual. — negocio</title>
+  <title>ritual.</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg"/>
+  <link rel="apple-touch-icon" href="icon-180.png"/>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#0B0B0D"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="ritual."/>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <script>try{document.documentElement.dataset.theme=localStorage.getItem('ritual-theme')||'rosa';}catch(e){}</script>
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('ritual-theme')||'dark';}catch(e){}</script>
   <style>
     /* ── PINKY design tokens ── */
     :root{
@@ -435,6 +442,23 @@ const FormActions = ({isEdit,onDelete,onSave,label,what,detail}) => html`
     ${isEdit&&html`<button class="btn-d" style="flex:1" onClick=${()=>ask(`¿Eliminar ${what||'este registro'}?`,onDelete,detail)}>Eliminar</button>`}
     <button class="btn-p" style="flex:2;justify-content:center" onClick=${onSave}>${isEdit?'Guardar cambios':label}</button>
   </div>`;
+const TimePick = ({value,onChange}) => {
+  const [h,m] = (value||'').split(':');
+  const mins = ['00','10','20','30','40','50'];
+  if(m&&!mins.includes(m)){ mins.push(m); mins.sort(); }
+  const lab = n => `${n%12||12} ${n<12?'AM':'PM'}`;
+  return html`
+    <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:6px">
+      <select aria-label="Hora" value=${h||''} style="padding-left:10px;padding-right:4px" onChange=${e=>onChange(e.target.value?`${e.target.value}:${m||'00'}`:'')}>
+        <option value="">Sin hora</option>
+        ${Array.from({length:24},(_,i)=>html`<option value=${pad(i)}>${lab(i)}</option>`)}
+      </select>
+      <select aria-label="Minutos" value=${h?(m||'00'):''} disabled=${!h} style="padding-left:10px;padding-right:4px" onChange=${e=>onChange(`${h}:${e.target.value}`)}>
+        ${!h&&html`<option value="">min</option>`}
+        ${mins.map(x=>html`<option value=${x}>:${x}</option>`)}
+      </select>
+    </div>`;
+};
 const CardHead = ({title,action,onAction}) => html`
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <p class="h3">${title}</p>
@@ -465,7 +489,7 @@ const chartBuckets = per => {
   const mo = todayKey().slice(0,7);
   return Array.from({length:6},(_,i)=>shiftMonth(mo,i-5)).map(ym=>({id:ym,l:new Date(ym+'-15T12:00:00').toLocaleDateString('es-MX',{month:'short'}).replace('.',''),full:fmtMonth(ym),from:ym+'-01',to:ym+'-31'}));
 };
-const PageHome = ({db,setTab,biz,openSettings}) => {
+const PageHome = ({db,setTab,biz,icon,openSettings}) => {
   const today = todayKey();
   const mo = today.slice(0,7);
   const {txns,appts,projects} = db;
@@ -502,7 +526,7 @@ const PageHome = ({db,setTab,biz,openSettings}) => {
       <div class="page-header">
         <div class="col">
           <p class="over">${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})}</p>
-          <h1 class="h1">${biz||'Mi negocio'} 🎀</h1>
+          <h1 class="h1">${biz||'Mi negocio'}${icon?' '+icon:''}</h1>
         </div>
         <button class="icon-btn mobile-only" onClick=${openSettings} aria-label="Ajustes"><${Ic} n="settings" s=${20}/></button>
       </div>
@@ -796,7 +820,7 @@ const PageAppts = ({db,put,setTab}) => {
           <div><label class="lbl">Cliente</label><input value=${f.client} onInput=${e=>setF({...f,client:e.target.value})} placeholder="Nombre del cliente"/></div>
           <div class="grid2">
             <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
-            <div><label class="lbl">Hora</label><input type="time" value=${f.time} onInput=${e=>setF({...f,time:e.target.value})}/></div>
+            <div><label class="lbl">Hora</label><${TimePick} value=${f.time} onChange=${v=>setF({...f,time:v})}/></div>
           </div>
           <div class="grid2">
             <div><label class="lbl">Precio</label><input type="number" inputmode="decimal" min="0" value=${f.price} onInput=${e=>setF({...f,price:e.target.value})} placeholder="0"/></div>
@@ -1013,17 +1037,26 @@ const PageCalendar = ({db,setTab}) => {
 // ══════════════════════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════
-const Settings = ({open,onClose,biz,setBiz,session,theme,setTheme}) => {
+const BIZ_ICONS = ['','✦','⭐','🎀','🌸','💎','🔥','🌙','📸','🎨','💄','💅','✂️','💼','☕','🧁'];
+const Settings = ({open,onClose,biz,setBiz,icon,setIcon,session,theme,setTheme}) => {
   const [name,setName] = useState(biz);
+  const [ic,setIc] = useState(icon);
   return html`
     <${Modal} open=${open} onClose=${onClose} title="Ajustes">
       <div class="stack" style="gap:14px">
         <div><label class="lbl">Nombre del negocio</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo se llama tu negocio?"/></div>
-        <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{setBiz(name.trim());onClose();}}>Guardar ajustes</button>
+        <div>
+          <label class="lbl">Icono junto al nombre</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${BIZ_ICONS.map(e=>html`<button onClick=${()=>setIc(e)} style=${{minWidth:38,height:38,padding:'0 8px',borderRadius:12,cursor:'pointer',fontSize:e?18:11,fontFamily:'Montserrat,sans-serif',color:'var(--ink-2)',
+              background:ic===e?'var(--sel)':'rgb(var(--glass) / 0.5)',border:ic===e?'1.5px solid var(--pink-deep)':'1px solid rgb(var(--acc) / 0.2)'}}>${e||'Sin icono'}</button>`)}
+          </div>
+        </div>
+        <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{if(name.trim()!==biz)setBiz(name.trim());if(ic!==icon)setIcon(ic);onClose();}}>Guardar ajustes</button>
         <div>
           <label class="lbl">Tema de la app</label>
           <div class="seg">
-            ${[['rosa','🌸 Rosa'],['dark','🌙 Oscuro']].map(([k,l])=>html`<button class=${theme===k?'on':''} onClick=${()=>setTheme(k)}>${l}</button>`)}
+            ${[['dark','🌙 Oscuro'],['rosa','🌸 Rosa']].map(([k,l])=>html`<button class=${theme===k?'on':''} onClick=${()=>setTheme(k)}>${l}</button>`)}
           </div>
           <p class="tiny" style="margin-top:6px">El tema se guarda en este dispositivo.</p>
         </div>
@@ -1099,6 +1132,7 @@ const App = () => {
   const [tab,setTab] = useState('home');
   const [showSet,setShowSet] = useState(false);
   const [biz,setBizS] = useState(()=>SUPA_KEY?'':load('ritual-name',''));
+  const [icon,setIconS] = useState(()=>SUPA_KEY?'':load('ritual-icon',''));
   const [db,setDb] = useState(()=>SUPA_KEY?EMPTY:{txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[])});
   const [session,setSession] = useState(SUPA_KEY&&sb?undefined:null);   // undefined = revisando sesión
   const [cloud,setCloud] = useState(SUPA_KEY?'cargando':'local');
@@ -1106,7 +1140,7 @@ const App = () => {
   const flash = m => { setToast(m); setTimeout(()=>setToast(''),4000); };
   const [conf,setConf] = useState(null);
   bus.ask = setConf;
-  const [theme,setThemeS] = useState(()=>document.documentElement.dataset.theme||'rosa');
+  const [theme,setThemeS] = useState(()=>document.documentElement.dataset.theme||'dark');
   const setTheme = v => { setThemeS(v); document.documentElement.dataset.theme=v; try{localStorage.setItem('ritual-theme',v);}catch{} };
   const uidNow = session&&session.user.id;
 
@@ -1117,6 +1151,7 @@ const App = () => {
   };
   const put = (k,v) => { setDb(d=>({...d,[k]:v})); if(SUPA_KEY) pushCloud(k,v); else save(k,v); };
   const setBiz = v => { setBizS(v); if(SUPA_KEY) pushCloud('name',v); else save('ritual-name',v); };
+  const setIcon = v => { setIconS(v); if(SUPA_KEY) pushCloud('icon',v); else save('ritual-icon',v); };
 
   useEffect(()=>{
     if(!sb)return;
@@ -1127,7 +1162,7 @@ const App = () => {
   // Cada cuenta carga solo sus propios registros.
   useEffect(()=>{
     if(!sb)return;
-    setDb(EMPTY); setBizS(''); setTab('home'); setCloud('cargando');
+    setDb(EMPTY); setBizS(''); setIconS(''); setTab('home'); setCloud('cargando');
     if(!uidNow)return;
     let dead=false;
     sb.from('ritual_data').select('key,value').eq('owner',uidNow).then(({data,error})=>{
@@ -1135,7 +1170,7 @@ const App = () => {
       if(error){ setCloud('error'); return; }
       const m = Object.fromEntries(data.map(r=>[r.key,r.value]));
       const n = {...EMPTY}; KEYS.forEach(k=>{ if(Array.isArray(m[k])) n[k]=m[k]; });
-      setDb(n); setBizS(typeof m.name==='string'?m.name:''); setCloud('ok');
+      setDb(n); setBizS(typeof m.name==='string'?m.name:''); setIconS(typeof m.icon==='string'?m.icon:''); setCloud('ok');
     });
     return ()=>{dead=true;};
   },[uidNow]);
@@ -1175,7 +1210,7 @@ const App = () => {
       </nav>
 
       <main class="main-content">
-        <${Page} key=${tab} db=${db} put=${put} setTab=${setTab} biz=${biz} openSettings=${()=>setShowSet(true)}/>
+        <${Page} key=${tab} db=${db} put=${put} setTab=${setTab} biz=${biz} icon=${icon} openSettings=${()=>setShowSet(true)}/>
       </main>
 
       <nav class="bottom-nav">
@@ -1187,7 +1222,7 @@ const App = () => {
         `)}
       </nav>
 
-      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} session=${session} theme=${theme} setTheme=${setTheme}/>`}
+      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} icon=${icon} setIcon=${setIcon} session=${session} theme=${theme} setTheme=${setTheme}/>`}
       ${conf&&html`
         <div class="modal-bg" style="z-index:70" onClick=${()=>setConf(null)}>
           <div class="modal-box fade-up" style="max-width:360px" onClick=${e=>e.stopPropagation()}>
