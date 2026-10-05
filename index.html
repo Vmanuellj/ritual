@@ -198,6 +198,11 @@
     .num{font-variant-numeric:tabular-nums;}
     .list-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #FBE4EE;}
     .list-row:last-child{border-bottom:none;}
+    .readonly .page .btn-p,.readonly .page .btn-g,.readonly .page .add-dash,
+    .readonly .page [aria-label="Editar"],.readonly .page [aria-label^="Quitar"]{display:none!important;}
+    .readonly .page .check-box{pointer-events:none;}
+    .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;
+      padding:10px 16px;border-radius:999px;font-size:12px;font-weight:500;box-shadow:0 10px 30px rgba(58,17,40,0.35);max-width:calc(100vw - 32px);text-align:center;}
     .bar{width:14px;border-radius:4px 4px 0 0;transition:height .5s;}
   </style>
 </head>
@@ -207,9 +212,19 @@
 
 <script type="module">
 import { h, render } from 'https://esm.sh/preact@10.23.1';
-import { useState } from 'https://esm.sh/preact@10.23.1/hooks';
+import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.23.1/hooks';
 import htm from 'https://esm.sh/htm@3.1.1';
 const html = htm.bind(h);
+
+// ── NUBE (Supabase) ────────────────────────────────────────────────────────
+// SUPA_KEY es la llave pública (anon / publishable). Vacía = solo este navegador.
+const SUPA_URL = 'https://tefxfxbdylunaeajtcak.supabase.co';
+const SUPA_KEY = 'sb_publishable_3CERy3XxHXUWnqyhXnqB4Q_y8IvLrS1';
+let sb = null;
+if(SUPA_KEY){
+  try{ sb = (await import('https://esm.sh/@supabase/supabase-js@2')).createClient(SUPA_URL,SUPA_KEY); }catch{}
+}
+const KEYS = ['txns','appts','projects','goals'];
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
 const pad = n => String(n).padStart(2,'0');
@@ -747,7 +762,7 @@ const PageProjects = ({db,put}) => {
                     <input value=${taskText} onInput=${e=>setTaskText(e.target.value)} placeholder="Nueva tarea…" autoFocus style="flex:1;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addTask(p.id);if(e.key==='Escape')setAddFor(null);}}/>
                     <button class="btn-p" style="padding:8px 14px" onClick=${()=>addTask(p.id)}>+</button>
                   </div>`:html`
-                  <button onClick=${()=>{setAddFor(p.id);setTaskText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed #F0A6C8;background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif">
+                  <button class="add-dash" onClick=${()=>{setAddFor(p.id);setTaskText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed #F0A6C8;background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif">
                     <${Ic} n="plus" s=${12}/> Agregar tarea
                   </button>`}
               </div>
@@ -826,7 +841,7 @@ const PageGoals = ({db,put}) => {
                       <input value=${stepText} onInput=${e=>setStepText(e.target.value)} placeholder="Nuevo paso…" autoFocus style="flex:1;padding:8px 10px" onKeyDown=${e=>{if(e.key==='Enter')addStep(g.id);if(e.key==='Escape')setAddFor(null);}}/>
                       <button class="btn-p" style="padding:8px 14px" onClick=${()=>addStep(g.id)}>+</button>
                     </div>`:html`
-                    <button onClick=${()=>{setAddFor(g.id);setStepText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed #F0A6C8;background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif">
+                    <button class="add-dash" onClick=${()=>{setAddFor(g.id);setStepText('');}} style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;border:1px dashed #F0A6C8;background:none;color:var(--pink-deep);font-size:12px;cursor:pointer;width:100%;font-family:Inter,sans-serif">
                       <${Ic} n="plus" s=${12}/> Agregar paso
                     </button>`}
                 </div>`}
@@ -857,13 +872,41 @@ const PageGoals = ({db,put}) => {
 // ══════════════════════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════
-const Settings = ({open,onClose,biz,setBiz}) => {
+const Settings = ({open,onClose,biz,setBiz,session,canEdit}) => {
   const [name,setName] = useState(biz);
+  const [email,setEmail] = useState('');
+  const [pass,setPass] = useState('');
+  const [err,setErr] = useState('');
+  const [busy,setBusy] = useState(false);
+  const login = async () => {
+    if(!sb||!email||!pass)return;
+    setBusy(true);
+    const {error} = await sb.auth.signInWithPassword({email:email.trim(),password:pass});
+    setBusy(false); setPass('');
+    setErr(error?'Correo o contraseña incorrectos.':'');
+  };
   return html`
     <${Modal} open=${open} onClose=${onClose} title="Ajustes">
       <div class="stack" style="gap:14px">
-        <div><label class="lbl">Nombre del negocio</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo se llama tu negocio?"/></div>
-        <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{setBiz(name.trim());onClose();}}>Guardar ajustes</button>
+        ${canEdit&&html`
+          <div><label class="lbl">Nombre del negocio</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo se llama tu negocio?"/></div>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{setBiz(name.trim());onClose();}}>Guardar ajustes</button>
+        `}
+        ${!SUPA_KEY&&html`<p class="tiny">Tus registros se guardan solo en este navegador.</p>`}
+        ${SUPA_KEY&&session&&html`
+          <div style="padding-top:12px;border-top:1px solid var(--line)">
+            <p class="muted" style="margin-bottom:10px">☁ Sesión iniciada como <b style="color:var(--ink)">${session.user.email}</b>. Todo se guarda en la nube.</p>
+            <button class="btn-g" style="width:100%;justify-content:center" onClick=${()=>sb.auth.signOut()}>Cerrar sesión</button>
+          </div>`}
+        ${SUPA_KEY&&!session&&html`
+          <div class="stack" style="gap:10px">
+            <p class="muted">Estás viendo en modo solo lectura. Inicia sesión para registrar y editar.</p>
+            <div><label class="lbl">Correo</label><input type="email" autocomplete="username" value=${email} onInput=${e=>setEmail(e.target.value)}/></div>
+            <div><label class="lbl">Contraseña</label><input type="password" autocomplete="current-password" value=${pass} onInput=${e=>setPass(e.target.value)} onKeyDown=${e=>{if(e.key==='Enter')login();}}/></div>
+            ${err&&html`<p class="tiny" style="color:var(--bad)">${err}</p>`}
+            ${!sb&&html`<p class="tiny" style="color:var(--bad)">No se pudo conectar con la nube. Revisa tu internet y recarga.</p>`}
+            <button class="btn-p" style="width:100%;justify-content:center" disabled=${busy||!sb} onClick=${login}>${busy?'Entrando…':'Iniciar sesión'}</button>
+          </div>`}
       </div>
     <//>
   `;
@@ -877,14 +920,53 @@ const App = () => {
   const [showSet,setShowSet] = useState(false);
   const [biz,setBizS] = useState(()=>load('ritual-name',''));
   const [db,setDb] = useState(()=>({txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[])}));
-  const put = (k,v) => { setDb(d=>({...d,[k]:v})); save(k,v); };
-  const setBiz = v => { setBizS(v); save('ritual-name',v); };
+  const [session,setSession] = useState(null);
+  const [cloud,setCloud] = useState(sb?'cargando':(SUPA_KEY?'error':'local'));
+  const [toast,setToast] = useState('');
+  const cloudEmpty = useRef(false);
+  const flash = m => { setToast(m); setTimeout(()=>setToast(''),3500); };
+  const canEdit = !SUPA_KEY || !!session;
+  const pushCloud = async (k,v) => {
+    if(!sb)return;
+    const {error} = await sb.from('ritual_data').upsert({key:k,value:v,updated_at:new Date().toISOString()});
+    if(error){ setCloud('error'); flash('No se pudo guardar en la nube. Revisa tu conexión.'); } else setCloud('ok');
+  };
+  const guard = () => { if(canEdit)return true; flash('Inicia sesión en Ajustes para editar.'); return false; };
+  const put = (k,v) => { if(!guard())return; setDb(d=>({...d,[k]:v})); save(k,v); pushCloud(k,v); };
+  const setBiz = v => { if(!guard())return; setBizS(v); save('ritual-name',v); pushCloud('name',v); };
+
+  // La nube manda: al abrir se descarga todo y se guarda una copia local.
+  useEffect(()=>{
+    if(!sb)return;
+    sb.auth.getSession().then(({data})=>setSession(data.session));
+    const {data:sub} = sb.auth.onAuthStateChange((_e,ses)=>setSession(ses));
+    sb.from('ritual_data').select('key,value').then(({data,error})=>{
+      if(error){ setCloud('error'); return; }
+      if(!data.length){ cloudEmpty.current=true; setCloud('ok'); return; }
+      const m = Object.fromEntries(data.map(r=>[r.key,r.value]));
+      setDb(d=>{ const n={...d}; KEYS.forEach(k=>{ if(Array.isArray(m[k])){ n[k]=m[k]; save(k,m[k]); } }); return n; });
+      if(typeof m.name==='string'){ setBizS(m.name); save('ritual-name',m.name); }
+      setCloud('ok');
+    });
+    return ()=>sub.subscription.unsubscribe();
+  },[]);
+  // Primera vez: si la nube está vacía, sube lo que ya había en este navegador.
+  useEffect(()=>{
+    if(!sb||!session||!cloudEmpty.current)return;
+    cloudEmpty.current=false;
+    KEYS.forEach(k=>{ if(db[k].length) pushCloud(k,db[k]); });
+    if(biz) pushCloud('name',biz);
+  },[session,cloud]);
+  const status = cloud==='local' ? 'Guardado solo en este navegador'
+    : !canEdit ? '👀 Solo lectura'
+    : cloud==='error' ? '⚠ Sin conexión a la nube'
+    : cloud==='cargando' ? 'Cargando…' : '☁ Guardado en la nube';
 
   const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,projects:PageProjects,goals:PageGoals};
   const Page  = pages[tab]||PageHome;
 
   return html`
-    <div style="min-height:100vh">
+    <div class=${canEdit?'':'readonly'} style="min-height:100vh">
       <nav class="sidebar">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;padding:0 6px">
           <div style="width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#F472B6,#DB2777);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(219,39,119,0.3)"><span style="font-size:16px;color:#fff">✦</span></div>
@@ -897,8 +979,9 @@ const App = () => {
             </button>
           `)}
         </div>
+        <p class="tiny" style="padding:0 12px">${status}</p>
         <button class="nav-item" style="margin-top:8px" onClick=${()=>setShowSet(true)}>
-          <${Ic} n="settings" s=${16}/>Ajustes
+          <${Ic} n="settings" s=${16}/>${canEdit?'Ajustes':'Iniciar sesión'}
         </button>
       </nav>
 
@@ -915,7 +998,8 @@ const App = () => {
         `)}
       </nav>
 
-      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz}/>`}
+      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} session=${session} canEdit=${canEdit}/>`}
+      ${toast&&html`<div class="toast">${toast}</div>`}
     </div>
   `;
 };
