@@ -929,7 +929,7 @@ const App = () => {
   const pushCloud = async (k,v) => {
     if(!sb)return;
     const {error} = await sb.from('ritual_data').upsert({key:k,value:v,updated_at:new Date().toISOString()});
-    if(error){ setCloud('error'); flash('No se pudo guardar en la nube. Revisa tu conexión.'); } else setCloud('ok');
+    if(error){ setCloud('error'); flash(error.code==='42501'?'La nube rechazó el guardado: tu correo no tiene permiso de edición.':'No se pudo guardar en la nube: '+(error.message||'revisa tu conexión')); } else setCloud('ok');
   };
   const guard = () => { if(canEdit)return true; flash('Inicia sesión en Ajustes para editar.'); return false; };
   const put = (k,v) => { if(!guard())return; setDb(d=>({...d,[k]:v})); save(k,v); pushCloud(k,v); };
@@ -959,7 +959,7 @@ const App = () => {
   },[session,cloud]);
   const status = cloud==='local' ? 'Guardado solo en este navegador'
     : !canEdit ? '👀 Solo lectura'
-    : cloud==='error' ? '⚠ Sin conexión a la nube'
+    : cloud==='error' ? '⚠ No se está guardando en la nube'
     : cloud==='cargando' ? 'Cargando…' : '☁ Guardado en la nube';
 
   const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,projects:PageProjects,goals:PageGoals};
