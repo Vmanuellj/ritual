@@ -11,324 +11,194 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-title" content="ritual."/>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <script>try{document.documentElement.dataset.theme=localStorage.getItem('ritual-theme')||'dark';}catch(e){}</script>
   <style>
-    /* ── PINKY design tokens ── */
+    /* ── Tokens. Oscuro es el tema por defecto; "rosa" es la variante clara. ── */
     :root{
-      --bg:        #FFF9FA;
-      --glass:     255 255 255;   /* color del vidrio */
-      --acc:       240 52 90;     /* líneas y tintes */
-      --sh:        240 52 90;     /* sombras */
-      --surface:   rgb(var(--glass) / 0.52);
-      --surface-2: rgb(var(--glass) / 0.55);
-      --line:      rgb(var(--glass) / 0.85);
-      --edge:      rgb(var(--glass) / 0.85);
-      --ink:       #3D0F1C;
-      --ink-2:     #7A3F4E;
-      --ink-3:     #A26B7B;
-      --pink:      #FF4D6D;
-      --pink-deep: #F0345A;
-      --pink-soft: rgba(255,92,122,0.15);
-      --g1:        #FF7A93;
-      --g2:        #F0345A;
-      --on-acc:    #FFFFFF;
-      --pill:      #FFFFFF;
-      --pill-ink:  #F0345A;
-      --sel:       #FFFFFF;
-      --b1:#FF6B8A; --b2:#FF3D62; --b3:#FF5C7A; --b4:#FF8FA8;
-      --c-inc:     #F0345A;
-      --c-exp:     #7C5CD6;
-      --violet:    #7C5CD6;
-      --violet-soft:#EEE9FB;
-      --violet-ink:#4B32A8;
-      --violet-bar:rgba(124,92,214,0.35);
-      --scrim:     rgba(120,20,45,0.22);
-      --mute:      #F5EEF2;
-      --good:      #0E9467;
-      --good-soft: #E3F6EE;
-      --bad:       #D92D4B;
-      --bad-soft:  #FDE8EC;
-      --bad-line:  #F7C2CC;
-      --warn:      #B7791F;
-      --warn-soft: #FDF3DC;
-    }
-    /* Tema oscuro: mismo diseño de vidrio en negro, gris y blanco */
-    :root[data-theme="dark"]{
       color-scheme:dark;
-      --bg:        #0B0B0D;
-      --glass:     44 44 50;
-      --acc:       255 255 255;
-      --sh:        0 0 0;
-      --line:      rgba(255,255,255,0.12);
-      --edge:      rgba(255,255,255,0.11);
-      --ink:       #F4F4F5;
-      --ink-2:     #B9B9C0;
-      --ink-3:     #8A8A93;
-      --pink:      #5C5C66;
-      --pink-deep: #F4F4F5;
-      --pink-soft: rgba(255,255,255,0.10);
-      --g1:        #FFFFFF;
-      --g2:        #CFCFD6;
-      --on-acc:    #111113;
-      --pill:      #F4F4F5;
-      --pill-ink:  #111113;
-      --sel:       rgba(255,255,255,0.16);
-      --b1:#26262B; --b2:#3A3A42; --b3:#2E2E34; --b4:#47474F;
-      --c-inc:     #F4F4F5;
-      --c-exp:     #74747F;
-      --violet:    #8E8E99;
-      --violet-soft:rgba(255,255,255,0.10);
-      --violet-ink:#E4E4E7;
-      --violet-bar:rgba(255,255,255,0.28);
-      --scrim:     rgba(0,0,0,0.6);
-      --mute:      rgba(255,255,255,0.08);
-      --good:      #4ADE80;
-      --good-soft: rgba(74,222,128,0.14);
-      --bad:       #F87171;
-      --bad-soft:  rgba(248,113,113,0.14);
-      --bad-line:  rgba(248,113,113,0.3);
-      --warn:      #FBBF24;
-      --warn-soft: rgba(251,191,36,0.14);
+      --bg:#0A0A0B; --side:#0D0D0F; --surface:#121214; --surface-2:#19191C; --line:#232327; --edge:#232327;
+      --ink:#EDEDEF; --ink-2:#A1A1AA; --ink-3:#6E6E78;
+      --pink:#EDEDEF; --pink-deep:#EDEDEF; --pink-soft:rgba(255,255,255,0.06);
+      --g1:#EDEDEF; --g2:#EDEDEF; --on-acc:#0A0A0B;
+      --pill:#2A2A30; --pill-ink:#EDEDEF; --sel:#19191C;
+      --glass:25 25 28; --acc:255 255 255; --sh:0 0 0;
+      --c-inc:#EDEDEF; --c-exp:#55555F;
+      --violet:#8B8B96; --violet-soft:rgba(255,255,255,0.06); --violet-ink:#EDEDEF; --violet-bar:rgba(255,255,255,0.2);
+      --scrim:rgba(0,0,0,0.62); --mute:rgba(255,255,255,0.06);
+      --good:#3FB950; --good-soft:rgba(63,185,80,0.12);
+      --bad:#F0616D;  --bad-soft:rgba(240,97,109,0.12); --bad-line:rgba(240,97,109,0.25);
+      --warn:#D4A72C; --warn-soft:rgba(212,167,44,0.12);
+      --shadow:0 0 0 rgba(0,0,0,0);
+      --pop:0 16px 48px rgba(0,0,0,0.5);
     }
-
+    :root[data-theme="rosa"]{
+      color-scheme:light;
+      --bg:#FBF8F9; --side:#F6F1F3; --surface:#FFFFFF; --surface-2:#F7F2F4; --line:#ECE3E6; --edge:#ECE3E6;
+      --ink:#1D1418; --ink-2:#6B5A61; --ink-3:#9C8B92;
+      --pink:#D6336C; --pink-deep:#D6336C; --pink-soft:rgba(214,51,108,0.08);
+      --g1:#D6336C; --g2:#D6336C; --on-acc:#FFFFFF;
+      --pill:#FFFFFF; --pill-ink:#1D1418; --sel:#F7F2F4;
+      --glass:255 255 255; --acc:60 30 40; --sh:60 30 40;
+      --c-inc:#D6336C; --c-exp:#7C6AD6;
+      --violet:#7C6AD6; --violet-soft:#F0EDFB; --violet-ink:#4B3BA8; --violet-bar:rgba(124,106,214,0.3);
+      --scrim:rgba(20,10,14,0.35); --mute:#F1ECEE;
+      --good:#1A7F4B; --good-soft:#E6F4EC;
+      --bad:#C9304B;  --bad-soft:#FBEAED; --bad-line:#F2C9D1;
+      --warn:#9A6700; --warn-soft:#FBF1D9;
+      --shadow:0 1px 2px rgba(60,30,40,0.05);
+      --pop:0 16px 48px rgba(60,30,40,0.18);
+    }
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Montserrat',sans-serif;overflow-x:hidden;min-height:100vh;color:var(--ink);background:var(--bg);}
+    html{-webkit-text-size-adjust:100%;}
+    body{font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.45;overflow-x:hidden;min-height:100vh;color:var(--ink);background:var(--bg);
+      -webkit-font-smoothing:antialiased;font-feature-settings:'cv11','ss01';}
+    button,input,select,textarea{font-family:inherit;}
 
-    /* ══ BACKGROUND ══ */
-    .bg-scene{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--bg);pointer-events:none;}
-    .blob{position:absolute;border-radius:42% 58% 63% 37% / 45% 40% 60% 55%;}
-    .blob.b1{width:54vmax;height:50vmax;right:-14vmax;top:-18vmax;background:var(--b1);opacity:.9;}
-    .blob.b2{width:40vmax;height:42vmax;right:6vmax;top:-6vmax;background:var(--b2);opacity:.55;border-radius:58% 42% 38% 62% / 52% 60% 40% 48%;}
-    .blob.b3{width:46vmax;height:44vmax;left:-14vmax;bottom:-16vmax;background:var(--b3);opacity:.85;border-radius:60% 40% 45% 55% / 40% 55% 45% 60%;}
-    .blob.b4{width:30vmax;height:30vmax;left:30vw;top:42vh;background:var(--b4);opacity:.55;border-radius:50% 50% 38% 62% / 60% 42% 58% 40%;}
-    .blob.d1{width:34px;height:22px;right:38vw;top:9vh;background:var(--pink);border-radius:50%;}
-    .blob.d2{width:16px;height:12px;right:35vw;top:5vh;background:var(--pink);border-radius:50%;}
-    .blob.d3{width:40px;height:30px;left:34vw;bottom:8vh;background:var(--pink);border-radius:50%;}
-
-    /* ══ SHELL ══ */
-    .sidebar{
-      position:fixed;top:0;left:0;bottom:0;width:220px;z-index:30;
-      background:rgb(var(--glass) / 0.78);
-      backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
-      border-right:1px solid var(--line);
-      display:flex;flex-direction:column;padding:24px 12px;
-    }
-    .card{
-      background:var(--surface);
-      border:1px solid var(--line);
-      border-radius:18px;padding:18px;
-      box-shadow:0 6px 24px rgb(var(--sh) / 0.07);
-      transition:border-color .2s ease, box-shadow .2s ease;
-    }
-    .card.click{cursor:pointer;}
-    .card.click:hover{border-color:rgb(var(--acc) / 0.35);box-shadow:0 8px 28px rgb(var(--sh) / 0.13);}
-    .nav-item{
-      display:flex;align-items:center;gap:10px;padding:10px 12px;
-      border-radius:12px;font-size:13px;font-weight:500;
-      color:var(--ink-2);cursor:pointer;transition:all .15s ease;
-      border:1px solid transparent;background:none;width:100%;text-align:left;font-family:'Montserrat',sans-serif;
-    }
-    .nav-item:hover{background:var(--pink-soft);color:var(--pink-deep);}
-    .nav-item.active{background:var(--pink-soft);color:var(--pink-deep);border-color:rgb(var(--acc) / 0.22);font-weight:600;}
-    .bottom-nav{
-      display:none;position:fixed;bottom:0;left:0;right:0;z-index:30;
-      padding:8px 6px env(safe-area-inset-bottom,14px);
-      background:rgb(var(--glass) / 0.9);
-      backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
-      border-top:1px solid var(--line);
-    }
-    .bnav-item{
-      flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-      padding:6px 2px;border-radius:12px;font-size:10px;font-weight:500;
-      color:var(--ink-3);cursor:pointer;transition:all .18s ease;
-      border:none;background:none;font-family:'Montserrat',sans-serif;
-    }
-    .bnav-item.active{color:var(--pink-deep);font-weight:600;}
-    .main-content{min-height:100vh;max-width:1080px;padding-bottom:40px;}
-
-    @media(min-width:768px){.main-content{margin-left:220px;}.mobile-only{display:none!important;}}
+    /* ══ Shell ══ */
+    .sidebar{position:fixed;top:0;left:0;bottom:0;width:232px;z-index:30;background:var(--side);border-right:1px solid var(--line);
+      display:flex;flex-direction:column;padding:14px 10px;}
+    .side-label{font-size:11px;font-weight:500;color:var(--ink-3);padding:14px 10px 6px;}
+    .nav-item{display:flex;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:6px;font-size:13px;font-weight:500;
+      color:var(--ink-2);cursor:pointer;transition:background .12s,color .12s;border:0;background:none;width:100%;text-align:left;}
+    .nav-item:hover{background:rgb(var(--acc) / 0.05);color:var(--ink);}
+    .nav-item.active{background:rgb(var(--acc) / 0.08);color:var(--ink);}
+    .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:30;padding:6px 6px env(safe-area-inset-bottom,10px);
+      background:var(--side);border-top:1px solid var(--line);}
+    .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:8px;font-size:10px;font-weight:500;
+      color:var(--ink-3);cursor:pointer;border:0;background:none;}
+    .bnav-item.active{color:var(--ink);}
+    .main-content{min-height:100vh;max-width:1180px;padding-bottom:48px;}
+    @media(min-width:768px){.main-content{margin-left:232px;}.mobile-only{display:none!important;}}
     @media(max-width:767px){
       .sidebar{display:none;}
       .bottom-nav{display:flex;}
-      .main-content{margin-left:0;padding-bottom:96px;}
+      .main-content{margin-left:0;padding-bottom:92px;}
       .page{padding:18px 14px 0!important;}
-      .card{padding:14px;}
       input,textarea,select{font-size:16px!important;}
-      .btn-p,.btn-g{min-height:44px;}
+      .btn-p,.btn-g,.btn-d{min-height:40px;}
     }
 
-    /* Inputs */
-    input,textarea,select{
-      background:var(--surface-2);border:1px solid var(--line);
-      color:var(--ink);border-radius:12px;padding:11px 14px;width:100%;outline:none;
-      font-family:'Montserrat',sans-serif;font-size:13px;transition:all .2s;
-    }
-    input:focus,textarea:focus,select:focus{border-color:var(--pink);background:rgb(var(--glass) / 0.95);box-shadow:0 0 0 3px rgb(var(--sh) / 0.15);}
+    /* ══ Superficies ══ */
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);}
+    .card.click{cursor:pointer;}
+    .card.click:hover{border-color:rgb(var(--acc) / 0.2);}
+
+    /* ══ Controles ══ */
+    input,textarea,select{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;width:100%;
+      outline:none;font-size:13px;transition:border-color .12s,box-shadow .12s;}
+    input:hover,textarea:hover,select:hover{border-color:rgb(var(--acc) / 0.2);}
+    input:focus,textarea:focus,select:focus{border-color:rgb(var(--acc) / 0.45);box-shadow:0 0 0 3px rgb(var(--acc) / 0.08);}
+    input:disabled,select:disabled{opacity:.6;}
     input::placeholder,textarea::placeholder{color:var(--ink-3);}
-
-    /* Buttons */
-    .btn-p{
-      background:linear-gradient(135deg,var(--g1) 0%,var(--g2) 100%);color:var(--on-acc);
-      border:none;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;
-      cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;
-      font-family:'Montserrat',sans-serif;box-shadow:0 6px 16px rgb(var(--sh) / 0.28);
-    }
-    .btn-p:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgb(var(--sh) / 0.38);}
-    .btn-p:active{transform:translateY(0);}
-    .btn-g{
-      background:var(--pink-soft);color:var(--pink-deep);
-      border:1px solid rgb(var(--acc) / 0.22);border-radius:999px;
-      padding:10px 16px;font-size:13px;font-weight:500;
-      cursor:pointer;transition:all .2s;font-family:'Montserrat',sans-serif;
-      display:inline-flex;align-items:center;gap:7px;
-    }
-    .btn-g:hover{background:rgb(var(--acc) / 0.24);}
-    .btn-d{
-      background:var(--bad-soft);color:var(--bad);border:1px solid var(--bad-line);
-      border-radius:999px;padding:10px 14px;font-size:13px;font-weight:500;
-      cursor:pointer;font-family:'Montserrat',sans-serif;transition:all .2s;
-      display:inline-flex;align-items:center;justify-content:center;
-    }
-    .btn-d:hover{filter:brightness(0.96);}
-    .icon-btn{background:none;border:none;cursor:pointer;color:var(--ink-3);padding:6px;border-radius:8px;display:inline-flex;}
-    .icon-btn:hover{color:var(--pink-deep);background:var(--pink-soft);}
-
-    .check-box{
-      width:22px;height:22px;border-radius:50%;
-      border:1.5px solid rgb(var(--acc) / 0.38);background:rgb(var(--glass) / 0.9);
-      display:flex;align-items:center;justify-content:center;cursor:pointer;
-      transition:all .2s;flex-shrink:0;
-    }
+    .btn-p,.btn-g,.btn-d{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:0 12px;border-radius:8px;
+      font-size:13px;font-weight:500;cursor:pointer;transition:background .12s,opacity .12s,border-color .12s;white-space:nowrap;}
+    .btn-p{background:var(--pink-deep);color:var(--on-acc);border:1px solid transparent;}
+    .btn-p:hover{opacity:.88;}
+    .btn-p:disabled{opacity:.5;cursor:default;}
+    .btn-g{background:transparent;color:var(--ink);border:1px solid var(--line);}
+    .btn-g:hover{background:rgb(var(--acc) / 0.05);border-color:rgb(var(--acc) / 0.2);}
+    .btn-d{background:var(--bad-soft);color:var(--bad);border:1px solid var(--bad-line);}
+    .btn-d:hover{opacity:.85;}
+    .icon-btn{background:none;border:0;cursor:pointer;color:var(--ink-3);padding:6px;border-radius:6px;display:inline-flex;}
+    .icon-btn:hover{color:var(--ink);background:rgb(var(--acc) / 0.06);}
+    .check-box{width:18px;height:18px;border-radius:50%;border:1.5px solid rgb(var(--acc) / 0.3);background:transparent;display:flex;align-items:center;
+      justify-content:center;cursor:pointer;transition:all .12s;flex-shrink:0;}
+    .check-box:hover{border-color:rgb(var(--acc) / 0.6);}
     .check-box.done{background:var(--pink-deep);border-color:var(--pink-deep);}
-    .prog-track{height:7px;background:var(--pink-soft);border-radius:4px;overflow:hidden;}
-    .prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--g1) 0%,var(--g2) 100%);transition:width .5s ease;}
+    .prog-track{height:4px;background:rgb(var(--acc) / 0.08);border-radius:2px;overflow:hidden;}
+    .prog-fill{height:100%;border-radius:2px;background:var(--pink-deep);transition:width .4s ease;}
+    .tab-pill{height:28px;padding:0 10px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--line);background:transparent;
+      color:var(--ink-2);transition:all .12s;white-space:nowrap;}
+    .tab-pill:hover{color:var(--ink);}
+    .tab-pill.active{background:rgb(var(--acc) / 0.09);color:var(--ink);border-color:rgb(var(--acc) / 0.14);}
+    .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;padding:2px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;}
+    .seg button{height:28px;border:0;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;background:transparent;color:var(--ink-2);}
+    .seg button.on{background:var(--pill);color:var(--pill-ink);box-shadow:0 1px 2px rgb(var(--sh) / 0.2);}
 
-    /* Modal */
-    .modal-bg{
-      position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
-      padding:20px 16px;background:rgba(90,20,55,0.28);
-      backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-    }
-    .modal-box{
-      background:var(--pill);border:1px solid var(--line);
-      box-shadow:0 24px 70px rgb(var(--sh) / 0.28);border-radius:24px;
-      width:100%;max-width:460px;display:flex;flex-direction:column;
-      max-height:calc(100vh - 40px);overflow:hidden;
-    }
-    .modal-header-sticky{flex-shrink:0;padding:18px 20px 14px;border-bottom:1px solid var(--line);}
-    .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 20px 20px;}
+    /* ══ Modal ══ */
+    .modal-bg{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px 16px;background:var(--scrim);
+      backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+    .modal-box{background:var(--surface);border:1px solid var(--line);box-shadow:var(--pop);border-radius:12px;width:100%;max-width:440px;
+      display:flex;flex-direction:column;max-height:calc(100vh - 40px);overflow:hidden;}
+    .modal-header-sticky{flex-shrink:0;padding:14px 18px;border-bottom:1px solid var(--line);}
+    .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 18px 18px;}
     @media(max-width:767px){.modal-box{max-height:calc(100vh - 100px);}}
 
-    /* Badges & pills */
-    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
-    .b-pink{background:var(--pink-soft);color:var(--pink-deep);}
+    /* ══ Etiquetas ══ */
+    .badge{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:5px;font-size:11px;font-weight:500;white-space:nowrap;}
+    .b-pink{background:rgb(var(--acc) / 0.08);color:var(--ink);}
     .b-violet{background:var(--violet-soft);color:var(--violet-ink);}
     .b-good{background:var(--good-soft);color:var(--good);}
     .b-bad{background:var(--bad-soft);color:var(--bad);}
     .b-warn{background:var(--warn-soft);color:var(--warn);}
     .b-mute{background:var(--mute);color:var(--ink-2);}
-    .tab-pill{
-      padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;
-      border:1px solid var(--line);background:var(--pill);color:var(--ink-2);
-      transition:all .15s;font-family:'Montserrat',sans-serif;white-space:nowrap;
-    }
-    .tab-pill.active{background:var(--pink-deep);color:var(--on-acc);border-color:var(--pink-deep);}
-    .seg{display:grid;grid-template-columns:1fr 1fr;border-radius:14px;overflow:hidden;border:1px solid var(--line);}
-    .seg button{padding:11px;border:none;cursor:pointer;font-weight:600;font-size:13px;background:var(--surface-2);color:var(--ink-2);font-family:'Montserrat',sans-serif;}
-    .seg button.on{background:var(--pink-deep);color:var(--on-acc);}
 
-    ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-thumb{background:rgb(var(--acc) / 0.3);border-radius:2px;}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
-    .fade-up{animation:fadeUp .28s cubic-bezier(.4,0,.2,1);}
+    ::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:rgb(var(--acc) / 0.12);border-radius:4px;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+    .fade-up{animation:fadeUp .16s ease-out;}
 
-    /* Layout */
-    .page{padding:28px 28px 0;}
+    /* ══ Layout y texto ══ */
+    .page{padding:26px 32px 0;}
     .page-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;}
-    .h1{font-size:22px;font-weight:700;letter-spacing:-0.3px;color:var(--ink);}
+    .h1{font-size:20px;font-weight:600;letter-spacing:-0.02em;color:var(--ink);}
     .h3{font-size:13px;font-weight:600;color:var(--ink);}
-    .muted{font-size:12px;color:var(--ink-2);}
-    .tiny{font-size:11px;color:var(--ink-3);}
-    .col{display:flex;flex-direction:column;gap:4px;}
+    .muted{font-size:13px;color:var(--ink-2);}
+    .tiny{font-size:12px;color:var(--ink-3);}
+    .over{font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);}
+    .col{display:flex;flex-direction:column;gap:2px;}
     .stack{display:flex;flex-direction:column;gap:10px;}
-    .rowx{display:flex;align-items:center;gap:10px;}
+    .rowx{display:flex;align-items:center;gap:8px;}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
-    .cols2{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start;}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start;}
+    .cols2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start;}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;align-items:start;}
     @media(max-width:980px){.kpis{grid-template-columns:1fr 1fr;}.cols2{grid-template-columns:1fr;}}
     @media(max-width:420px){.cards{grid-template-columns:1fr;}}
-    label.lbl{font-size:11px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:5px;}
-    .empty-state{text-align:center;padding:36px 20px;}
-    .empty-state .emo{font-size:38px;margin-bottom:10px;}
+    label.lbl{font-size:12px;font-weight:500;color:var(--ink-2);display:block;margin-bottom:5px;}
+    .empty-state{text-align:center;padding:40px 20px;}
+    .empty-ic{width:40px;height:40px;border-radius:10px;background:rgb(var(--acc) / 0.06);color:var(--ink-3);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;}
     .ellip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .chip{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .chip{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .num{font-variant-numeric:tabular-nums;}
-    .list-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgb(var(--acc) / 0.10);}
-    .list-row:last-child{border-bottom:none;}
-    .readonly .page .btn-p,.readonly .page .btn-g,.readonly .page .add-dash,
-    .readonly .page [aria-label="Editar"],.readonly .page [aria-label^="Quitar"]{display:none!important;}
-    .readonly .page .check-box{pointer-events:none;}
-    .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:80;background:var(--ink);color:var(--bg);
-      padding:10px 16px;border-radius:999px;font-size:12px;font-weight:500;box-shadow:0 10px 30px rgba(58,17,40,0.35);max-width:calc(100vw - 32px);text-align:center;}
-    /* ══ LIQUID GLASS ══ */
-    .card,.sidebar,.bottom-nav,.modal-box,.tab-pill,.auth-card{
-      backdrop-filter:blur(26px) saturate(170%);-webkit-backdrop-filter:blur(26px) saturate(170%);
-    }
-    .card{border-radius:24px;border:1px solid var(--edge);
-      box-shadow:0 12px 40px rgb(var(--sh) / 0.13), inset 0 1px 0 rgb(var(--glass) / 0.95), inset 0 -1px 0 rgb(var(--glass) / 0.35);}
-    .card.click:hover{border-color:var(--edge);}
-    .sidebar{background:rgb(var(--glass) / 0.42);border-right:1px solid var(--edge);}
-    .bottom-nav{background:rgb(var(--glass) / 0.62);border-top:1px solid var(--edge);}
-    .modal-bg{background:var(--scrim);}
-    .modal-box{background:rgb(var(--glass) / 0.82);border:1px solid var(--edge);box-shadow:0 30px 80px rgb(var(--sh) / 0.3), inset 0 1px 0 rgb(var(--glass));}
-    .modal-header-sticky{border-bottom:1px solid rgb(var(--acc) / 0.12);}
-    input,textarea,select{background:rgb(var(--glass) / 0.72);border:1px solid rgb(var(--acc) / 0.2);}
-    .tab-pill{background:rgb(var(--glass) / 0.55);border-color:var(--edge);}
-    .nav-item{border-radius:999px;padding:10px 16px;}
-    .nav-item:hover{background:rgb(var(--glass) / 0.6);}
-    .nav-item.active{background:var(--pill);color:var(--pill-ink);font-weight:700;border-color:transparent;box-shadow:0 8px 22px rgb(var(--sh) / 0.18);}
-    .h1{font-weight:300;font-size:28px;letter-spacing:.3px;}
-    .h3{font-weight:600;letter-spacing:.2px;}
-    .over{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--ink-2);}
-    .badge{text-transform:uppercase;letter-spacing:.8px;font-size:9.5px;font-weight:700;}
-    .b-pink{background:var(--pill);color:var(--pill-ink);}
-    .btn-p{letter-spacing:.3px;}
-    .logo-word{font-size:20px;font-weight:300;letter-spacing:1px;color:var(--ink);}
+    .list-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+    .list-row:last-child{border-bottom:0;}
+    .bar{width:12px;border-radius:3px 3px 0 0;transition:height .4s;}
+    .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+    .logo-word{font-size:15px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);}
+    .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:80;background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;
+      font-size:13px;font-weight:500;box-shadow:var(--pop);max-width:calc(100vw - 32px);text-align:center;}
+
+    /* ══ Acceso ══ */
     .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
-    .auth-card{width:100%;max-width:400px;padding:34px 28px;border-radius:30px;background:rgb(var(--glass) / 0.5);
-      border:1px solid var(--edge);box-shadow:0 30px 80px rgb(var(--sh) / 0.22), inset 0 1px 0 rgb(var(--glass));text-align:center;}
-    .glass-pill{display:inline-block;background:var(--pill);color:var(--pill-ink);font-weight:700;letter-spacing:2px;font-size:22px;padding:4px 16px;border-radius:10px;}
-    .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-    .cal-head{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-3);text-align:center;padding:4px 0;}
-    .cal-day{min-height:86px;border-radius:14px;background:rgb(var(--glass) / 0.45);border:1px solid var(--edge);padding:6px;cursor:pointer;
-      text-align:left;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:3px;overflow:hidden;min-width:0;}
-    .cal-day:hover{background:rgb(var(--glass) / 0.8);}
-    .cal-day.sel{background:var(--sel);border-color:var(--pink-deep);box-shadow:0 6px 18px rgb(var(--sh) / 0.18);}
-    .cal-num{font-size:11px;font-weight:600;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-    .cal-day.today .cal-num{background:var(--pink-deep);color:var(--on-acc);}
+    .auth-card{width:100%;max-width:360px;padding:28px 24px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--pop);text-align:center;}
+
+    /* ══ Calendario ══ */
+    .cal{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line);border-radius:10px;overflow:hidden;}
+    .cal-head{font-size:11px;font-weight:500;color:var(--ink-3);padding:8px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface-2);}
+    .cal-day{min-height:96px;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:transparent;padding:6px;cursor:pointer;
+      text-align:left;color:var(--ink);display:flex;flex-direction:column;gap:4px;overflow:hidden;min-width:0;transition:background .12s;}
+    button.cal-day:hover{background:rgb(var(--acc) / 0.03);}
+    .cal-day.sel{background:rgb(var(--acc) / 0.06);}
+    .cal-day.off{cursor:default;background:rgb(var(--acc) / 0.015);}
+    .cal-num{font-size:12px;font-weight:500;color:var(--ink-2);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .cal-day.today .cal-num{background:var(--pink-deep);color:var(--on-acc);font-weight:600;}
     .cal-chips{display:flex;flex-direction:column;gap:3px;min-width:0;width:100%;}
-    .cal-chip{font-size:10px;font-weight:500;padding:2px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .cal-chip.a{background:rgb(var(--acc) / 0.16);}
-    .cal-chip.p{background:var(--violet-soft);color:var(--violet-ink);}
-    .cal-chip.bare{height:6px;padding:0;font-size:0;border-radius:3px;background:var(--violet-bar);}
-    .cal-layout{display:grid;grid-template-columns:1.8fr 1fr;gap:16px;align-items:start;}
+    .cal-chip{font-size:11px;font-weight:500;padding:2px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      background:rgb(var(--acc) / 0.07);border-left:2px solid var(--pink-deep);}
+    .cal-more{font-size:11px;color:var(--ink-3);padding-left:4px;}
+    .cal-layout{display:grid;grid-template-columns:1.9fr 1fr;gap:16px;align-items:start;}
     @media(max-width:1100px){.cal-layout{grid-template-columns:1fr;}}
-    .cal-more{font-size:9px;color:var(--ink-3);padding-left:4px;}
-    .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;}
     @media(max-width:767px){
-      .cal{gap:4px;}
-      .cal-day{min-height:54px;padding:4px 2px;align-items:center;border-radius:10px;}
+      .cal-head{padding:6px 0;text-align:center;}
+      .cal-day{min-height:52px;padding:4px 2px;align-items:center;}
       .cal-chips{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:3px;}
-      .cal-chip,.cal-chip.bare{font-size:0;padding:0;width:7px;height:7px;border-radius:50%;}
-      .cal-chip.a{background:var(--pink-deep);} .cal-chip.p{background:var(--violet);}
+      .cal-chip{font-size:0;padding:0;width:6px;height:6px;border-radius:50%;border:0;background:var(--pink-deep);}
       .cal-more{display:none;}
     }
-    .bar{width:14px;border-radius:4px 4px 0 0;transition:height .5s;}
   </style>
 </head>
 <body>
-<div class="bg-scene"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div><div class="blob d1"></div><div class="blob d2"></div><div class="blob d3"></div></div>
 <div id="root" style="position:relative;z-index:1;min-height:100vh;"></div>
 
 <script type="module">
@@ -429,8 +299,9 @@ const Modal = ({open,onClose,title,children}) => {
     </div>
   `;
 };
+const EMPTY_IC = {'💸':'finance','📅':'cal','💖':'check','💼':'proj'};
 const Empty = ({emo,title,text}) => html`
-  <div class="card empty-state"><div class="emo">${emo}</div>
+  <div class="card empty-state"><div class="empty-ic"><${Ic} n=${EMPTY_IC[emo]||'plus'} s=${18}/></div>
     ${title&&html`<p class="h3" style="margin-bottom:4px">${title}</p>`}
     <p class="muted">${text}</p>
   </div>`;
@@ -462,7 +333,7 @@ const TimePick = ({value,onChange}) => {
 const CardHead = ({title,action,onAction}) => html`
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <p class="h3">${title}</p>
-    ${action&&html`<button onClick=${onAction} style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--pink-deep);font-family:Montserrat,sans-serif">${action}</button>`}
+    ${action&&html`<button onClick=${onAction} style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--pink-deep);">${action}</button>`}
   </div>`;
 
 const TABS = [
@@ -536,9 +407,9 @@ const PageHome = ({db,setTab,biz,icon,openSettings}) => {
           <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <span class="muted" style="font-weight:500">${k.l}</span>
-              <div class="chip" style=${{background:k.bg,width:30,height:30,borderRadius:10}}><${Ic} n=${k.i} s=${15} c=${k.c}/></div>
+              <div class="chip" style=${{background:k.bg,width:30,height:30,borderRadius:8}}><${Ic} n=${k.i} s=${15} c=${k.c}/></div>
             </div>
-            <p class="num" style="font-size:24px;font-weight:700;letter-spacing:-0.5px">${k.v}</p>
+            <p class="num" style="font-size:24px;font-weight:600;letter-spacing:-0.02em">${k.v}</p>
             <p class="tiny" style="margin-top:4px">
               ${k.sub || (k.d===null ? 'Sin datos del mes pasado' : html`<span style=${{fontWeight:600,color:(k.d>=0)===k.goodUp?'var(--good)':'var(--bad)'}}>${k.d>=0?'▲':'▼'} ${Math.abs(k.d)}%</span> vs mes pasado`)}
             </p>
@@ -569,7 +440,7 @@ const PageHome = ({db,setTab,biz,icon,openSettings}) => {
               <div style="position:absolute;inset:0;display:flex;align-items:flex-end">
                 ${series.map(m=>html`
                   <div onMouseEnter=${()=>setHov(m.id)} onMouseLeave=${()=>setHov(null)} onClick=${()=>setHov(m.id)}
-                       style=${{flex:1,height:'100%',display:'flex',alignItems:'flex-end',justifyContent:'center',gap:2,cursor:'default',borderRadius:8,background:shown.id===m.id?'rgb(var(--glass) / 0.55)':'transparent'}}>
+                       style=${{flex:1,height:'100%',display:'flex',alignItems:'flex-end',justifyContent:'center',gap:2,cursor:'default',borderRadius:8,background:shown.id===m.id?'rgb(var(--acc) / 0.05)':'transparent'}}>
                     <div class="bar" style=${{background:C_INC,height:`${m.inc?Math.max(3,m.inc/maxV*140):0}px`}}/>
                     <div class="bar" style=${{background:C_EXP,height:`${m.exp?Math.max(3,m.exp/maxV*140):0}px`}}/>
                   </div>
@@ -711,7 +582,7 @@ const PageFinance = ({db,put}) => {
       <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar movimiento':'Nuevo movimiento'}>
         ${f&&html`<div class="stack" style="gap:12px">
           <div class="seg">
-            ${[['income','💰 Ingreso'],['expense','💸 Gasto']].map(([tp,l])=>html`<button class=${f.type===tp?'on':''} onClick=${()=>setF({...f,type:tp,category:FCATS[tp][0]})}>${l}</button>`)}
+            ${[['income','Ingreso'],['expense','Gasto']].map(([tp,l])=>html`<button class=${f.type===tp?'on':''} onClick=${()=>setF({...f,type:tp,category:FCATS[tp][0]})}>${l}</button>`)}
           </div>
           <div><label class="lbl">Monto</label><input type="number" inputmode="decimal" min="0" value=${f.amount} onInput=${e=>setF({...f,amount:e.target.value})} placeholder="0" autoFocus/></div>
           <div class="grid2">
@@ -798,7 +669,7 @@ const PageAppts = ({db,put,setTab}) => {
                       ${[['Precio',a.price],['Abonado',paid(a)],['Falta',owed(a)]].map(([l,v])=>html`<div><p class="tiny">${l}</p><p class="num" style="font-size:13px;font-weight:700">${fmtMoney(v)}</p></div>`)}
                     </div>
                     <div class="rowx" style="margin-top:8px;justify-content:space-between">
-                      ${a.status==='cancelada'?html`<span class="tiny">Cancelada, no se cobra</span>`:owed(a)>0?html`<span class="badge b-warn">Debe ${fmtMoney(owed(a))}</span>`:html`<span class="badge b-good">✓ Pagado</span>`}
+                      ${a.status==='cancelada'?html`<span class="tiny">Cancelada, no se cobra</span>`:owed(a)>0?html`<span class="badge b-warn">Debe ${fmtMoney(owed(a))}</span>`:html`<span class="badge b-good">Pagado</span>`}
                       ${owed(a)>0&&html`<button class="btn-g" style="padding:6px 12px;font-size:12px;min-height:0" onClick=${()=>setPay({appt:a,amount:String(owed(a)),date:today})}><${Ic} n="plus" s=${12}/>Agregar pago</button>`}
                     </div>`}
                 </div>
@@ -889,7 +760,7 @@ const PageProjects = ({db,put}) => {
             <div class="card">
               <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px">
                 <div style="min-width:0">
-                  <p style="font-size:15px;font-weight:600">${st.target>0&&st.pct>=100?'⭐ ':''}${p.name}</p>
+                  <p style="font-size:15px;font-weight:600">${p.name}</p>
                   <p class="tiny" style="margin-top:2px;text-transform:capitalize">${r?(r[0]===r[1]?fmtDate(r[0]):`${fmtDate(r[0])} → ${fmtDate(r[1])}`):'Sin fechas'}</p>
                 </div>
                 <div class="rowx" style="gap:2px;flex-shrink:0">
@@ -922,7 +793,7 @@ const PageProjects = ({db,put}) => {
           <div>
             <label class="lbl">¿Cómo mides la meta?</label>
             <div class="seg">
-              ${[['ventas','💰 Por ventas'],['citas','📅 Por citas']].map(([k,l])=>html`<button class=${f.goalKind===k?'on':''} onClick=${()=>setF({...f,goalKind:k})}>${l}</button>`)}
+              ${[['ventas','Por ventas'],['citas','Por citas']].map(([k,l])=>html`<button class=${f.goalKind===k?'on':''} onClick=${()=>setF({...f,goalKind:k})}>${l}</button>`)}
             </div>
           </div>
           <div class="grid2">
@@ -943,42 +814,34 @@ const PageProjects = ({db,put}) => {
 // ══════════════════════════════════════════════════════════════════════════
 const PageCalendar = ({db,setTab}) => {
   const today = todayKey();
-  const {appts,projects,txns} = db;
+  const {appts,txns} = db;
   const [ym,setYm] = useState(today.slice(0,7));
   const [sel,setSel] = useState(today);
   const [y,m] = ym.split('-').map(Number);
   const offset = (new Date(y,m-1,1).getDay()+6)%7;
   const nDays = new Date(y,m,0).getDate();
   const cells = [...Array(offset).fill(null),...Array.from({length:nDays},(_,i)=>`${ym}-${pad(i+1)}`)];
+  while(cells.length%7) cells.push(null);
   const apptsOn = d => appts.filter(a=>a.date===d&&a.status!=='cancelada').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  const projsOn = d => projects.filter(p=>{ const r=projRange(p); return r&&r[0]<=d&&d<=r[1]; });
   const go = d => { setSel(d); setYm(d.slice(0,7)); };
 
-  const events = [
-    ...appts.filter(a=>a.status==='pendiente'&&a.date>=today).map(a=>({date:a.date,time:a.time||'',kind:'a',text:apptName(db,a),sub:a.client||''})),
-    ...projects.flatMap(p=>{ const r=projRange(p); if(!r||p.status==='listo')return []; return [
-      r[0]>=today?{date:r[0],time:'',kind:'p',text:p.name,sub:'Inicia el proyecto'}:null,
-      r[1]>=today&&r[1]!==r[0]?{date:r[1],time:'',kind:'p',text:p.name,sub:'Termina el proyecto'}:null,
-    ].filter(Boolean); }),
-  ].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,8);
-  const selA = apptsOn(sel), selP = projsOn(sel);
+  const events = appts.filter(a=>a.status==='pendiente'&&a.date>=today)
+    .map(a=>({date:a.date,time:a.time||'',text:apptName(db,a),sub:a.client||''}))
+    .sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,8);
+  const selA = apptsOn(sel);
   const longDate = d => { const t=new Date(d+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}); return t[0].toUpperCase()+t.slice(1); };
 
   return html`
     <div class="page fade-up">
       <div class="page-header">
-        <div class="col"><h2 class="h1">Calendario</h2><p class="muted">Tus citas y proyectos por venir</p></div>
-        <div class="rowx" style="gap:14px">
-          <span class="muted rowx" style="gap:6px"><span class="dot" style="background:var(--pink-deep)"/>Citas</span>
-          <span class="muted rowx" style="gap:6px"><span class="dot" style="background:var(--violet)"/>Proyectos</span>
-        </div>
+        <div class="col"><h2 class="h1">Calendario</h2><p class="muted">Tus citas por venir</p></div>
       </div>
       <div class="cal-layout">
         <div class="card">
           <div class="rowx" style="justify-content:space-between;margin-bottom:12px">
             <div class="rowx" style="gap:2px">
               <button class="icon-btn" onClick=${()=>setYm(shiftMonth(ym,-1))} aria-label="Mes anterior"><${Ic} n="left" s=${16}/></button>
-              <span style="font-size:15px;font-weight:600;min-width:140px;text-align:center">${fmtMonth(ym)}</span>
+              <span style="font-size:14px;font-weight:600;min-width:130px;text-align:center">${fmtMonth(ym)}</span>
               <button class="icon-btn" onClick=${()=>setYm(shiftMonth(ym,1))} aria-label="Mes siguiente"><${Ic} n="right" s=${16}/></button>
             </div>
             <button class="tab-pill" onClick=${()=>go(today)}>Hoy</button>
@@ -986,9 +849,8 @@ const PageCalendar = ({db,setTab}) => {
           <div class="cal">
             ${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d=>html`<div class="cal-head">${d}</div>`)}
             ${cells.map(d=>{
-              if(!d) return html`<div/>`;
-              const mon=new Date(d+'T12:00:00').getDay()===1;
-              const items=[...projsOn(d).map(p=>({k:'p'+(d===projRange(p)[0]||mon?'':' bare'),t:p.name})),...apptsOn(d).map(a=>({k:'a',t:(a.time?a.time+' ':'')+apptName(db,a)}))];
+              if(!d) return html`<div class="cal-day off"/>`;
+              const items=apptsOn(d).map(a=>({k:'a',t:(a.time?a.time+' ':'')+apptName(db,a)}));
               return html`
                 <button class=${'cal-day'+(d===sel?' sel':'')+(d===today?' today':'')} onClick=${()=>setSel(d)}>
                   <span class="cal-num">${Number(d.slice(8))}</span>
@@ -1004,13 +866,7 @@ const PageCalendar = ({db,setTab}) => {
         <div class="stack" style="gap:16px">
           <div class="card">
             <${CardHead} title=${sel===today?'Hoy':longDate(sel)} action="Ir a Citas" onAction=${()=>setTab('appts')}/>
-            ${selA.length===0&&selP.length===0&&html`<p class="muted" style="padding:8px 0">Nada agendado este día.</p>`}
-            ${selP.map(p=>{const st=projStats(db,p);return html`
-              <div class="list-row">
-                <span class="dot" style="background:var(--violet)"/>
-                <div style="flex:1;min-width:0"><p class="ellip" style="font-size:13px;font-weight:600">${p.name}</p><p class="tiny ellip">${goalText(p,st)}</p></div>
-                <span class="num muted" style="font-weight:600">${st.pct}%</span>
-              </div>`;})}
+            ${selA.length===0&&html`<p class="muted" style="padding:8px 0">Nada agendado este día.</p>`}
             ${selA.map(a=>html`
               <div class="list-row">
                 <span class="dot" style="background:var(--pink-deep)"/>
@@ -1023,7 +879,7 @@ const PageCalendar = ({db,setTab}) => {
             ${events.length===0&&html`<p class="muted" style="padding:8px 0">No hay nada próximo.</p>`}
             ${events.map(e=>html`
               <div class="list-row" style="cursor:pointer" onClick=${()=>go(e.date)}>
-                <span class="dot" style=${{background:e.kind==='a'?'var(--pink-deep)':'var(--violet)'}}/>
+                <span class="dot" style="background:var(--pink-deep)"/>
                 <div style="flex:1;min-width:0"><p class="ellip" style="font-size:13px;font-weight:600">${e.text}</p><p class="tiny ellip">${e.sub}</p></div>
                 <span class="tiny" style="text-transform:capitalize;white-space:nowrap">${e.date===today?'Hoy':fmtDate(e.date)}${e.time?` · ${e.time}`:''}</span>
               </div>`)}
@@ -1048,7 +904,7 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,session,theme,setTheme})
         <div>
           <label class="lbl">Icono junto al nombre</label>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
-            ${BIZ_ICONS.map(e=>html`<button onClick=${()=>setIc(e)} style=${{minWidth:38,height:38,padding:'0 8px',borderRadius:12,cursor:'pointer',fontSize:e?18:11,fontFamily:'Montserrat,sans-serif',color:'var(--ink-2)',
+            ${BIZ_ICONS.map(e=>html`<button onClick=${()=>setIc(e)} style=${{minWidth:38,height:38,padding:'0 8px',borderRadius:12,cursor:'pointer',fontSize:e?18:11,color:'var(--ink-2)',
               background:ic===e?'var(--sel)':'rgb(var(--glass) / 0.5)',border:ic===e?'1.5px solid var(--pink-deep)':'1px solid rgb(var(--acc) / 0.2)'}}>${e||'Sin icono'}</button>`)}
           </div>
         </div>
@@ -1056,14 +912,14 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,session,theme,setTheme})
         <div>
           <label class="lbl">Tema de la app</label>
           <div class="seg">
-            ${[['dark','🌙 Oscuro'],['rosa','🌸 Rosa']].map(([k,l])=>html`<button class=${theme===k?'on':''} onClick=${()=>setTheme(k)}>${l}</button>`)}
+            ${[['dark','Oscuro'],['rosa','Claro']].map(([k,l])=>html`<button class=${theme===k?'on':''} onClick=${()=>setTheme(k)}>${l}</button>`)}
           </div>
           <p class="tiny" style="margin-top:6px">El tema se guarda en este dispositivo.</p>
         </div>
         ${!SUPA_KEY&&html`<p class="tiny">Tus registros se guardan solo en este navegador.</p>`}
         ${session&&html`
           <div style="padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)">
-            <p class="muted" style="margin-bottom:10px">☁ Sesión iniciada como <b style="color:var(--ink)">${session.user.email}</b>. Todo se guarda en tu cuenta.</p>
+            <p class="muted" style="margin-bottom:10px">Sesión iniciada como <b style="color:var(--ink)">${session.user.email}</b>. Todo se guarda en tu cuenta.</p>
             <button class="btn-g" style="width:100%;justify-content:center" onClick=${()=>{onClose();sb.auth.signOut();}}>Cerrar sesión</button>
           </div>`}
       </div>
@@ -1076,7 +932,7 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,session,theme,setTheme})
 // ══════════════════════════════════════════════════════════════════════════
 const Splash = ({text,children}) => html`
   <div class="auth-wrap"><div class="auth-card fade-up">
-    <p class="logo-word" style="font-size:30px;margin-bottom:10px">ritual.</p>
+    <img src="icon.svg" width="40" height="40" alt="" style="border-radius:10px;margin-bottom:14px"/>
     <p class="muted">${text}</p>${children}
   </div></div>`;
 const AuthScreen = () => {
@@ -1107,9 +963,9 @@ const AuthScreen = () => {
   return html`
     <div class="auth-wrap">
       <div class="auth-card fade-up">
-        <p class="over" style="margin-bottom:10px">- tu negocio -</p>
-        <span class="glass-pill">RITUAL</span>
-        <p style="font-size:26px;font-weight:300;letter-spacing:2px;margin:6px 0 22px">${isUp?'crear cuenta':'bienvenida'}</p>
+        <img src="icon.svg" width="40" height="40" alt="" style="border-radius:10px;margin-bottom:14px"/>
+        <p style="font-size:18px;font-weight:600;letter-spacing:-0.02em">${isUp?'Crea tu cuenta':'Inicia sesión en ritual.'}</p>
+        <p class="muted" style="margin:4px 0 20px">Ingresos, citas y proyectos de tu negocio.</p>
         <div class="seg" style="margin-bottom:14px">
           ${[['in','Iniciar sesión'],['up','Crear cuenta']].map(([k,l])=>html`<button class=${mode===k?'on':''} onClick=${()=>{setMode(k);setMsg(null);}}>${l}</button>`)}
         </div>
@@ -1192,19 +1048,23 @@ const App = () => {
   return html`
     <div style="min-height:100vh">
       <nav class="sidebar">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;padding:0 6px">
-          <div style="width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--g1),var(--g2));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgb(var(--sh) / 0.3)"><span style="font-size:16px;color:var(--on-acc)">✦</span></div>
-          <span class="logo-word">ritual.</span>
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 10px 4px">
+          <img src="icon.svg" width="24" height="24" alt="" style="border-radius:6px"/>
+          <div style="min-width:0">
+            <p class="logo-word ellip">${biz||'ritual.'}</p>
+            ${biz&&html`<p class="tiny" style="font-size:11px;line-height:1.2">ritual.</p>`}
+          </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+        <p class="side-label">Negocio</p>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1">
           ${TABS.map(t=>html`
             <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>setTab(t.id)}>
               <${Ic} n=${t.icon} s=${16}/>${t.label}
             </button>
           `)}
         </div>
-        <p class="tiny ellip" style="padding:0 14px">${session?'☁ '+session.user.email:'Guardado solo en este navegador'}</p>
-        <button class="nav-item" style="margin-top:8px" onClick=${()=>setShowSet(true)}>
+        <p class="tiny ellip" style="padding:0 10px 4px;font-size:11px">${session?session.user.email:'Guardado solo en este navegador'}</p>
+        <button class="nav-item" onClick=${()=>setShowSet(true)}>
           <${Ic} n="settings" s=${16}/>Ajustes
         </button>
       </nav>
@@ -1227,7 +1087,7 @@ const App = () => {
         <div class="modal-bg" style="z-index:70" onClick=${()=>setConf(null)}>
           <div class="modal-box fade-up" style="max-width:360px" onClick=${e=>e.stopPropagation()}>
             <div class="modal-body" style="text-align:center;padding:26px 22px 22px">
-              <div style="font-size:34px;margin-bottom:8px">🗑️</div>
+              <div class="empty-ic" style="background:var(--bad-soft);color:var(--bad)"><${Ic} n="trash" s=${18}/></div>
               <p style="font-size:16px;font-weight:600;margin-bottom:6px">${conf.msg}</p>
               <p class="muted" style="margin-bottom:18px">${conf.detail?conf.detail+' ':''}Esta acción no se puede deshacer.</p>
               <div style="display:flex;gap:8px">
