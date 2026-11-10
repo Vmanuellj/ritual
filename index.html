@@ -1151,6 +1151,7 @@ const AuthScreen = () => {
           ${msg&&html`<p class="tiny" style=${{color:msg.ok?'var(--good)':'var(--bad)',fontWeight:500}}>${msg.t}</p>`}
           <button class="btn-p" style="width:100%;justify-content:center;margin-top:4px" disabled=${busy} onClick=${go}>${busy?'Un momento…':isUp?'Crear mi cuenta':'Entrar'}</button>
           ${isUp&&html`<p class="tiny" style="text-align:center">Cada cuenta tiene su propio negocio. Nadie más ve tus registros.</p>`}
+          <p class="tiny" style="text-align:center;margin-top:6px">Al continuar aceptas los <a href="terminos.html" style="color:var(--ink-2)">Términos</a> y el <a href="privacidad.html" style="color:var(--ink-2)">Aviso de privacidad</a>.</p>
         </div>
       </div>
     </div>`;
