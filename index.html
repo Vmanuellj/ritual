@@ -169,6 +169,14 @@
     .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:80;background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;
       font-size:13px;font-weight:500;box-shadow:var(--pop);max-width:calc(100vw - 32px);text-align:center;}
 
+    /* ══ Botón + ══ */
+    .fab-wrap{position:fixed;right:24px;bottom:24px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+    .fab{width:48px;height:48px;border-radius:50%;border:0;background:var(--pink-deep);display:flex;align-items:center;justify-content:center;cursor:pointer;
+      box-shadow:var(--pop);transition:transform .15s ease, opacity .12s;}
+    .fab:hover{opacity:.9;}
+    .fab-menu{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;min-width:170px;box-shadow:var(--pop);}
+    @media(max-width:767px){.fab-wrap{bottom:84px;right:16px;}}
+
     /* ══ Acceso ══ */
     .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
     .auth-card{width:100%;max-width:360px;padding:28px 24px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--pop);text-align:center;}
@@ -203,7 +211,7 @@
 
 <script type="module">
 import { h, render } from 'https://esm.sh/preact@10.23.1';
-import { useState, useEffect } from 'https://esm.sh/preact@10.23.1/hooks';
+import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.23.1/hooks';
 import htm from 'https://esm.sh/htm@3.1.1';
 const html = htm.bind(h);
 
@@ -351,6 +359,166 @@ const TABS = [
 ];
 
 // ══════════════════════════════════════════════════════════════════════════
+// FORMULARIOS COMPARTIDOS  (se abren desde cualquier pantalla con act.*)
+// ══════════════════════════════════════════════════════════════════════════
+const act = {};
+const ApptForms = ({db,put,setTab}) => {
+  const today = todayKey();
+  const {appts,txns,projects} = db;
+  const clients = db.clients||[];
+  const [f,setF] = useState(null);
+  const [pay,setPay] = useState(null);
+  const [view,setView] = useState(null);
+  const blank = {projectId:'',title:'',client:'',clientId:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
+  const name = a => apptName(db,a);
+  const paid = a => apptPaid(txns,a.id);
+  const owed = a => apptOwed(txns,a);
+  const payTxn = (a,amount,category,date) => ({id:uid(),type:'income',amount:Number(amount),category,note:[name(a),clientName(db,a)].filter(Boolean).join(' — '),date,apptId:a.id,projectId:a.projectId||''});
+  const saveF = () => {
+    if(!f.date)return;
+    const {abono,...rest} = f;
+    const nm = (f.client||'').trim();
+    let cid = '';
+    if(nm){
+      const ex = clients.find(c=>c.name.trim().toLowerCase()===nm.toLowerCase());
+      if(ex) cid = ex.id;
+      else { cid = uid(); put('clients',[...clients,{id:cid,name:nm,phone:'',instagram:'',email:'',note:'',createdAt:today}]); }
+    }
+    const item = {...rest,client:nm,clientId:cid,id:f.id||uid(),price:Number(f.price)||0};
+    put('appts',f.id?appts.map(x=>x.id===item.id?item:x):[...appts,item]);
+    if(!f.id&&Number(abono)>0) put('txns',[payTxn(item,abono,'Anticipo',today),...txns]);
+    setF(null);
+  };
+  const pickProject = id => { const p=projects.find(x=>x.id===id); setF({...f,projectId:id,price:f.price||(p&&p.price?String(p.price):'')}); };
+  const savePay = () => { if(!(Number(pay.amount)>0))return; put('txns',[payTxn(pay.appt,pay.amount,paid(pay.appt)>0?'Abono':'Anticipo',pay.date),...txns]); setPay(null); };
+  const delPay = id => put('txns',txns.filter(t=>t.id!==id));
+  const del = id => put('appts',appts.filter(x=>x.id!==id));
+  const options = f ? projects.filter(p=>p.status!=='listo'||p.id===f.projectId) : [];
+  act.newAppt = (pre={}) => { setView(null); setF({...blank,...pre}); };
+  act.editAppt = a => { setView(null); setF({...blank,...a,client:clientName(db,a)}); };
+  act.pay = a => { setView(null); setPay({appt:a,amount:String(owed(a)),date:today}); };
+  act.viewAppt = a => setView(a.id);
+  act.toggleDone = a => put('appts',appts.map(x=>x.id===a.id?{...x,status:x.status==='hecha'?'pendiente':'hecha'}:x));
+  const cur = view && appts.find(a=>a.id===view);
+  const cl = cur && clientOf(db,cur.clientId);
+  const curPays = cur ? txns.filter(t=>t.apptId===cur.id) : [];
+  return html`<div>
+      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar cita':'Nueva cita'}>
+        ${f&&html`<div class="stack" style="gap:12px">
+          <div>
+            <label class="lbl">Proyecto</label>
+            <select value=${f.projectId||''} onChange=${e=>pickProject(e.target.value)}>
+              <option value="">${f.title?`Sin proyecto (${f.title})`:'Sin proyecto'}</option>
+              ${options.map(p=>html`<option value=${p.id}>${p.name}</option>`)}
+            </select>
+            ${projects.length===0&&html`<p class="tiny" style="margin-top:6px">Aún no tienes proyectos. <a href="#" style="color:var(--pink-deep);font-weight:600" onClick=${e=>{e.preventDefault();setF(null);setTab('projects');}}>Crea uno</a> para poder elegirlo aquí.</p>`}
+          </div>
+          <div>
+            <label class="lbl">Cliente</label>
+            <input list="clients-dl" value=${f.client} onInput=${e=>setF({...f,client:e.target.value})} placeholder="Busca o escribe un cliente nuevo"/>
+            <datalist id="clients-dl">${clients.map(c=>html`<option value=${c.name}/>`)}</datalist>
+            ${(f.client||'').trim()&&!clients.some(c=>c.name.trim().toLowerCase()===f.client.trim().toLowerCase())&&html`<p class="tiny" style="margin-top:6px">Se agregará a Clientes como cliente nuevo.</p>`}
+          </div>
+          <div class="grid2">
+            <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
+            <div><label class="lbl">Hora</label><${TimePick} value=${f.time} onChange=${v=>setF({...f,time:v})}/></div>
+          </div>
+          <div class="grid2">
+            <div><label class="lbl">Precio</label><input type="number" inputmode="decimal" min="0" value=${f.price} onInput=${e=>setF({...f,price:e.target.value})} placeholder="0"/></div>
+            ${f.id?html`<div><label class="lbl">Falta por cobrar</label><input class="num" value=${fmtMoney(Math.max(0,(Number(f.price)||0)-apptPaid(txns,f.id)))} disabled/></div>`
+                  :html`<div><label class="lbl">Anticipo (si dejó)</label><input type="number" inputmode="decimal" min="0" value=${f.abono} onInput=${e=>setF({...f,abono:e.target.value})} placeholder="0 = sin anticipo"/></div>`}
+          </div>
+          ${!f.id&&Number(f.price)>0&&html`<p class="tiny">Falta por cobrar: <b class="num" style="color:var(--ink)">${fmtMoney(Math.max(0,Number(f.price)-(Number(f.abono)||0)))}</b>${Number(f.abono)>0?' · el anticipo se registra en Finanzas con fecha de hoy':''}</p>`}
+          ${f.id&&html`<div>
+            <label class="lbl">Pagos recibidos</label>
+            ${txns.filter(t=>t.apptId===f.id).length===0&&html`<p class="tiny">Sin pagos todavía.</p>`}
+            ${txns.filter(t=>t.apptId===f.id).map(t=>html`
+              <div class="list-row" style="padding:6px 0">
+                <span class="muted" style="flex:1;text-transform:capitalize">${fmtDate(t.date)} · ${t.category}</span>
+                <b class="num" style="font-size:13px">${fmtMoney(t.amount)}</b>
+                <button class="icon-btn" style="padding:2px" onClick=${()=>ask('¿Quitar este pago?',()=>delPay(t.id),'También se borra de Finanzas.')} aria-label="Quitar pago"><${Ic} n="x" s=${12}/></button>
+              </div>`)}
+          </div>`}
+          <div><label class="lbl">Estado</label><select value=${f.status} onChange=${e=>setF({...f,status:e.target.value})}>${Object.entries(A_STATUS).map(([k,v])=>html`<option value=${k}>${v.l}</option>`)}</select></div>
+          <textarea value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Notas" rows="2" style="resize:none"/>
+          <${FormActions} isEdit=${!!f.id} label="Agendar cita" what="esta cita" detail="Los pagos que ya registraste se quedan en Finanzas." onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
+        </div>`}
+      <//>
+
+      <${Modal} open=${!!pay} onClose=${()=>setPay(null)} title="Agregar pago">
+        ${pay&&html`<div class="stack" style="gap:12px">
+          <p class="muted"><b style="color:var(--ink)">${name(pay.appt)}</b>${clientName(db,pay.appt)?` · ${clientName(db,pay.appt)}`:''} — falta <b class="num" style="color:var(--ink)">${fmtMoney(owed(pay.appt))}</b></p>
+          <div class="grid2">
+            <div><label class="lbl">Monto del pago</label><input type="number" inputmode="decimal" min="0" value=${pay.amount} onInput=${e=>setPay({...pay,amount:e.target.value})} autoFocus/></div>
+            <div><label class="lbl">Fecha</label><input type="date" value=${pay.date} onInput=${e=>setPay({...pay,date:e.target.value})}/></div>
+          </div>
+          <p class="tiny">Se acredita como ingreso en Finanzas.</p>
+          <button class="btn-p" style="width:100%;justify-content:center" onClick=${savePay}>Registrar pago</button>
+        </div>`}
+      <//>
+
+      <${Modal} open=${!!cur} onClose=${()=>setView(null)} title="Cita">
+        ${cur&&html`<div class="stack" style="gap:14px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div style="min-width:0">
+              <p style="font-size:16px;font-weight:600">${name(cur)}</p>
+              <p class="muted" style="text-transform:capitalize">${fmtDate(cur.date)}${cur.time?' · '+cur.time:' · Sin hora'}</p>
+            </div>
+            <span class=${'badge '+(A_STATUS[cur.status]||A_STATUS.pendiente).b}>${(A_STATUS[cur.status]||A_STATUS.pendiente).l}</span>
+          </div>
+          ${clientName(db,cur)&&html`
+            <div class="rowx" style="gap:10px;flex-wrap:wrap">
+              <span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${14} c="var(--ink-3)"/>${clientName(db,cur)}</span>
+              ${cl&&waLink(cl.phone)&&html`<a class="btn-g" style="text-decoration:none;min-height:28px;font-size:12px" href=${waLink(cl.phone)} target="_blank" rel="noopener">WhatsApp</a>`}
+            </div>`}
+          ${(cur.price>0||paid(cur)>0)&&html`
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:var(--surface-2);border-radius:8px">
+              ${[['Precio',cur.price],['Abonado',paid(cur)],['Falta',owed(cur)]].map(([l,v])=>html`<div><p class="tiny">${l}</p><p class="num" style="font-size:13px;font-weight:600">${fmtMoney(v)}</p></div>`)}
+            </div>`}
+          ${curPays.length>0&&html`<div>
+            <p class="over" style="margin-bottom:2px">Pagos</p>
+            ${curPays.map(t=>html`<div class="list-row" style="padding:7px 0"><span class="muted" style="flex:1;text-transform:capitalize">${fmtDate(t.date)} · ${t.category}</span><b class="num" style="font-size:13px">${fmtMoney(t.amount)}</b></div>`)}
+          </div>`}
+          ${cur.note&&html`<p class="muted">${cur.note}</p>`}
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${cur.status!=='cancelada'&&html`<button class="btn-g" style="flex:1" onClick=${()=>act.toggleDone(cur)}><${Ic} n="check" s=${14}/>${cur.status==='hecha'?'Marcar pendiente':'Marcar realizada'}</button>`}
+            ${owed(cur)>0&&html`<button class="btn-g" style="flex:1" onClick=${()=>act.pay(cur)}><${Ic} n="plus" s=${14}/>Agregar pago</button>`}
+            <button class="btn-p" style="flex:1" onClick=${()=>act.editAppt(cur)}><${Ic} n="edit" s=${14} c="var(--on-acc)"/>Editar</button>
+          </div>
+        </div>`}
+      <//>
+  </div>`;
+};
+const TxnForm = ({db,put}) => {
+  const today = todayKey();
+  const {txns,projects} = db;
+  const [f,setF] = useState(null);
+  const blank = type => ({type,amount:'',category:FCATS[type][0],note:'',date:today,projectId:''});
+  const saveF = () => { if(!Number(f.amount))return; put('txns',upsert(txns,{...f,amount:Number(f.amount)})); setF(null); };
+  const del = id => put('txns',txns.filter(x=>x.id!==id));
+  const cats = f ? [...new Set([...FCATS[f.type],f.category])] : [];
+  act.newTxn = type => setF(blank(type));
+  act.editTxn = t => setF({projectId:'',...t,amount:String(t.amount)});
+  return html`<div>
+      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar movimiento':'Nuevo movimiento'}>
+        ${f&&html`<div class="stack" style="gap:12px">
+          <div class="seg">
+            ${[['income','Ingreso'],['expense','Gasto']].map(([tp,l])=>html`<button class=${f.type===tp?'on':''} onClick=${()=>setF({...f,type:tp,category:FCATS[tp][0]})}>${l}</button>`)}
+          </div>
+          <div><label class="lbl">Monto</label><input type="number" inputmode="decimal" min="0" value=${f.amount} onInput=${e=>setF({...f,amount:e.target.value})} placeholder="0" autoFocus/></div>
+          <div class="grid2">
+            <div><label class="lbl">Categoría</label><select value=${f.category} onChange=${e=>setF({...f,category:e.target.value})}>${cats.map(c=>html`<option value=${c}>${c}</option>`)}</select></div>
+            <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
+          </div>
+          <div><label class="lbl">Descripción</label><input value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Cliente, proveedor o concepto"/></div>
+          ${projects.length>0&&html`<div><label class="lbl">Proyecto (opcional)</label><select value=${f.projectId||''} onChange=${e=>setF({...f,projectId:e.target.value})}><option value="">Sin proyecto</option>${projects.map(p=>html`<option value=${p.id}>${p.name}</option>`)}</select></div>`}
+          <${FormActions} isEdit=${!!f.id} label="Guardar" what="este movimiento" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
+        </div>`}
+      <//>
+  </div>`;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
 // PAGE: DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
 const chartBuckets = per => {
@@ -383,12 +551,14 @@ const PageHome = ({db,setTab,biz,icon,openSettings}) => {
   const maxV = Math.max(...series.flatMap(m=>[m.inc,m.exp]),1);
   const shown = series.find(m=>m.id===hov) || series[series.length-1];
 
-  const upcoming = appts.filter(a=>a.status!=='cancelada'&&a.status!=='hecha'&&a.date>=today)
+  const upcoming = appts.filter(a=>a.status!=='cancelada'&&a.status!=='hecha'&&a.date>today)
     .sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).slice(0,5);
   const active = projects.filter(p=>p.status==='curso'||p.status==='propuesta').slice(0,5);
   const byCat={}; inMo.filter(t=>t.type==='expense').forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
   const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const debtors = appts.filter(a=>apptOwed(txns,a)>0);
+  const todays = appts.filter(a=>a.date===today&&a.status!=='cancelada').sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));
+  const pastDebt = appts.filter(a=>a.date<today&&apptOwed(txns,a)>0);
   const owedTotal = debtors.reduce((s,a)=>s+apptOwed(txns,a),0);
 
   const kpis = [
@@ -406,6 +576,22 @@ const PageHome = ({db,setTab,biz,icon,openSettings}) => {
           <h1 class="h1">${biz||'Mi negocio'}${icon?' '+icon:''}</h1>
         </div>
         <button class="icon-btn mobile-only" onClick=${openSettings} aria-label="Ajustes"><${Ic} n="settings" s=${20}/></button>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <${CardHead} title=${`Hoy · ${todays.length} cita${todays.length===1?'':'s'}`} action="+ Agendar" onAction=${()=>act.newAppt({date:today})}/>
+        ${todays.length===0&&html`<p class="muted" style="padding:6px 0">No tienes citas hoy.</p>`}
+        ${todays.map(a=>{const ow=apptOwed(txns,a);const st=A_STATUS[a.status]||A_STATUS.pendiente;return html`
+          <div class="list-row">
+            <div class=${'check-box'+(a.status==='hecha'?' done':'')} onClick=${()=>act.toggleDone(a)} title="Marcar como realizada">${a.status==='hecha'&&html`<${Ic} n="check" s=${12} c="var(--on-acc)"/>`}</div>
+            <span class="num" style="width:44px;font-weight:600;flex-shrink:0">${a.time||'—'}</span>
+            <div style="flex:1;min-width:0;cursor:pointer" onClick=${()=>act.viewAppt(a)}>
+              <p class="ellip" style=${{fontSize:13,fontWeight:600,textDecoration:a.status==='hecha'?'line-through':'none'}}>${apptName(db,a)}</p>
+              <p class="tiny ellip">${clientName(db,a)||'Sin cliente'}</p>
+            </div>
+            ${ow>0?html`<button class="btn-g" style="min-height:28px;font-size:12px" onClick=${()=>act.pay(a)}>Cobrar ${fmtMoney(ow)}</button>`:html`<span class=${'badge '+(a.price>0&&a.status!=='cancelada'?'b-good':st.b)}>${a.price>0&&a.status!=='cancelada'?'Pagado':st.l}</span>`}
+          </div>`;})}
+        ${pastDebt.length>0&&html`<p class="tiny" style="margin-top:10px">Además, ${pastDebt.length} cita${pastDebt.length===1?'':'s'} anterior${pastDebt.length===1?'':'es'} te deben <b class="num" style="color:var(--ink)">${fmtMoney(pastDebt.reduce((s,a)=>s+apptOwed(txns,a),0))}</b>. <a href="#" style="color:var(--ink-2)" onClick=${e=>{e.preventDefault();setTab('appts');}}>Ver citas</a></p>`}
       </div>
 
       <div class="kpis">
@@ -478,7 +664,7 @@ const PageHome = ({db,setTab,biz,icon,openSettings}) => {
             <${CardHead} title="Próximas citas" action="Calendario" onAction=${()=>setTab('cal')}/>
             ${upcoming.length===0&&html`<p class="muted" style="padding:10px 0">No tienes citas pendientes.</p>`}
             ${upcoming.map(a=>html`
-              <div class="list-row">
+              <div class="list-row" style="cursor:pointer" onClick=${()=>act.viewAppt(a)}>
                 <div class="chip" style="background:var(--pink-soft);flex-direction:column;width:42px;height:42px">
                   <span style="font-size:14px;font-weight:700;color:var(--pink-deep);line-height:1">${Number(a.date.slice(8))}</span>
                   <span style="font-size:9px;font-weight:600;color:var(--pink-deep);text-transform:uppercase">${new Date(a.date+'T12:00:00').toLocaleDateString('es-MX',{month:'short'}).replace('.','')}</span>
@@ -516,17 +702,13 @@ const PageFinance = ({db,put}) => {
   const [ym,setYm] = useState(today.slice(0,7));
   const [scope,setScope] = useState('mes');
   const [kind,setKind] = useState('todos');
-  const [f,setF] = useState(null);
-  const blank = type => ({type,amount:'',category:FCATS[type][0],note:'',date:today,projectId:''});
-  const saveF = () => { if(!Number(f.amount))return; put('txns',upsert(txns,{...f,amount:Number(f.amount)})); setF(null); };
-  const del = id => put('txns',txns.filter(x=>x.id!==id));
+
 
   const pfx = scope==='mes'?ym:ym.slice(0,4);
   const inP = txns.filter(t=>(t.date||'').startsWith(pfx));
   const inc = sum(inP,'income'), exp = sum(inP,'expense'), bal = inc-exp;
   const list = inP.filter(t=>kind==='todos'||t.type===kind).sort((a,b)=>b.date.localeCompare(a.date));
   const byDay={}; list.forEach(t=>{(byDay[t.date]=byDay[t.date]||[]).push(t);});
-  const cats = f ? [...new Set([...FCATS[f.type],f.category])] : [];
   const pName = id => (projects.find(p=>p.id===id)||{}).name;
 
   return html`
@@ -534,8 +716,8 @@ const PageFinance = ({db,put}) => {
       <div class="page-header">
         <div class="col"><h2 class="h1">Ingresos y egresos</h2><p class="muted">${scope==='mes'?fmtMonth(ym):`Año ${ym.slice(0,4)}`}</p></div>
         <div class="rowx" style="gap:8px">
-          <button class="btn-g" onClick=${()=>setF(blank('expense'))}><${Ic} n="down" s=${14}/>Gasto</button>
-          <button class="btn-p" onClick=${()=>setF(blank('income'))}><${Ic} n="up" s=${14} c="var(--on-acc)"/>Ingreso</button>
+          <button class="btn-g" onClick=${()=>act.newTxn('expense')}><${Ic} n="down" s=${14}/>Gasto</button>
+          <button class="btn-p" onClick=${()=>act.newTxn('income')}><${Ic} n="up" s=${14} c="var(--on-acc)"/>Ingreso</button>
         </div>
       </div>
 
@@ -580,26 +762,12 @@ const PageFinance = ({db,put}) => {
                   <p class="tiny ellip">${t.category}${pName(t.projectId)?` · ${pName(t.projectId)}`:''}</p>
                 </div>
                 <p class="num" style="font-size:14px;font-weight:700;flex-shrink:0">${t.type==='income'?'+':'−'}${fmtMoney(t.amount)}</p>
-                <button class="icon-btn" onClick=${()=>setF({projectId:'',...t,amount:String(t.amount)})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
+                <button class="icon-btn" onClick=${()=>act.editTxn(t)} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
               </div>`)}
           </div>
         </div>`)}
 
-      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar movimiento':'Nuevo movimiento'}>
-        ${f&&html`<div class="stack" style="gap:12px">
-          <div class="seg">
-            ${[['income','Ingreso'],['expense','Gasto']].map(([tp,l])=>html`<button class=${f.type===tp?'on':''} onClick=${()=>setF({...f,type:tp,category:FCATS[tp][0]})}>${l}</button>`)}
-          </div>
-          <div><label class="lbl">Monto</label><input type="number" inputmode="decimal" min="0" value=${f.amount} onInput=${e=>setF({...f,amount:e.target.value})} placeholder="0" autoFocus/></div>
-          <div class="grid2">
-            <div><label class="lbl">Categoría</label><select value=${f.category} onChange=${e=>setF({...f,category:e.target.value})}>${cats.map(c=>html`<option value=${c}>${c}</option>`)}</select></div>
-            <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
-          </div>
-          <div><label class="lbl">Descripción</label><input value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Cliente, proveedor o concepto"/></div>
-          ${projects.length>0&&html`<div><label class="lbl">Proyecto (opcional)</label><select value=${f.projectId||''} onChange=${e=>setF({...f,projectId:e.target.value})}><option value="">Sin proyecto</option>${projects.map(p=>html`<option value=${p.id}>${p.name}</option>`)}</select></div>`}
-          <${FormActions} isEdit=${!!f.id} label="Guardar" what="este movimiento" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
-        </div>`}
-      <//>
+
     </div>
   `;
 };
@@ -611,35 +779,12 @@ const PageAppts = ({db,put,setTab}) => {
   const today = todayKey();
   const {appts,txns,projects} = db;
   const clients = db.clients||[];
-  const [f,setF] = useState(null);
-  const [pay,setPay] = useState(null);
   const [onlyDebt,setOnlyDebt] = useState(false);
-  const blank = {projectId:'',title:'',client:'',clientId:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
   const name = a => apptName(db,a);
   const paid = a => apptPaid(txns,a.id);
   const owed = a => apptOwed(txns,a);
-  const payTxn = (a,amount,category,date) => ({id:uid(),type:'income',amount:Number(amount),category,note:[name(a),clientName(db,a)].filter(Boolean).join(' — '),date,apptId:a.id,projectId:a.projectId||''});
-  const saveF = () => {
-    if(!f.date)return;
-    const {abono,...rest} = f;
-    const nm = (f.client||'').trim();
-    let cid = '';
-    if(nm){
-      const ex = clients.find(c=>c.name.trim().toLowerCase()===nm.toLowerCase());
-      if(ex) cid = ex.id;
-      else { cid = uid(); put('clients',[...clients,{id:cid,name:nm,phone:'',instagram:'',email:'',note:'',createdAt:today}]); }
-    }
-    const item = {...rest,client:nm,clientId:cid,id:f.id||uid(),price:Number(f.price)||0};
-    put('appts',f.id?appts.map(x=>x.id===item.id?item:x):[...appts,item]);
-    if(!f.id&&Number(abono)>0) put('txns',[payTxn(item,abono,'Anticipo',today),...txns]);
-    setF(null);
-  };
-  const pickProject = id => { const p=projects.find(x=>x.id===id); setF({...f,projectId:id,price:f.price||(p&&p.price?String(p.price):'')}); };
-  const savePay = () => { if(!(Number(pay.amount)>0))return; put('txns',[payTxn(pay.appt,pay.amount,paid(pay.appt)>0?'Abono':'Anticipo',pay.date),...txns]); setPay(null); };
-  const delPay = id => put('txns',txns.filter(t=>t.id!==id));
   const owedTotal = appts.reduce((s,a)=>s+owed(a),0);
-  const del = id => put('appts',appts.filter(x=>x.id!==id));
-  const toggle = a => put('appts',appts.map(x=>x.id===a.id?{...x,status:x.status==='hecha'?'pendiente':'hecha'}:x));
+  const toggle = a => act.toggleDone(a);
   const key = a => a.date+(a.time||'');
   const asc = appts.filter(a=>!onlyDebt||owed(a)>0).sort((a,b)=>key(a).localeCompare(key(b)));
   const groups = [
@@ -648,13 +793,12 @@ const PageAppts = ({db,put,setTab}) => {
     ['Anteriores', asc.filter(a=>a.date<today).reverse().slice(0,15)],
   ].filter(g=>g[1].length);
   const pending = appts.filter(a=>a.status==='pendiente'&&a.date>=today).length;
-  const options = f ? projects.filter(p=>p.status!=='listo'||p.id===f.projectId) : [];
 
   return html`
     <div class="page fade-up">
       <div class="page-header">
         <div class="col"><h2 class="h1">Citas</h2><p class="muted">${pending} pendiente${pending===1?'':'s'} · por cobrar <b class="num" style="color:var(--ink)">${fmtMoney(owedTotal)}</b></p></div>
-        <button class="btn-p" onClick=${()=>setF({...blank})}><${Ic} n="plus" s=${15} c="var(--on-acc)"/>Nueva cita</button>
+        <button class="btn-p" onClick=${()=>act.newAppt()}><${Ic} n="plus" s=${15} c="var(--on-acc)"/>Nueva cita</button>
       </div>
       <div class="rowx" style="margin-bottom:16px">
         ${[[false,'Todas'],[true,'Me deben']].map(([v,l])=>html`<button class=${'tab-pill'+(onlyDebt===v?' active':'')} onClick=${()=>setOnlyDebt(v)}>${l}</button>`)}
@@ -670,7 +814,7 @@ const PageAppts = ({db,put,setTab}) => {
                 <div class=${'check-box'+(a.status==='hecha'?' done':'')} style="margin-top:2px" onClick=${()=>toggle(a)} title="Marcar como realizada">${a.status==='hecha'&&html`<${Ic} n="check" s=${13} c="var(--on-acc)"/>`}</div>
                 <div style="flex:1;min-width:0">
                   <div class="rowx" style="justify-content:space-between;gap:8px">
-                    <p class="ellip" style=${{fontSize:14,fontWeight:600,textDecoration:a.status==='cancelada'?'line-through':'none'}}>${name(a)}</p>
+                    <p class="ellip" style=${{fontSize:14,fontWeight:600,cursor:'pointer',textDecoration:a.status==='cancelada'?'line-through':'none'}} onClick=${()=>act.viewAppt(a)}>${name(a)}</p>
                     <span class=${'badge '+st.b}>${st.l}</span>
                   </div>
                   <div class="stack" style="gap:4px;margin-top:8px">
@@ -684,67 +828,15 @@ const PageAppts = ({db,put,setTab}) => {
                     </div>
                     <div class="rowx" style="margin-top:8px;justify-content:space-between">
                       ${a.status==='cancelada'?html`<span class="tiny">Cancelada, no se cobra</span>`:owed(a)>0?html`<span class="badge b-warn">Debe ${fmtMoney(owed(a))}</span>`:html`<span class="badge b-good">Pagado</span>`}
-                      ${owed(a)>0&&html`<button class="btn-g" style="padding:6px 12px;font-size:12px;min-height:0" onClick=${()=>setPay({appt:a,amount:String(owed(a)),date:today})}><${Ic} n="plus" s=${12}/>Agregar pago</button>`}
+                      ${owed(a)>0&&html`<button class="btn-g" style="padding:6px 12px;font-size:12px;min-height:0" onClick=${()=>act.pay(a)}><${Ic} n="plus" s=${12}/>Agregar pago</button>`}
                     </div>`}
                 </div>
-                <button class="icon-btn" onClick=${()=>setF({...blank,...a,client:clientName(db,a)})} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
+                <button class="icon-btn" onClick=${()=>act.editAppt(a)} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
               </div>`;})}
           </div>
         </div>`)}
 
-      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar cita':'Nueva cita'}>
-        ${f&&html`<div class="stack" style="gap:12px">
-          <div>
-            <label class="lbl">Proyecto</label>
-            <select value=${f.projectId||''} onChange=${e=>pickProject(e.target.value)}>
-              <option value="">${f.title?`Sin proyecto (${f.title})`:'Sin proyecto'}</option>
-              ${options.map(p=>html`<option value=${p.id}>${p.name}</option>`)}
-            </select>
-            ${projects.length===0&&html`<p class="tiny" style="margin-top:6px">Aún no tienes proyectos. <a href="#" style="color:var(--pink-deep);font-weight:600" onClick=${e=>{e.preventDefault();setF(null);setTab('projects');}}>Crea uno</a> para poder elegirlo aquí.</p>`}
-          </div>
-          <div>
-            <label class="lbl">Cliente</label>
-            <input list="clients-dl" value=${f.client} onInput=${e=>setF({...f,client:e.target.value})} placeholder="Busca o escribe un cliente nuevo"/>
-            <datalist id="clients-dl">${clients.map(c=>html`<option value=${c.name}/>`)}</datalist>
-            ${(f.client||'').trim()&&!clients.some(c=>c.name.trim().toLowerCase()===f.client.trim().toLowerCase())&&html`<p class="tiny" style="margin-top:6px">Se agregará a Clientes como cliente nuevo.</p>`}
-          </div>
-          <div class="grid2">
-            <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
-            <div><label class="lbl">Hora</label><${TimePick} value=${f.time} onChange=${v=>setF({...f,time:v})}/></div>
-          </div>
-          <div class="grid2">
-            <div><label class="lbl">Precio</label><input type="number" inputmode="decimal" min="0" value=${f.price} onInput=${e=>setF({...f,price:e.target.value})} placeholder="0"/></div>
-            ${f.id?html`<div><label class="lbl">Falta por cobrar</label><input class="num" value=${fmtMoney(Math.max(0,(Number(f.price)||0)-apptPaid(txns,f.id)))} disabled/></div>`
-                  :html`<div><label class="lbl">Anticipo (si dejó)</label><input type="number" inputmode="decimal" min="0" value=${f.abono} onInput=${e=>setF({...f,abono:e.target.value})} placeholder="0 = sin anticipo"/></div>`}
-          </div>
-          ${!f.id&&Number(f.price)>0&&html`<p class="tiny">Falta por cobrar: <b class="num" style="color:var(--ink)">${fmtMoney(Math.max(0,Number(f.price)-(Number(f.abono)||0)))}</b>${Number(f.abono)>0?' · el anticipo se registra en Finanzas con fecha de hoy':''}</p>`}
-          ${f.id&&html`<div>
-            <label class="lbl">Pagos recibidos</label>
-            ${txns.filter(t=>t.apptId===f.id).length===0&&html`<p class="tiny">Sin pagos todavía.</p>`}
-            ${txns.filter(t=>t.apptId===f.id).map(t=>html`
-              <div class="list-row" style="padding:6px 0">
-                <span class="muted" style="flex:1;text-transform:capitalize">${fmtDate(t.date)} · ${t.category}</span>
-                <b class="num" style="font-size:13px">${fmtMoney(t.amount)}</b>
-                <button class="icon-btn" style="padding:2px" onClick=${()=>ask('¿Quitar este pago?',()=>delPay(t.id),'También se borra de Finanzas.')} aria-label="Quitar pago"><${Ic} n="x" s=${12}/></button>
-              </div>`)}
-          </div>`}
-          <div><label class="lbl">Estado</label><select value=${f.status} onChange=${e=>setF({...f,status:e.target.value})}>${Object.entries(A_STATUS).map(([k,v])=>html`<option value=${k}>${v.l}</option>`)}</select></div>
-          <textarea value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Notas" rows="2" style="resize:none"/>
-          <${FormActions} isEdit=${!!f.id} label="Agendar cita" what="esta cita" detail="Los pagos que ya registraste se quedan en Finanzas." onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
-        </div>`}
-      <//>
 
-      <${Modal} open=${!!pay} onClose=${()=>setPay(null)} title="Agregar pago">
-        ${pay&&html`<div class="stack" style="gap:12px">
-          <p class="muted"><b style="color:var(--ink)">${name(pay.appt)}</b>${clientName(db,pay.appt)?` · ${clientName(db,pay.appt)}`:''} — falta <b class="num" style="color:var(--ink)">${fmtMoney(owed(pay.appt))}</b></p>
-          <div class="grid2">
-            <div><label class="lbl">Monto del pago</label><input type="number" inputmode="decimal" min="0" value=${pay.amount} onInput=${e=>setPay({...pay,amount:e.target.value})} autoFocus/></div>
-            <div><label class="lbl">Fecha</label><input type="date" value=${pay.date} onInput=${e=>setPay({...pay,date:e.target.value})}/></div>
-          </div>
-          <p class="tiny">Se acredita como ingreso en Finanzas.</p>
-          <button class="btn-p" style="width:100%;justify-content:center" onClick=${savePay}>Registrar pago</button>
-        </div>`}
-      <//>
     </div>
   `;
 };
@@ -869,7 +961,7 @@ const PageClients = ({db,put}) => {
             <p class="over" style="margin-bottom:4px">Historial</p>
             ${cst.ap.length===0&&html`<p class="muted" style="padding:8px 0">Todavía no tiene citas.</p>`}
             ${cst.ap.map(a=>{const st=A_STATUS[a.status]||A_STATUS.pendiente;const ow=apptOwed(txns,a);return html`
-              <div class="list-row">
+              <div class="list-row" style="cursor:pointer" onClick=${()=>{setView(null);act.viewAppt(a);}}>
                 <div style="flex:1;min-width:0">
                   <p class="ellip" style="font-size:13px;font-weight:500">${apptName(db,a)}</p>
                   <p class="tiny" style="text-transform:capitalize">${fmtDate(a.date)}${a.time?' · '+a.time:''}${a.price?' · '+fmtMoney(a.price):''}</p>
@@ -992,7 +1084,7 @@ const PageCalendar = ({db,setTab}) => {
   const go = d => { setSel(d); setYm(d.slice(0,7)); };
 
   const events = appts.filter(a=>a.status==='pendiente'&&a.date>=today)
-    .map(a=>({date:a.date,time:a.time||'',text:apptName(db,a),sub:clientName(db,a)||''}))
+    .map(a=>({a,date:a.date,time:a.time||'',text:apptName(db,a),sub:clientName(db,a)||''}))
     .sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,8);
   const selA = apptsOn(sel);
   const longDate = d => { const t=new Date(d+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}); return t[0].toUpperCase()+t.slice(1); };
@@ -1016,12 +1108,12 @@ const PageCalendar = ({db,setTab}) => {
             ${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d=>html`<div class="cal-head">${d}</div>`)}
             ${cells.map(d=>{
               if(!d) return html`<div class="cal-day off"/>`;
-              const items=apptsOn(d).map(a=>({k:'a',t:(a.time?a.time+' ':'')+apptName(db,a)}));
+              const items=apptsOn(d).map(a=>({k:'a',a,t:(a.time?a.time+' ':'')+apptName(db,a)}));
               return html`
-                <button class=${'cal-day'+(d===sel?' sel':'')+(d===today?' today':'')} onClick=${()=>setSel(d)}>
+                <button class=${'cal-day'+(d===sel?' sel':'')+(d===today?' today':'')} onClick=${()=>setSel(d)} onDblClick=${()=>act.newAppt({date:d})} title="Doble clic para agendar">
                   <span class="cal-num">${Number(d.slice(8))}</span>
                   <div class="cal-chips">
-                    ${items.slice(0,3).map(it=>html`<span class=${'cal-chip '+it.k} title=${it.t}>${it.t}</span>`)}
+                    ${items.slice(0,3).map(it=>html`<span class=${'cal-chip '+it.k} title=${it.t} onClick=${e=>{e.stopPropagation();setSel(d);act.viewAppt(it.a);}}>${it.t}</span>`)}
                     ${items.length>3&&html`<span class="cal-more">+${items.length-3} más</span>`}
                   </div>
                 </button>`;
@@ -1031,10 +1123,10 @@ const PageCalendar = ({db,setTab}) => {
 
         <div class="stack" style="gap:16px">
           <div class="card">
-            <${CardHead} title=${sel===today?'Hoy':longDate(sel)} action="Ir a Citas" onAction=${()=>setTab('appts')}/>
-            ${selA.length===0&&html`<p class="muted" style="padding:8px 0">Nada agendado este día.</p>`}
+            <${CardHead} title=${sel===today?'Hoy':longDate(sel)} action="+ Agendar este día" onAction=${()=>act.newAppt({date:sel})}/>
+            ${selA.length===0&&html`<p class="muted" style="padding:8px 0">Nada agendado este día. Tip: doble clic en un día para agendar.</p>`}
             ${selA.map(a=>html`
-              <div class="list-row">
+              <div class="list-row" style="cursor:pointer" onClick=${()=>act.viewAppt(a)}>
                 <span class="dot" style="background:var(--pink-deep)"/>
                 <div style="flex:1;min-width:0"><p class="ellip" style="font-size:13px;font-weight:600">${apptName(db,a)}</p><p class="tiny ellip">${a.time||'Sin hora'}${clientName(db,a)?` · ${clientName(db,a)}`:''}</p></div>
                 ${apptOwed(txns,a)>0?html`<span class="badge b-warn num">Falta ${fmtMoney(apptOwed(txns,a))}</span>`:a.status==='hecha'?html`<span class="badge b-good">Realizada</span>`:null}
@@ -1044,7 +1136,7 @@ const PageCalendar = ({db,setTab}) => {
             <${CardHead} title="Lo que viene"/>
             ${events.length===0&&html`<p class="muted" style="padding:8px 0">No hay nada próximo.</p>`}
             ${events.map(e=>html`
-              <div class="list-row" style="cursor:pointer" onClick=${()=>go(e.date)}>
+              <div class="list-row" style="cursor:pointer" onClick=${()=>{go(e.date);act.viewAppt(e.a);}}>
                 <span class="dot" style="background:var(--pink-deep)"/>
                 <div style="flex:1;min-width:0"><p class="ellip" style="font-size:13px;font-weight:600">${e.text}</p><p class="tiny ellip">${e.sub}</p></div>
                 <span class="tiny" style="text-transform:capitalize;white-space:nowrap">${e.date===today?'Hoy':fmtDate(e.date)}${e.time?` · ${e.time}`:''}</span>
@@ -1169,19 +1261,50 @@ const App = () => {
   const [db,setDb] = useState(()=>SUPA_KEY?EMPTY:{txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[]),clients:load('clients',[])});
   const [session,setSession] = useState(SUPA_KEY&&sb?undefined:null);   // undefined = revisando sesión
   const [cloud,setCloud] = useState(SUPA_KEY?'cargando':'local');
-  const [toast,setToast] = useState('');
-  const flash = m => { setToast(m); setTimeout(()=>setToast(''),4000); };
+  const [toast,setToast] = useState(null);
+  const toastT = useRef(0);
+  const flash = (msg,undo) => { clearTimeout(toastT.current); setToast({msg,undo}); toastT.current=setTimeout(()=>setToast(null),undo?7000:4000); };
+  const [fab,setFab] = useState(false);
+  const [saving,setSaving] = useState(0);
+  const [failed,setFailed] = useState({});
+  const dbRef = useRef(db); dbRef.current = db;
   const [conf,setConf] = useState(null);
   bus.ask = setConf;
   const [theme,setThemeS] = useState(()=>document.documentElement.dataset.theme||'dark');
   const setTheme = v => { setThemeS(v); document.documentElement.dataset.theme=v; try{localStorage.setItem('ritual-theme',v);}catch{} };
   const uidNow = session&&session.user.id;
 
+  // Cada guardado se rastrea: "Guardando…", "Guardado" o "Sin conexión" con reintento.
   const pushCloud = async (k,v) => {
     if(!sb||!uidNow)return;
-    const {error} = await sb.from('ritual_data').upsert({owner:uidNow,key:k,value:v,updated_at:new Date().toISOString()},{onConflict:'owner,key'});
-    if(error) flash('No se pudo guardar en la nube: '+(error.message||'revisa tu conexión'));
+    setSaving(n=>n+1);
+    let error=null;
+    try{ ({error} = await sb.from('ritual_data').upsert({owner:uidNow,key:k,value:v,updated_at:new Date().toISOString()},{onConflict:'owner,key'})); }catch(e){ error=e; }
+    setSaving(n=>n-1);
+    setFailed(f=>{ const n={...f}; if(error) n[k]=v; else delete n[k]; return n; });
   };
+  const nFailed = Object.keys(failed).length;
+  const retry = () => Object.entries(failed).forEach(([k,v])=>pushCloud(k,v));
+  useEffect(()=>{
+    if(!nFailed)return;
+    const t=setInterval(retry,20000);
+    window.addEventListener('online',retry);
+    return ()=>{ clearInterval(t); window.removeEventListener('online',retry); };
+  },[failed]);
+  useEffect(()=>{
+    const warn = e => { if(saving>0||nFailed>0){ e.preventDefault(); e.returnValue=''; } };
+    window.addEventListener('beforeunload',warn);
+    return ()=>window.removeEventListener('beforeunload',warn);
+  },[saving,nFailed]);
+  // Eliminar con opción de deshacer: se guarda una foto de los datos antes de borrar.
+  const confirmDelete = () => {
+    const fn=conf.fn, snap=dbRef.current;
+    setConf(null); fn();
+    flash('Eliminado.',()=>{ const now=dbRef.current; KEYS.forEach(k=>{ if(now[k]!==snap[k]) put(k,snap[k]); }); flash('Listo, se restauró.'); });
+  };
+  const saveState = !SUPA_KEY ? {t:'Guardado en este navegador',c:'var(--ink-3)'}
+    : nFailed ? {t:'Sin conexión · Reintentar',c:'var(--bad)',click:retry}
+    : saving ? {t:'Guardando…',c:'var(--warn)'} : {t:'Guardado',c:'var(--good)'};
   const put = (k,v) => { setDb(d=>({...d,[k]:v})); if(SUPA_KEY) pushCloud(k,v); else save(k,v); };
   const setBiz = v => { setBizS(v); if(SUPA_KEY) pushCloud('name',v); else save('ritual-name',v); };
   const setIcon = v => { setIconS(v); if(SUPA_KEY) pushCloud('icon',v); else save('ritual-icon',v); };
@@ -1240,7 +1363,10 @@ const App = () => {
             </button>
           `)}
         </div>
-        <p class="tiny ellip" style="padding:0 10px 4px;font-size:11px">${session?session.user.email:'Guardado solo en este navegador'}</p>
+        <button onClick=${saveState.click} style=${{display:'flex',alignItems:'center',gap:6,padding:'4px 10px',background:'none',border:0,cursor:saveState.click?'pointer':'default',color:'var(--ink-2)',fontSize:11,textAlign:'left'}}>
+          <span class="dot" style=${{width:6,height:6,background:saveState.c}}/>${saveState.t}
+        </button>
+        ${session&&html`<p class="tiny ellip" style="padding:0 10px 4px;font-size:11px">${session.user.email}</p>`}
         <button class="nav-item" onClick=${()=>setShowSet(true)}>
           <${Ic} n="settings" s=${16}/>Ajustes
         </button>
@@ -1266,15 +1392,28 @@ const App = () => {
             <div class="modal-body" style="text-align:center;padding:26px 22px 22px">
               <div class="empty-ic" style="background:var(--bad-soft);color:var(--bad)"><${Ic} n="trash" s=${18}/></div>
               <p style="font-size:16px;font-weight:600;margin-bottom:6px">${conf.msg}</p>
-              <p class="muted" style="margin-bottom:18px">${conf.detail?conf.detail+' ':''}Esta acción no se puede deshacer.</p>
+              <p class="muted" style="margin-bottom:18px">${conf.detail?conf.detail+' ':''}Podrás deshacerlo durante unos segundos.</p>
               <div style="display:flex;gap:8px">
                 <button class="btn-g" style="flex:1;justify-content:center" onClick=${()=>setConf(null)}>Cancelar</button>
-                <button class="btn-d" style="flex:1" onClick=${()=>{const fn=conf.fn;setConf(null);fn();}}>Sí, eliminar</button>
+                <button class="btn-d" style="flex:1" onClick=${confirmDelete}>Sí, eliminar</button>
               </div>
             </div>
           </div>
         </div>`}
-      ${toast&&html`<div class="toast">${toast}</div>`}
+      <${ApptForms} db=${db} put=${put} setTab=${setTab}/>
+      <${TxnForm} db=${db} put=${put}/>
+
+      ${fab&&html`<div style="position:fixed;inset:0;z-index:39" onClick=${()=>setFab(false)}/>`}
+      <div class="fab-wrap">
+        ${fab&&html`<div class="fab-menu fade-up">
+          ${[['cal','Nueva cita',()=>act.newAppt()],['up','Ingreso',()=>act.newTxn('income')],['down','Gasto',()=>act.newTxn('expense')]].map(([ic,l,fn])=>html`
+            <button class="nav-item" onClick=${()=>{setFab(false);fn();}}><${Ic} n=${ic} s=${15}/>${l}</button>`)}
+        </div>`}
+        <button class="fab" aria-label="Agregar" onClick=${()=>setFab(!fab)} style=${{transform:fab?'rotate(45deg)':'none'}}><${Ic} n="plus" s=${22} c="var(--on-acc)" sw=${2.2}/></button>
+      </div>
+
+      ${nFailed>0&&html`<div class="toast" style="top:16px;bottom:auto;background:var(--bad);color:#fff">No se pudieron guardar algunos cambios. Reintentando… <button onClick=${retry} style="margin-left:8px;background:none;border:0;color:#fff;font-weight:600;text-decoration:underline;cursor:pointer">Reintentar ahora</button></div>`}
+      ${toast&&html`<div class="toast">${toast.msg}${toast.undo&&html`<button onClick=${()=>{const u=toast.undo;setToast(null);u();}} style="margin-left:12px;background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer">Deshacer</button>`}</div>`}
     </div>
   `;
 };
