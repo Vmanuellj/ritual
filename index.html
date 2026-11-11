@@ -217,6 +217,7 @@
       .set-tabs .nav-item{width:auto;flex-shrink:0;white-space:nowrap;height:34px;font-size:13px;}
       .set-save{bottom:calc(-20px - env(safe-area-inset-bottom,0px));}
     }
+    @media(hover:none){.nav-item:hover:not(.active){background:none;color:var(--ink-2);}}
     .switch{position:relative;width:42px;height:24px;border-radius:12px;border:0;cursor:pointer;flex-shrink:0;background:rgb(var(--acc) / 0.2);transition:background .15s;}
     .switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .15s;}
     .switch.on{background:var(--good);}
@@ -513,6 +514,9 @@ const ICON = {
   menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
   repeat:'<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/>',
   download:'<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  share:'<path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>',
+  addsq:'<rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>',
+  dots: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
   user: '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>',
 };
@@ -1838,6 +1842,55 @@ const CollabHome = ({collab,updateJob,email}) => {
 
 // ══════════════════════════════════════════════════════════════════════════
 const BIZ_ICONS = ['','✦','⭐','🎀','🌸','💎','🔥','🌙','📸','🎨','💄','💅','✂️','💼','☕','🧁'];
+// ── Instalar la app (atajo en la pantalla de inicio) ──
+const devInfo = () => {
+  const ua = navigator.userAgent||'';
+  const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  const android = /Android/i.test(ua);
+  const standalone = (window.matchMedia&&matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true;
+  const browser = /Edg\//.test(ua)?'Edge':/SamsungBrowser/.test(ua)?'Samsung Internet':/CriOS|Chrome\//.test(ua)?'Chrome':/FxiOS|Firefox\//.test(ua)?'Firefox':/Safari\//.test(ua)?'Safari':'tu navegador';
+  return {kind:ios?'ios':android?'android':'desktop', standalone, browser, iosSafari: ios && !/CriOS|FxiOS|EdgiOS|GSA\//.test(ua)};
+};
+const InstallApp = () => {
+  const [, force] = useState(0);
+  const [done,setDone] = useState(false);
+  useEffect(()=>{ const f=()=>force(n=>n+1); const ok=()=>setDone(true);
+    window.addEventListener('ritual-install',f); window.addEventListener('appinstalled',ok);
+    return ()=>{ window.removeEventListener('ritual-install',f); window.removeEventListener('appinstalled',ok); }; },[]);
+  const d = devInfo(), evt = window.__installEvt;
+  const install = async () => { evt.prompt(); const r=await evt.userChoice; if(r&&r.outcome==='accepted'){ window.__installEvt=null; setDone(true); } };
+  const Step = ({n,children}) => html`<div class="rowx" style="align-items:flex-start;gap:10px;padding:6px 0">
+    <span style="width:22px;height:22px;border-radius:50%;background:rgb(var(--acc) / 0.1);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${n}</span>
+    <span class="muted" style="line-height:1.5">${children}</span></div>`;
+  const Key = ({ic,t}) => html`<b style="color:var(--ink);display:inline-flex;align-items:center;gap:4px;white-space:nowrap"><${Ic} n=${ic} s=${14}/>${t}</b>`;
+  const where = {ios:'iPhone / iPad',android:'Android',desktop:'computadora'}[d.kind];
+  let content;
+  if(d.standalone||done) content = html`<p class="muted rowx" style="gap:6px"><${Ic} n="check" s=${15} c="var(--good)"/>Ya estás usando la app instalada en este dispositivo.</p>`;
+  else if(evt) content = html`<p class="tiny" style="margin-bottom:10px">Tu ${where} permite instalarla con un toque.</p>
+    <button class="btn-p" onClick=${install}><${Ic} n="download" s=${15} c="var(--on-acc)"/>Instalar app</button>`;
+  else if(d.kind==='ios') content = d.iosSafari ? html`
+      <${Step} n="1">Toca el botón <${Key} ic="share" t="Compartir"/> (abajo al centro en iPhone, arriba en iPad).<//>
+      <${Step} n="2">Desliza y elige <${Key} ic="addsq" t="Agregar a pantalla de inicio"/>.<//>
+      <${Step} n="3">Toca <b style="color:var(--ink)">Agregar</b>. La app aparecerá con el icono de la estrella.<//>`
+    : html`<p class="muted">En iPhone la app solo se puede agregar desde <b style="color:var(--ink)">Safari</b>. Copia este link y ábrelo en Safari:</p>
+      <div class="rowx" style="margin-top:8px"><input value=${location.origin} readonly/><button class="btn-g" onClick=${()=>navigator.clipboard&&navigator.clipboard.writeText(location.origin)}>Copiar</button></div>`;
+  else if(d.kind==='android') content = html`
+      <${Step} n="1">En ${d.browser}, toca el menú <${Key} ic="dots" t=""/> (arriba a la derecha).<//>
+      <${Step} n="2">Elige <${Key} ic="addsq" t="Instalar app"/> o <b style="color:var(--ink)">Agregar a la pantalla principal</b>.<//>
+      <${Step} n="3">Confirma. La app aparecerá con el icono de la estrella.<//>`;
+  else content = d.browser==='Safari' ? html`
+      <${Step} n="1">En la barra de menú de Safari, abre <b style="color:var(--ink)">Archivo</b>.<//>
+      <${Step} n="2">Elige <${Key} ic="addsq" t="Agregar al Dock"/> (macOS Sonoma o más nuevo).<//>`
+    : d.browser==='Firefox' ? html`<p class="muted">Firefox no permite instalar apps web. Abre <b style="color:var(--ink)">${location.host}</b> en Chrome o Edge para instalarla.</p>`
+    : html`
+      <${Step} n="1">En la barra de direcciones de ${d.browser}, busca el icono <${Key} ic="download" t="Instalar"/> a la derecha.<//>
+      <${Step} n="2">O abre el menú <${Key} ic="dots" t=""/> → <b style="color:var(--ink)">Transmitir, guardar y compartir → Instalar página como app</b>.<//>
+      <${Step} n="3">La app se abrirá en su propia ventana y quedará en tu escritorio y menú de inicio.<//>`;
+  return html`<div style="padding:12px;background:var(--surface-2);border-radius:8px">
+    <div class="rowx" style="justify-content:space-between;margin-bottom:8px"><p class="h3">Acceso directo a la app</p><span class="badge b-mute">${where}</span></div>
+    ${content}
+  </div>`;
+};
 const SET_TABS = [
   ['perfil','Datos personales','user'],
   ['negocio','Negocio','proj'],
@@ -1912,8 +1965,9 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,sessi
         <label class="btn-g" style="cursor:pointer">Restaurar desde archivo<input type="file" accept="application/json,.json" style="display:none" onChange=${e=>{const fl=e.target.files&&e.target.files[0]; e.target.value=''; if(!fl)return; fl.text().then(t=>{let o=null; try{o=JSON.parse(t);}catch{} onClose(); importBackup(o);});}}/></label>
       </div>
       <p class="tiny" style="margin-top:10px">Restaurar reemplaza tus datos actuales por los del archivo; antes te pide confirmación.</p>`,
-    personal: html`${H('Personalización','Cómo se ve la app.')}
+    personal: html`${H('Personalización','Cómo se ve la app y cómo la abres.')}
       <div class="stack" style="gap:16px">
+        <${InstallApp}/>
         <div><label class="lbl">Tema de la app</label>
           <div class="seg">${[['dark','Oscuro'],['rosa','Claro']].map(([k,l])=>html`<button class=${theme===k?'on':''} onClick=${()=>setTheme(k)}>${l}</button>`)}</div>
           <p class="tiny" style="margin-top:6px">El tema se guarda en este dispositivo.</p></div>
@@ -1928,7 +1982,7 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,sessi
     <${Modal} open=${open} onClose=${onClose} title="Ajustes" wide=${true}>
       <div class="set-wrap">
         <nav class="set-tabs">
-          ${SET_TABS.map(([k,l,ic2])=>html`<button class=${'nav-item'+(sec===k?' active':'')} onClick=${()=>setSec(k)}><${Ic} n=${ic2} s=${15}/>${l}</button>`)}
+          ${SET_TABS.map(([k,l,ic2])=>html`<button class=${'nav-item'+(sec===k?' active':'')} onClick=${e=>{setSec(k);e.currentTarget.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});}}><${Ic} n=${ic2} s=${15}/>${l}</button>`)}
         </nav>
         <div style="min-width:0">
           ${body[sec]}
@@ -2317,6 +2371,7 @@ const App = () => {
   `;
 };
 
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__installEvt = e; window.dispatchEvent(new Event('ritual-install')); });
 const Safe = ({children}) => {
   const [err] = useErrorBoundary(e=>console.error('Error en la app:',e));
   if(err) return html`<${Splash} text="Algo salió mal al mostrar la app. Tus datos están a salvo en la nube.">
