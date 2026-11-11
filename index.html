@@ -265,7 +265,7 @@
 
 <script type="module">
 import { h, render } from 'https://esm.sh/preact@10.23.1';
-import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.23.1/hooks';
+import { useState, useEffect, useRef, useErrorBoundary } from 'https://esm.sh/preact@10.23.1/hooks';
 import htm from 'https://esm.sh/htm@3.1.1';
 const html = htm.bind(h);
 
@@ -2107,15 +2107,16 @@ const App = () => {
     setDb(EMPTY); setBizS(''); setIconS(''); setProfileS({}); setTab('home'); setCloud('cargando');
     if(!uidNow)return;
     let dead=false;
+    const slow=setTimeout(()=>{ if(!dead){ dead=true; setCloud('error'); } },20000);
     sb.from('ritual_data').select('key,value').eq('owner',uidNow).then(({data,error})=>{
-      if(dead)return;
+      if(dead)return; clearTimeout(slow);
       if(error){ setCloud('error'); return; }
       const m = Object.fromEntries(data.map(r=>[r.key,r.value]));
       const n = {...EMPTY}; KEYS.forEach(k=>{ if(Array.isArray(m[k])) n[k]=m[k]; });
       setJobsRemote(Object.fromEntries(data.filter(r=>r.key.startsWith('jobs:')).map(r=>[r.key.slice(5),r.value])));
       setDb(n); setBizS(typeof m.name==='string'?m.name:''); setIconS(typeof m.icon==='string'?m.icon:''); setProfileS(m.profile&&typeof m.profile==='object'?m.profile:{}); setCloud('ok');
     });
-    return ()=>{dead=true;};
+    return ()=>{dead=true;clearTimeout(slow);};
   },[uidNow]);
 
   // Plan, equipo e invitaciones de la cuenta.
@@ -2156,14 +2157,15 @@ const App = () => {
   useEffect(()=>{
     if(!sb||!uidNow) return;
     const owners = mode==='team' ? [...new Set(invites.map(i=>i.owner))] : [uidNow];
-    const chans = owners.map(o=>sb.channel('rd-'+o+'-'+mode).on('postgres_changes',{event:'*',schema:'public',table:'ritual_data',filter:'owner=eq.'+o},p=>{
+    let chans=[];
+    try{ chans = owners.map(o=>sb.channel('rd-'+o+'-'+mode).on('postgres_changes',{event:'*',schema:'public',table:'ritual_data',filter:'owner=eq.'+o},p=>{
       const r=p.new; if(!r||!r.key) return;
       if(mode==='team'){ loadCollabRef.current&&loadCollabRef.current(); return; }
       if(r.key.startsWith('jobs:')){ setJobsRemote(j=>({...j,[r.key.slice(5)]:r.value})); return; }
       if(Date.now()-(lastPush.current[r.key]||0)<5000) return;
       if(KEYS.includes(r.key)&&JSON.stringify(dbRef.current[r.key])!==JSON.stringify(r.value)) setDb(d=>({...d,[r.key]:r.value}));
-    }).subscribe());
-    return ()=>chans.forEach(c=>sb.removeChannel(c));
+    }).subscribe()); }catch(e){ console.warn('Sin cambios en vivo:',e); }
+    return ()=>chans.forEach(c=>{ try{ sb.removeChannel(c); }catch{} });
   },[uidNow,mode,invites]);
   // Jefe: publica a cada colaborador sus trabajos y trae sus avances a las citas.
   useEffect(()=>{
@@ -2315,7 +2317,14 @@ const App = () => {
   `;
 };
 
-render(html`<${App}/>`, document.getElementById('root'));
+const Safe = ({children}) => {
+  const [err] = useErrorBoundary(e=>console.error('Error en la app:',e));
+  if(err) return html`<${Splash} text="Algo salió mal al mostrar la app. Tus datos están a salvo en la nube.">
+    <p class="tiny" style="margin-top:10px;word-break:break-word">${String((err&&err.message)||err)}</p>
+    <button class="btn-p" style="margin-top:14px;width:100%" onClick=${()=>location.reload()}>Recargar</button><//>`;
+  return children;
+};
+render(html`<${Safe}><${App}/><//>`, document.getElementById('root'));
 if('serviceWorker' in navigator && location.hostname!=='localhost') navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
