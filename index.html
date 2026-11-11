@@ -249,7 +249,7 @@ let sb = null;
 if(SUPA_KEY){
   try{ sb = (await import('https://esm.sh/@supabase/supabase-js@2')).createClient(SUPA_URL,SUPA_KEY); }catch{}
 }
-const KEYS = ['txns','appts','projects','goals','clients'];
+const KEYS = ['txns','appts','projects','goals','clients','docs'];
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
 const pad = n => String(n).padStart(2,'0');
@@ -280,6 +280,84 @@ const clientName = (db,a) => (clientOf(db,a.clientId)||{}).name || a.client || '
 const initials = n => (n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const waLink = ph => { let d=(ph||'').replace(/\D/g,''); if(!d) return ''; if(d.length===10) d='52'+d; return 'https://wa.me/'+d; };
 const igLink = h => { const u=(h||'').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i,'').replace(/^@/,'').replace(/\/.*$/,''); return u?'https://instagram.com/'+u:''; };
+// Busca el cliente por nombre o lo crea; si traes teléfono, lo guarda en su ficha.
+const ensureClient = (clients,put,name,phone,today) => {
+  const nm=(name||'').trim(), ph=(phone||'').trim();
+  if(!nm) return '';
+  const ex=clients.find(c=>c.name.trim().toLowerCase()===nm.toLowerCase());
+  if(ex){ if(ph&&ph!==(ex.phone||'')) put('clients',clients.map(c=>c.id===ex.id?{...c,phone:ph}:c)); return ex.id; }
+  const id=uid(); put('clients',[...clients,{id,name:nm,phone:ph,instagram:'',email:'',note:'',createdAt:today}]); return id;
+};
+const D_KIND = {cot:{l:'Cotización',pre:'COT',title:'COTIZACIÓN'}, nv:{l:'Nota de venta',pre:'NV',title:'NOTA DE VENTA'}};
+const D_STATUS = {borrador:{l:'Borrador',b:'b-mute'},enviada:{l:'Enviada',b:'b-pink'},aceptada:{l:'Aceptada',b:'b-good'},rechazada:{l:'Rechazada',b:'b-bad'},vencida:{l:'Vencida',b:'b-warn'},
+  pendiente:{l:'Pendiente',b:'b-warn'},parcial:{l:'Pago parcial',b:'b-pink'},pagada:{l:'Pagada',b:'b-good'},cancelada:{l:'Cancelada',b:'b-mute'}};
+const folioOf = d => `${D_KIND[d.kind].pre}-${String(d.folio||0).padStart(4,'0')}`;
+const docSub = d => (d.items||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.price)||0),0);
+const docTotal = d => Math.max(0,docSub(d)-(Number(d.discount)||0));
+const docPaid = (txns,id) => txns.filter(t=>t.docId===id&&t.type==='income').reduce((s,t)=>s+(Number(t.amount)||0),0);
+const docValidUntil = d => d.kind==='cot'&&Number(d.validDays)>0 ? dKey(addDays(new Date(d.date+'T12:00:00'),Number(d.validDays))) : '';
+const docStatus = (txns,d) => {
+  if(d.kind==='nv'){ if(d.status==='cancelada') return 'cancelada'; const p=docPaid(txns,d.id), t=docTotal(d); return t>0&&p>=t?'pagada':p>0?'parcial':'pendiente'; }
+  const until=docValidUntil(d);
+  if((d.status==='borrador'||d.status==='enviada'||!d.status)&&until&&until<todayKey()) return 'vencida';
+  return d.status||'borrador';
+};
+const docOwed = (txns,d) => d.kind==='nv'&&d.status!=='cancelada' ? Math.max(0,docTotal(d)-docPaid(txns,d.id)) : 0;
+const nextFolio = (docs,kind) => Math.max(0,...docs.filter(d=>d.kind===kind).map(d=>Number(d.folio)||0))+1;
+const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtLong = d => new Date(d+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+// PDF: se abre una hoja lista para imprimir o "Guardar como PDF".
+const printDoc = (d,{biz,profile,clientName:cn,phone,paid}) => {
+  const w = window.open('','_blank');
+  if(!w){ alert('Permite las ventanas emergentes para generar el PDF.'); return; }
+  const k=D_KIND[d.kind], sub=docSub(d), tot=docTotal(d), disc=Number(d.discount)||0, until=docValidUntil(d);
+  const pr=profile||{};
+  const contact=[pr.phone&&('WhatsApp '+pr.phone),pr.instagram&&('@'+pr.instagram.replace(/^@/,'')),pr.email,pr.address].filter(Boolean).map(esc).join(' &nbsp;·&nbsp; ');
+  const rows=(d.items||[]).map(i=>`<tr><td>${esc(i.desc)}</td><td class="r">${esc(i.qty)}</td><td class="r">${fmtMoney(i.price)}</td><td class="r">${fmtMoney((Number(i.qty)||0)*(Number(i.price)||0))}</td></tr>`).join('');
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${folioOf(d)} · ${esc(biz||'ritual.')}</title><style>
+    @page{margin:16mm}*{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,'Segoe UI',Inter,system-ui,sans-serif;color:#141416;font-size:13px;line-height:1.5;padding:32px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .top{display:flex;justify-content:space-between;gap:24px;padding-bottom:20px;border-bottom:2px solid #141416}
+    .brand{display:flex;gap:12px;align-items:center}.brand img{width:40px;height:40px;border-radius:9px}
+    .bn{font-size:18px;font-weight:700;letter-spacing:-.01em}.muted{color:#6b6b74}.small{font-size:11.5px}
+    .doc{text-align:right}.dt{font-size:12px;letter-spacing:.14em;font-weight:700;color:#6b6b74}.fo{font-size:22px;font-weight:700;letter-spacing:-.01em}
+    .meta{display:flex;justify-content:space-between;gap:24px;margin:22px 0}.lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b6b74;margin-bottom:3px}
+    table{width:100%;border-collapse:collapse;margin-top:6px}th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#6b6b74;text-align:left;padding:8px 6px;border-bottom:1px solid #d9d9de}
+    td{padding:10px 6px;border-bottom:1px solid #ececf0;vertical-align:top}.r{text-align:right;white-space:nowrap}
+    .tot{margin-left:auto;width:280px;margin-top:16px}.tot div{display:flex;justify-content:space-between;padding:5px 0}.tot .big{font-size:17px;font-weight:700;border-top:2px solid #141416;margin-top:6px;padding-top:9px}
+    .notes{margin-top:26px;padding:14px 16px;background:#f5f5f7;border-radius:8px;white-space:pre-wrap}
+    .foot{margin-top:34px;padding-top:12px;border-top:1px solid #ececf0;font-size:11px;color:#8a8a93;display:flex;justify-content:space-between}
+  </style></head><body>
+    <div class="top">
+      <div class="brand"><img src="${location.origin}/icon.svg" alt=""><div><div class="bn">${esc(biz||'Mi negocio')}</div>${contact?`<div class="muted small">${contact}</div>`:''}</div></div>
+      <div class="doc"><div class="dt">${k.title}</div><div class="fo">${folioOf(d)}</div><div class="muted small">${fmtLong(d.date)}</div></div>
+    </div>
+    <div class="meta">
+      <div><div class="lbl">Cliente</div><div style="font-weight:600">${esc(cn||'—')}</div>${phone?`<div class="muted small">${esc(phone)}</div>`:''}</div>
+      ${until?`<div style="text-align:right"><div class="lbl">Válida hasta</div><div>${fmtLong(until)}</div></div>`:''}
+    </div>
+    <table><thead><tr><th>Concepto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="tot">
+      <div><span class="muted">Subtotal</span><span>${fmtMoney(sub)}</span></div>
+      ${disc?`<div><span class="muted">Descuento</span><span>− ${fmtMoney(disc)}</span></div>`:''}
+      <div class="big"><span>Total</span><span>${fmtMoney(tot)}</span></div>
+      ${d.kind==='nv'?`<div><span class="muted">Pagado</span><span>${fmtMoney(paid)}</span></div><div style="font-weight:600"><span>Saldo</span><span>${fmtMoney(Math.max(0,tot-paid))}</span></div>`:''}
+    </div>
+    ${d.notes?`<div class="notes">${esc(d.notes)}</div>`:''}
+    <div class="foot"><span>Este documento no es un comprobante fiscal.</span><span>${folioOf(d)}</span></div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); },500);
+};
+const docWaUrl = (d,{biz,clientName:cn,phone,paid}) => {
+  const first=(cn||'').trim().split(/\s+/)[0];
+  const tot=docTotal(d), until=docValidUntil(d);
+  const msg = d.kind==='cot'
+    ? `Hola${first?' '+first:''}, te comparto tu cotización ${folioOf(d)}${biz?' de '+biz:''} por ${fmtMoney(tot)}${until?` (válida hasta el ${fmtLong(until)})`:''}. Quedo al pendiente de cualquier duda.`
+    : `Hola${first?' '+first:''}, te comparto tu nota de venta ${folioOf(d)}${biz?' de '+biz:''} por ${fmtMoney(tot)}. Pagado: ${fmtMoney(paid)} · Saldo: ${fmtMoney(Math.max(0,tot-paid))}. ¡Gracias por tu preferencia!`;
+  const base = waLink(phone) || 'https://wa.me/';
+  return base+'?text='+encodeURIComponent(msg);
+};
 const projOf = (db,id) => db.projects.find(p=>p.id===id);
 const apptName = (db,a) => (projOf(db,a.projectId)||{}).name || a.title || 'Cita';
 // Avance del proyecto: por ventas (suma de precios de sus citas) o por cantidad de citas.
@@ -315,6 +393,7 @@ const ICON = {
   clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
   pin:  '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
   cam:  '<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>',
+  doc:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
   user: '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>',
 };
@@ -323,11 +402,11 @@ const Ic = ({n,s=18,c='currentColor',sw=1.8}) => html`
 `;
 
 // ── SHARED UI ─────────────────────────────────────────────────────────────
-const Modal = ({open,onClose,title,children}) => {
+const Modal = ({open,onClose,title,children,wide}) => {
   if(!open) return null;
   return html`
     <div class="modal-bg" onClick=${onClose}>
-      <div class="modal-box fade-up" onClick=${e=>e.stopPropagation()}>
+      <div class="modal-box fade-up" style=${wide?{maxWidth:'720px'}:null} onClick=${e=>e.stopPropagation()}>
         <div class="modal-header-sticky">
           <div style="display:flex;align-items:center;justify-content:space-between">
             <h3 style="font-size:16px;font-weight:600">${title}</h3>
@@ -339,7 +418,7 @@ const Modal = ({open,onClose,title,children}) => {
     </div>
   `;
 };
-const EMPTY_IC = {'💸':'finance','📅':'cal','💖':'check','💼':'proj','👤':'user'};
+const EMPTY_IC = {'🧾':'doc','💸':'finance','📅':'cal','💖':'check','💼':'proj','👤':'user'};
 const Empty = ({emo,title,text}) => html`
   <div class="card empty-state"><div class="empty-ic"><${Ic} n=${EMPTY_IC[emo]||'plus'} s=${18}/></div>
     ${title&&html`<p class="h3" style="margin-bottom:4px">${title}</p>`}
@@ -376,11 +455,27 @@ const CardHead = ({title,action,onAction}) => html`
     ${action&&html`<button onClick=${onAction} style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--pink-deep);">${action}</button>`}
   </div>`;
 
+const ClientField = ({clients,name,phone,onChange}) => {
+  const find = v => clients.find(c=>c.name.trim().toLowerCase()===(v||'').trim().toLowerCase());
+  const isNew = (name||'').trim() && !find(name);
+  return html`<div>
+    <div class="grid2" style="grid-template-columns:1.4fr 1fr">
+      <div><label class="lbl">Cliente</label>
+        <input list="clients-dl" value=${name} placeholder="Busca o escribe uno nuevo"
+          onInput=${e=>{const v=e.target.value, m=find(v); onChange({client:v,phone:m?(m.phone||''):phone});}}/>
+        <datalist id="clients-dl">${clients.map(c=>html`<option value=${c.name}>${c.phone||''}</option>`)}</datalist>
+      </div>
+      <div><label class="lbl">WhatsApp</label><input type="tel" inputmode="tel" value=${phone} placeholder="10 dígitos" onInput=${e=>onChange({client:name,phone:e.target.value})}/></div>
+    </div>
+    ${isNew&&html`<p class="tiny" style="margin-top:6px">Se agregará a Clientes como cliente nuevo.</p>`}
+  </div>`;
+};
 const TABS = [
   {id:'home',    label:'Dashboard', icon:'home'},
   {id:'finance', label:'Finanzas',  icon:'finance'},
   {id:'appts',   label:'Citas',     icon:'clock'},
   {id:'clients', label:'Clientes',  icon:'user'},
+  {id:'docs',    label:'Documentos',icon:'doc'},
   {id:'projects',label:'Proyectos', icon:'proj'},
   {id:'cal',     label:'Calendario',icon:'cal'},
 ];
@@ -396,21 +491,16 @@ const ApptForms = ({db,put,setTab}) => {
   const [f,setF] = useState(null);
   const [pay,setPay] = useState(null);
   const [view,setView] = useState(null);
-  const blank = {projectId:'',title:'',client:'',clientId:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
+  const blank = {projectId:'',title:'',client:'',clientId:'',phone:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
   const name = a => apptName(db,a);
   const paid = a => apptPaid(txns,a.id);
   const owed = a => apptOwed(txns,a);
   const payTxn = (a,amount,category,date) => ({id:uid(),type:'income',amount:Number(amount),category,note:[name(a),clientName(db,a)].filter(Boolean).join(' — '),date,apptId:a.id,projectId:a.projectId||''});
   const saveF = () => {
     if(!f.date)return;
-    const {abono,...rest} = f;
+    const {abono,phone,...rest} = f;
     const nm = (f.client||'').trim();
-    let cid = '';
-    if(nm){
-      const ex = clients.find(c=>c.name.trim().toLowerCase()===nm.toLowerCase());
-      if(ex) cid = ex.id;
-      else { cid = uid(); put('clients',[...clients,{id:cid,name:nm,phone:'',instagram:'',email:'',note:'',createdAt:today}]); }
-    }
+    const cid = ensureClient(clients,put,nm,phone,today);
     const item = {...rest,client:nm,clientId:cid,id:f.id||uid(),price:Number(f.price)||0};
     put('appts',f.id?appts.map(x=>x.id===item.id?item:x):[...appts,item]);
     if(!f.id&&Number(abono)>0) put('txns',[payTxn(item,abono,'Anticipo',today),...txns]);
@@ -422,7 +512,7 @@ const ApptForms = ({db,put,setTab}) => {
   const del = id => put('appts',appts.filter(x=>x.id!==id));
   const options = f ? projects.filter(p=>p.status!=='listo'||p.id===f.projectId) : [];
   act.newAppt = (pre={}) => { setView(null); setF({...blank,...pre}); };
-  act.editAppt = a => { setView(null); setF({...blank,...a,client:clientName(db,a)}); };
+  act.editAppt = a => { setView(null); setF({...blank,...a,client:clientName(db,a),phone:(clientOf(db,a.clientId)||{}).phone||''}); };
   act.pay = a => { setView(null); setPay({appt:a,amount:String(owed(a)),date:today}); };
   act.viewAppt = a => setView(a.id);
   act.toggleDone = a => put('appts',appts.map(x=>x.id===a.id?{...x,status:x.status==='hecha'?'pendiente':'hecha'}:x));
@@ -440,12 +530,7 @@ const ApptForms = ({db,put,setTab}) => {
             </select>
             ${projects.length===0&&html`<p class="tiny" style="margin-top:6px">Aún no tienes proyectos. <a href="#" style="color:var(--pink-deep);font-weight:600" onClick=${e=>{e.preventDefault();setF(null);setTab('projects');}}>Crea uno</a> para poder elegirlo aquí.</p>`}
           </div>
-          <div>
-            <label class="lbl">Cliente</label>
-            <input list="clients-dl" value=${f.client} onInput=${e=>setF({...f,client:e.target.value})} placeholder="Busca o escribe un cliente nuevo"/>
-            <datalist id="clients-dl">${clients.map(c=>html`<option value=${c.name}/>`)}</datalist>
-            ${(f.client||'').trim()&&!clients.some(c=>c.name.trim().toLowerCase()===f.client.trim().toLowerCase())&&html`<p class="tiny" style="margin-top:6px">Se agregará a Clientes como cliente nuevo.</p>`}
-          </div>
+          <${ClientField} clients=${clients} name=${f.client} phone=${f.phone||''} onChange=${v=>setF({...f,...v})}/>
           <div class="grid2">
             <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
             <div><label class="lbl">Hora</label><${TimePick} value=${f.time} onChange=${v=>setF({...f,time:v})}/></div>
@@ -582,6 +667,178 @@ const TxnForm = ({db,put}) => {
         </div>`}
       <//>
   </div>`;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// DOCUMENTOS  (cotizaciones y notas de venta no fiscales)
+// ══════════════════════════════════════════════════════════════════════════
+const DocForm = ({db,put,biz,profile}) => {
+  const today = todayKey();
+  const {txns} = db;
+  const docs = db.docs||[], clients = db.clients||[];
+  const [f,setF] = useState(null);
+  const [pay,setPay] = useState(null);
+  const blankItem = () => ({id:uid(),desc:'',qty:1,price:''});
+  const blank = kind => ({kind,client:'',phone:'',date:today,validDays:kind==='cot'?15:'',items:[blankItem()],discount:'',
+    notes:(profile&&profile.terms)||'',status:kind==='cot'?'borrador':'pendiente',anticipo:''});
+  act.newDoc = (kind,pre={}) => { setPay(null); setF({...blank(kind),...pre}); };
+  act.editDoc = d => { setPay(null); setF({...d,client:clientName(db,d),phone:(clientOf(db,d.clientId)||{}).phone||'',
+    items:(d.items||[]).map(i=>({...i,price:String(i.price)})),discount:d.discount?String(d.discount):'',anticipo:''}); };
+  const setItem = (ix,patch) => setF({...f,items:f.items.map((it,i)=>i===ix?{...it,...patch}:it)});
+  // Guarda sin cerrar y devuelve el documento guardado (para PDF y WhatsApp).
+  const persist = (extra={}) => {
+    const items = f.items.filter(i=>(i.desc||'').trim()||Number(i.price)).map(i=>({id:i.id||uid(),desc:(i.desc||'').trim(),qty:Number(i.qty)||1,price:Number(i.price)||0}));
+    if(!items.length){ alert('Agrega al menos un concepto.'); return null; }
+    const nm=(f.client||'').trim();
+    const cid=ensureClient(clients,put,nm,f.phone,today);
+    const {phone,anticipo,...rest} = f;
+    const item = {...rest,...extra,client:nm,clientId:cid,items,discount:Number(f.discount)||0,validDays:Number(f.validDays)||0,
+      id:f.id||uid(),folio:f.folio||nextFolio(docs,f.kind),createdAt:f.createdAt||today};
+    put('docs',f.id?docs.map(x=>x.id===item.id?item:x):[...docs,item]);
+    if(!f.id&&f.kind==='nv'&&Number(anticipo)>0)
+      put('txns',[{id:uid(),type:'income',amount:Number(anticipo),category:'Anticipo',note:`${folioOf(item)}${nm?' — '+nm:''}`,date:today,docId:item.id,projectId:''},...txns]);
+    setF({...item,client:nm,phone:f.phone,items:item.items.map(i=>({...i,price:String(i.price)})),discount:item.discount?String(item.discount):'',anticipo:''});
+    return item;
+  };
+  const ctx = d => ({biz,profile,clientName:(f.client||'').trim(),phone:(f.phone||'').trim(),paid:docPaid(txns,d.id)});
+  const doPdf = () => { const d=persist(); if(d) printDoc(d,ctx(d)); };
+  const doWa = () => { const d=persist(f.kind==='cot'&&(!f.status||f.status==='borrador')?{status:'enviada'}:{}); if(d) window.open(docWaUrl(d,ctx(d)),'_blank','noopener'); };
+  const toNota = () => {
+    const d=persist({status:'aceptada'}); if(!d) return;
+    setF({...blank('nv'),client:f.client,phone:f.phone,notes:d.notes,discount:d.discount?String(d.discount):'',fromId:d.id,
+      items:d.items.map(i=>({...i,id:uid(),price:String(i.price)}))});
+  };
+  const toCita = () => { const d=persist(); if(!d) return; setF(null); act.newAppt({client:f.client,phone:f.phone,price:String(docTotal(d)),note:folioOf(d)}); };
+  const savePay = () => {
+    if(!(Number(pay.amount)>0)) return;
+    const paidNow=docPaid(txns,f.id);
+    put('txns',[{id:uid(),type:'income',amount:Number(pay.amount),category:paidNow>0?'Abono':'Anticipo',note:`${folioOf(f)}${f.client?' — '+f.client:''}`,date:pay.date,docId:f.id,projectId:''},...txns]);
+    setPay(null);
+  };
+  const del = id => put('docs',docs.filter(d=>d.id!==id));
+  if(!f) return null;
+  const sub=docSub(f), tot=docTotal(f), isNv=f.kind==='nv';
+  const paid=f.id?docPaid(txns,f.id):0, owe=isNv?Math.max(0,tot-paid):0;
+  const pays=f.id?txns.filter(t=>t.docId===f.id):[];
+  const st=f.id?docStatus(txns,f):null;
+  return html`<${Modal} open=${true} wide=${true} onClose=${()=>setF(null)} title=${(f.id?folioOf(f)+' · ':'Nueva ')+D_KIND[f.kind].l.toLowerCase().replace(/^./,c=>f.id?c.toUpperCase():c)}>
+    <div class="stack" style="gap:14px">
+      ${st&&html`<div class="rowx" style="justify-content:space-between;flex-wrap:wrap">
+        <span class=${'badge '+D_STATUS[st].b}>${D_STATUS[st].l}</span>
+        ${f.fromId&&html`<span class="tiny">Viene de ${folioOf((docs.find(x=>x.id===f.fromId))||{kind:'cot',folio:0})}</span>`}
+      </div>`}
+      <${ClientField} clients=${clients} name=${f.client} phone=${f.phone||''} onChange=${v=>setF({...f,...v})}/>
+      <div class="grid2">
+        <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
+        ${isNv
+          ? html`<div><label class="lbl">Estado</label><select value=${f.status==='cancelada'?'cancelada':'activa'} onChange=${e=>setF({...f,status:e.target.value==='cancelada'?'cancelada':'pendiente'})}><option value="activa">Activa</option><option value="cancelada">Cancelada</option></select></div>`
+          : html`<div class="grid2" style="gap:8px">
+              <div><label class="lbl">Vigencia (días)</label><input type="number" min="0" value=${f.validDays} onInput=${e=>setF({...f,validDays:e.target.value})}/></div>
+              <div><label class="lbl">Estado</label><select value=${f.status||'borrador'} onChange=${e=>setF({...f,status:e.target.value})}>${['borrador','enviada','aceptada','rechazada'].map(k=>html`<option value=${k}>${D_STATUS[k].l}</option>`)}</select></div>
+            </div>`}
+      </div>
+
+      <div>
+        <div style="display:grid;grid-template-columns:1fr 64px 110px 28px;gap:6px;margin-bottom:5px">
+          <span class="lbl" style="margin:0">Concepto</span><span class="lbl" style="margin:0">Cant.</span><span class="lbl" style="margin:0">Precio</span><span/>
+        </div>
+        <div class="stack" style="gap:6px">
+          ${f.items.map((it,ix)=>html`
+            <div style="display:grid;grid-template-columns:1fr 64px 110px 28px;gap:6px;align-items:center">
+              <input value=${it.desc} placeholder="Ej. Sesión de fotos 1 hora" onInput=${e=>setItem(ix,{desc:e.target.value})}/>
+              <input type="number" min="0" value=${it.qty} onInput=${e=>setItem(ix,{qty:e.target.value})}/>
+              <input type="number" inputmode="decimal" min="0" value=${it.price} placeholder="0" onInput=${e=>setItem(ix,{price:e.target.value})}/>
+              <button class="icon-btn" aria-label="Quitar concepto" onClick=${()=>setF({...f,items:f.items.length>1?f.items.filter((_,i)=>i!==ix):[blankItem()]})}><${Ic} n="x" s=${14}/></button>
+            </div>`)}
+          <button class="btn-g" style="justify-content:center" onClick=${()=>setF({...f,items:[...f.items,blankItem()]})}><${Ic} n="plus" s=${14}/>Agregar concepto</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 240px;gap:16px;align-items:start">
+        <div><label class="lbl">Notas y condiciones</label><textarea rows="4" style="resize:vertical" value=${f.notes} onInput=${e=>setF({...f,notes:e.target.value})} placeholder="Ej. Anticipo del 50% para apartar la fecha."/></div>
+        <div class="stack" style="gap:6px;padding:12px;background:var(--surface-2);border-radius:8px">
+          <div class="rowx" style="justify-content:space-between"><span class="muted">Subtotal</span><span class="num">${fmtMoney(sub)}</span></div>
+          <div class="rowx" style="justify-content:space-between"><span class="muted">Descuento</span><input type="number" min="0" value=${f.discount} placeholder="0" style="width:100px;text-align:right;padding:4px 8px" onInput=${e=>setF({...f,discount:e.target.value})}/></div>
+          <div class="rowx" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><b>Total</b><b class="num" style="font-size:16px">${fmtMoney(tot)}</b></div>
+          ${isNv&&f.id&&html`<div class="rowx" style="justify-content:space-between"><span class="muted">Pagado</span><span class="num">${fmtMoney(paid)}</span></div>
+            <div class="rowx" style="justify-content:space-between"><span class="muted">Saldo</span><b class="num">${fmtMoney(owe)}</b></div>`}
+          ${isNv&&!f.id&&html`<div class="rowx" style="justify-content:space-between"><span class="muted">Anticipo</span><input type="number" min="0" value=${f.anticipo} placeholder="0" style="width:100px;text-align:right;padding:4px 8px" onInput=${e=>setF({...f,anticipo:e.target.value})}/></div>`}
+        </div>
+      </div>
+
+      ${isNv&&f.id&&html`<div>
+        <p class="over" style="margin-bottom:2px">Pagos</p>
+        ${pays.length===0&&html`<p class="tiny" style="padding:6px 0">Sin pagos todavía.</p>`}
+        ${pays.map(t=>html`<div class="list-row" style="padding:7px 0"><span class="muted" style="flex:1;text-transform:capitalize">${fmtDate(t.date)} · ${t.category}</span><b class="num">${fmtMoney(t.amount)}</b>
+          <button class="icon-btn" style="padding:2px" aria-label="Quitar pago" onClick=${()=>ask('¿Quitar este pago?',()=>put('txns',txns.filter(x=>x.id!==t.id)),'También se borra de Finanzas.')}><${Ic} n="x" s=${12}/></button></div>`)}
+        ${owe>0&&(pay
+          ? html`<div class="rowx" style="margin-top:8px;flex-wrap:wrap"><input type="number" min="0" value=${pay.amount} style="width:120px" onInput=${e=>setPay({...pay,amount:e.target.value})}/><input type="date" value=${pay.date} style="width:150px" onInput=${e=>setPay({...pay,date:e.target.value})}/><button class="btn-p" onClick=${savePay}>Registrar pago</button><button class="btn-g" onClick=${()=>setPay(null)}>Cancelar</button></div>`
+          : html`<button class="btn-g" style="margin-top:8px" onClick=${()=>setPay({amount:String(owe),date:today})}><${Ic} n="plus" s=${14}/>Agregar pago</button>`)}
+      </div>`}
+
+      <div class="rowx" style="flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid var(--line)">
+        <button class="btn-g" onClick=${doPdf}><${Ic} n="doc" s=${14}/>PDF</button>
+        <button class="btn-g" onClick=${doWa}><${Ic} n="user" s=${14}/>Enviar por WhatsApp</button>
+        ${f.kind==='cot'&&f.id&&f.status!=='rechazada'&&html`<button class="btn-g" onClick=${toNota}>Convertir en nota de venta</button>`}
+        ${f.id&&html`<button class="btn-g" onClick=${toCita}><${Ic} n="cal" s=${14}/>Agendar cita</button>`}
+      </div>
+      <${FormActions} isEdit=${!!f.id} label=${isNv?'Guardar nota':'Guardar cotización'} what=${f.id?folioOf(f):'este documento'} detail=${isNv?'Sus pagos se quedan en Finanzas.':''} onSave=${()=>{ if(persist()) setF(null); }} onDelete=${()=>{del(f.id);setF(null);}}/>
+    </div>
+  <//>`;
+};
+
+const PageDocs = ({db}) => {
+  const today = todayKey(), mo = today.slice(0,7);
+  const {txns} = db;
+  const docs = db.docs||[];
+  const [kind,setKind] = useState('todos');
+  const [stf,setStf] = useState('');
+  const [q,setQ] = useState('');
+  const rows = docs.map(d=>({d,st:docStatus(txns,d),tot:docTotal(d),cn:clientName(db,d)}))
+    .filter(r=>(kind==='todos'||r.d.kind===kind)&&(!stf||r.st===stf)&&(!q.trim()||[folioOf(r.d),r.cn].join(' ').toLowerCase().includes(q.trim().toLowerCase())))
+    .sort((a,b)=>(b.d.date||'').localeCompare(a.d.date||'')||(b.d.folio||0)-(a.d.folio||0));
+  const cotMo = docs.filter(d=>d.kind==='cot'&&(d.date||'').startsWith(mo));
+  const kpis = [
+    ['Cotizado este mes', fmtMoney(cotMo.filter(d=>d.status!=='rechazada').reduce((s,d)=>s+docTotal(d),0)), `${cotMo.length} cotizaci${cotMo.length===1?'ón':'ones'}`],
+    ['Aceptado este mes', fmtMoney(cotMo.filter(d=>d.status==='aceptada').reduce((s,d)=>s+docTotal(d),0)), `${cotMo.filter(d=>d.status==='aceptada').length} aceptadas`],
+    ['Por cobrar en notas', fmtMoney(docs.reduce((s,d)=>s+docOwed(txns,d),0)), `${docs.filter(d=>docOwed(txns,d)>0).length} con saldo`],
+  ];
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 class="h1">Documentos</h2><p class="muted">Cotizaciones y notas de venta (no fiscales)</p></div>
+        <div class="rowx">
+          <button class="btn-g" onClick=${()=>act.newDoc('cot')}><${Ic} n="plus" s=${14}/>Cotización</button>
+          <button class="btn-p" onClick=${()=>act.newDoc('nv')}><${Ic} n="plus" s=${14} c="var(--on-acc)"/>Nota de venta</button>
+        </div>
+      </div>
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+        ${kpis.map(([l,v,sub])=>html`<div class="card"><p class="muted" style="margin-bottom:8px">${l}</p><p class="num" style="font-size:22px;font-weight:600;letter-spacing:-0.02em">${v}</p><p class="tiny" style="margin-top:4px">${sub}</p></div>`)}
+      </div>
+      <div class="rowx" style="margin-bottom:14px;flex-wrap:wrap">
+        ${[['todos','Todos'],['cot','Cotizaciones'],['nv','Notas de venta']].map(([v,l])=>html`<button class=${'tab-pill'+(kind===v?' active':'')} onClick=${()=>{setKind(v);setStf('');}}>${l}</button>`)}
+        <select value=${stf} onChange=${e=>setStf(e.target.value)} style="width:auto;min-width:150px;height:28px;padding:0 8px;font-size:12px">
+          <option value="">Todos los estados</option>
+          ${Object.entries(D_STATUS).filter(([k])=>kind==='todos'||(kind==='cot'?['borrador','enviada','aceptada','rechazada','vencida']:['pendiente','parcial','pagada','cancelada']).includes(k)).map(([k,v])=>html`<option value=${k}>${v.l}</option>`)}
+        </select>
+        <input value=${q} onInput=${e=>setQ(e.target.value)} placeholder="Buscar folio o cliente" style="max-width:240px;height:28px;padding:0 10px;font-size:12px"/>
+      </div>
+      ${docs.length===0&&html`<${Empty} emo="🧾" title="Aún no tienes documentos" text="Crea una cotización o una nota de venta para mandarla en PDF o por WhatsApp."/>`}
+      ${docs.length>0&&rows.length===0&&html`<${Empty} emo="🧾" title="Sin resultados" text="Ningún documento coincide con los filtros."/>`}
+      ${rows.length>0&&html`<div class="card" style="padding:4px 16px">
+        ${rows.map(({d,st,tot,cn})=>html`
+          <div class="list-row" style="cursor:pointer" onClick=${()=>act.editDoc(d)}>
+            <span class="num" style="font-weight:600;width:84px;flex-shrink:0">${folioOf(d)}</span>
+            <div style="flex:1;min-width:0">
+              <p class="ellip" style="font-size:13px;font-weight:500">${cn||'Sin cliente'}</p>
+              <p class="tiny ellip" style="text-transform:capitalize">${D_KIND[d.kind].l} · ${fmtDate(d.date)}${d.kind==='nv'&&docOwed(txns,d)>0?' · saldo '+fmtMoney(docOwed(txns,d)):''}</p>
+            </div>
+            <span class="num" style="font-weight:600">${fmtMoney(tot)}</span>
+            <span class=${'badge '+D_STATUS[st].b} style="min-width:84px;justify-content:center">${D_STATUS[st].l}</span>
+          </div>`)}
+      </div>`}
+    </div>
+  `;
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1023,6 +1280,16 @@ const PageClients = ({db,put}) => {
             ${[['Citas',cst.count],['Gastado',fmtMoney(cst.spent)],['Pagado',fmtMoney(cst.paid)],['Debe',fmtMoney(cst.owe)]].map(([l,v])=>html`<div><p class="tiny">${l}</p><p class="num" style="font-size:13px;font-weight:600">${v}</p></div>`)}
           </div>
           ${cur.note&&html`<p class="muted">${cur.note}</p>`}
+          ${(db.docs||[]).some(d=>d.clientId===cur.id)&&html`<div>
+            <p class="over" style="margin-bottom:4px">Documentos</p>
+            ${(db.docs||[]).filter(d=>d.clientId===cur.id).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(d=>{const st=docStatus(txns,d);return html`
+              <div class="list-row" style="cursor:pointer" onClick=${()=>{setView(null);act.editDoc(d);}}>
+                <span class="num" style="font-weight:600;width:80px">${folioOf(d)}</span>
+                <span class="tiny" style="flex:1;text-transform:capitalize">${fmtDate(d.date)}</span>
+                <span class="num" style="font-weight:600">${fmtMoney(docTotal(d))}</span>
+                <span class=${'badge '+D_STATUS[st].b}>${D_STATUS[st].l}</span>
+              </div>`;})}
+          </div>`}
           <div>
             <p class="over" style="margin-bottom:4px">Historial</p>
             ${cst.ap.length===0&&html`<p class="muted" style="padding:8px 0">Todavía no tiene citas.</p>`}
@@ -1218,9 +1485,11 @@ const PageCalendar = ({db,setTab}) => {
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════
 const BIZ_ICONS = ['','✦','⭐','🎀','🌸','💎','🔥','🌙','📸','🎨','💄','💅','✂️','💼','☕','🧁'];
-const Settings = ({open,onClose,biz,setBiz,icon,setIcon,session,theme,setTheme}) => {
+const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,session,theme,setTheme}) => {
   const [name,setName] = useState(biz);
   const [ic,setIc] = useState(icon);
+  const [pf,setPf] = useState({phone:'',instagram:'',email:'',address:'',terms:'',...(profile||{})});
+  const setP = (k,v) => setPf({...pf,[k]:v});
   return html`
     <${Modal} open=${open} onClose=${onClose} title="Ajustes">
       <div class="stack" style="gap:14px">
@@ -1232,7 +1501,24 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,session,theme,setTheme})
               background:ic===e?'var(--sel)':'rgb(var(--glass) / 0.5)',border:ic===e?'1.5px solid var(--pink-deep)':'1px solid rgb(var(--acc) / 0.2)'}}>${e||'Sin icono'}</button>`)}
           </div>
         </div>
-        <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{if(name.trim()!==biz)setBiz(name.trim());if(ic!==icon)setIcon(ic);onClose();}}>Guardar ajustes</button>
+        <div style="padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)">
+          <p class="h3" style="margin-bottom:4px">Datos de contacto del negocio</p>
+          <p class="tiny" style="margin-bottom:10px">Aparecen en tus cotizaciones y notas de venta.</p>
+          <div class="stack" style="gap:10px">
+            <div class="grid2">
+              <div><label class="lbl">WhatsApp del negocio</label><input type="tel" inputmode="tel" value=${pf.phone} onInput=${e=>setP('phone',e.target.value)} placeholder="10 dígitos"/></div>
+              <div><label class="lbl">Instagram</label><input value=${pf.instagram} onInput=${e=>setP('instagram',e.target.value)} placeholder="@tunegocio"/></div>
+            </div>
+            <div class="grid2">
+              <div><label class="lbl">Correo</label><input type="email" value=${pf.email} onInput=${e=>setP('email',e.target.value)} placeholder="opcional"/></div>
+              <div><label class="lbl">Dirección o ciudad</label><input value=${pf.address} onInput=${e=>setP('address',e.target.value)} placeholder="opcional"/></div>
+            </div>
+            <div><label class="lbl">Condiciones por defecto en cotizaciones</label><textarea rows="2" style="resize:vertical" value=${pf.terms} onInput=${e=>setP('terms',e.target.value)} placeholder="Ej. Anticipo del 50% para apartar la fecha. Precios en MXN."/></div>
+            ${waLink(pf.phone)&&html`<a class="tiny" style="color:var(--ink-2)" href=${waLink(pf.phone)} target="_blank" rel="noopener">Probar que el número abre tu WhatsApp →</a>`}
+            <p class="tiny">Los mensajes a tus clientes se mandan desde el WhatsApp de tu celular o WhatsApp Web: la app abre el chat con el texto listo y tú lo envías.</p>
+          </div>
+        </div>
+        <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{if(name.trim()!==biz)setBiz(name.trim());if(ic!==icon)setIcon(ic);if(JSON.stringify(pf)!==JSON.stringify(profile||{}))setProfile(pf);onClose();}}>Guardar ajustes</button>
         <div>
           <label class="lbl">Tema de la app</label>
           <div class="seg">
@@ -1318,13 +1604,14 @@ const AuthScreen = () => {
 // ══════════════════════════════════════════════════════════════════════════
 // APP ROOT  — all data lives in `db`; `put` is the single write path
 // ══════════════════════════════════════════════════════════════════════════
-const EMPTY = {txns:[],appts:[],projects:[],goals:[],clients:[]};
+const EMPTY = {txns:[],appts:[],projects:[],goals:[],clients:[],docs:[]};
 const App = () => {
   const [tab,setTab] = useState('home');
   const [showSet,setShowSet] = useState(false);
   const [biz,setBizS] = useState(()=>SUPA_KEY?'':load('ritual-name',''));
   const [icon,setIconS] = useState(()=>SUPA_KEY?'':load('ritual-icon',''));
-  const [db,setDb] = useState(()=>SUPA_KEY?EMPTY:{txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[]),clients:load('clients',[])});
+  const [profile,setProfileS] = useState(()=>SUPA_KEY?{}:load('ritual-profile',{}));
+  const [db,setDb] = useState(()=>SUPA_KEY?EMPTY:{txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[]),clients:load('clients',[]),docs:load('docs',[])});
   const [session,setSession] = useState(SUPA_KEY&&sb?undefined:null);   // undefined = revisando sesión
   const [cloud,setCloud] = useState(SUPA_KEY?'cargando':'local');
   const [toast,setToast] = useState(null);
@@ -1374,6 +1661,7 @@ const App = () => {
   const put = (k,v) => { setDb(d=>({...d,[k]:v})); if(SUPA_KEY) pushCloud(k,v); else save(k,v); };
   const setBiz = v => { setBizS(v); if(SUPA_KEY) pushCloud('name',v); else save('ritual-name',v); };
   const setIcon = v => { setIconS(v); if(SUPA_KEY) pushCloud('icon',v); else save('ritual-icon',v); };
+  const setProfile = v => { setProfileS(v); if(SUPA_KEY) pushCloud('profile',v); else save('ritual-profile',v); };
 
   useEffect(()=>{
     if(!sb)return;
@@ -1384,7 +1672,7 @@ const App = () => {
   // Cada cuenta carga solo sus propios registros.
   useEffect(()=>{
     if(!sb)return;
-    setDb(EMPTY); setBizS(''); setIconS(''); setTab('home'); setCloud('cargando');
+    setDb(EMPTY); setBizS(''); setIconS(''); setProfileS({}); setTab('home'); setCloud('cargando');
     if(!uidNow)return;
     let dead=false;
     sb.from('ritual_data').select('key,value').eq('owner',uidNow).then(({data,error})=>{
@@ -1392,7 +1680,7 @@ const App = () => {
       if(error){ setCloud('error'); return; }
       const m = Object.fromEntries(data.map(r=>[r.key,r.value]));
       const n = {...EMPTY}; KEYS.forEach(k=>{ if(Array.isArray(m[k])) n[k]=m[k]; });
-      setDb(n); setBizS(typeof m.name==='string'?m.name:''); setIconS(typeof m.icon==='string'?m.icon:''); setCloud('ok');
+      setDb(n); setBizS(typeof m.name==='string'?m.name:''); setIconS(typeof m.icon==='string'?m.icon:''); setProfileS(m.profile&&typeof m.profile==='object'?m.profile:{}); setCloud('ok');
     });
     return ()=>{dead=true;};
   },[uidNow]);
@@ -1408,7 +1696,7 @@ const App = () => {
       </div><//>`;
   }
 
-  const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,clients:PageClients,projects:PageProjects,cal:PageCalendar};
+  const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,clients:PageClients,docs:PageDocs,projects:PageProjects,cal:PageCalendar};
   const Page  = pages[tab]||PageHome;
 
   return html`
@@ -1451,7 +1739,7 @@ const App = () => {
         `)}
       </nav>
 
-      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} icon=${icon} setIcon=${setIcon} session=${session} theme=${theme} setTheme=${setTheme}/>`}
+      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} icon=${icon} setIcon=${setIcon} profile=${profile} setProfile=${setProfile} session=${session} theme=${theme} setTheme=${setTheme}/>`}
       ${conf&&html`
         <div class="modal-bg" style="z-index:70" onClick=${()=>setConf(null)}>
           <div class="modal-box fade-up" style="max-width:360px" onClick=${e=>e.stopPropagation()}>
@@ -1468,11 +1756,12 @@ const App = () => {
         </div>`}
       <${ApptForms} db=${db} put=${put} setTab=${setTab}/>
       <${TxnForm} db=${db} put=${put}/>
+      <${DocForm} db=${db} put=${put} biz=${biz} profile=${profile}/>
 
       ${fab&&html`<div style="position:fixed;inset:0;z-index:39" onClick=${()=>setFab(false)}/>`}
       <div class="fab-wrap">
         ${fab&&html`<div class="fab-menu fade-up">
-          ${[['cal','Nueva cita',()=>act.newAppt()],['up','Ingreso',()=>act.newTxn('income')],['down','Gasto',()=>act.newTxn('expense')],['cam','Gasto con foto',()=>act.scanExpense()]].map(([ic,l,fn])=>html`
+          ${[['cal','Nueva cita',()=>act.newAppt()],['up','Ingreso',()=>act.newTxn('income')],['down','Gasto',()=>act.newTxn('expense')],['cam','Gasto con foto',()=>act.scanExpense()],['doc','Cotización',()=>act.newDoc('cot')],['doc','Nota de venta',()=>act.newDoc('nv')]].map(([ic,l,fn])=>html`
             <button class="nav-item" onClick=${()=>{setFab(false);fn();}}><${Ic} n=${ic} s=${15}/>${l}</button>`)}
         </div>`}
         <button class="fab" aria-label="Agregar" onClick=${()=>setFab(!fab)} style=${{transform:fab?'rotate(45deg)':'none'}}><${Ic} n="plus" s=${22} c="var(--on-acc)" sw=${2.2}/></button>
