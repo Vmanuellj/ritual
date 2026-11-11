@@ -326,15 +326,16 @@ const docBase = d => Math.max(0,docSub(d)-(Number(d.discount)||0));
 const docTax = d => Math.round(docBase(d)*(Number(d.taxRate)||0))/100;
 const docTotal = d => Math.round((docBase(d)+docTax(d))*100)/100;
 const taxLabel = d => `${d.taxName||'Impuesto'} ${Number(d.taxRate)||0}%`;
-const docPaid = (txns,id) => txns.filter(t=>t.docId===id&&t.type==='income').reduce((s,t)=>s+(Number(t.amount)||0),0);
+const docPaid = (txns,id,apptId) => txns.filter(t=>t.type==='income'&&(t.docId===id||(apptId&&t.apptId===apptId))).reduce((s,t)=>s+(Number(t.amount)||0),0);
+const noteOfAppt = (db,a) => (db.docs||[]).find(d=>d.kind==='nv'&&d.apptId===a.id&&d.status!=='cancelada');
 const docValidUntil = d => d.kind==='cot'&&Number(d.validDays)>0 ? dKey(addDays(new Date(d.date+'T12:00:00'),Number(d.validDays))) : '';
 const docStatus = (txns,d) => {
-  if(d.kind==='nv'){ if(d.status==='cancelada') return 'cancelada'; const p=docPaid(txns,d.id), t=docTotal(d); return t>0&&p>=t?'pagada':p>0?'parcial':'pendiente'; }
+  if(d.kind==='nv'){ if(d.status==='cancelada') return 'cancelada'; const p=docPaid(txns,d.id,d.apptId), t=docTotal(d); return t>0&&p>=t?'pagada':p>0?'parcial':'pendiente'; }
   const until=docValidUntil(d);
   if((d.status==='borrador'||d.status==='enviada'||!d.status)&&until&&until<todayKey()) return 'vencida';
   return d.status||'borrador';
 };
-const docOwed = (txns,d) => d.kind==='nv'&&d.status!=='cancelada' ? Math.max(0,docTotal(d)-docPaid(txns,d.id)) : 0;
+const docOwed = (txns,d) => d.kind==='nv'&&d.status!=='cancelada' ? Math.max(0,docTotal(d)-docPaid(txns,d.id,d.apptId)) : 0;
 const nextFolio = (docs,kind) => Math.max(0,...docs.filter(d=>d.kind===kind).map(d=>Number(d.folio)||0))+1;
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtLong = d => new Date(d+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
@@ -732,6 +733,7 @@ const ApptForms = ({db,put,setTab}) => {
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${cur.status!=='cancelada'&&html`<button class="btn-g" style="flex:1" onClick=${()=>act.toggleDone(cur)}><${Ic} n="check" s=${14}/>${cur.status==='hecha'?'Marcar pendiente':'Marcar realizada'}</button>`}
             ${owed(cur)>0&&html`<button class="btn-g" style="flex:1" onClick=${()=>act.pay(cur)}><${Ic} n="plus" s=${14}/>Agregar pago</button>`}
+            ${planOf().tabs.includes('docs')&&cur.status!=='cancelada'&&html`<button class="btn-g" style="flex:1" onClick=${()=>{setView(null);act.noteFromAppt(cur);}}><${Ic} n="doc" s=${14}/>${noteOfAppt(db,cur)?folioOf(noteOfAppt(db,cur)):'Nota de venta'}</button>`}
             <button class="btn-p" style="flex:1" onClick=${()=>act.editAppt(cur)}><${Ic} n="edit" s=${14} c="var(--on-acc)"/>Editar</button>
           </div>
         </div>`}
@@ -833,6 +835,13 @@ const DocForm = ({db,put,biz,profile}) => {
   const blank = kind => ({kind,client:'',phone:'',date:today,validDays:kind==='cot'?15:'',items:[blankItem()],discount:'',taxRate:pTax,taxName:pTaxName,
     notes:(profile&&profile.terms)||'',status:kind==='cot'?'borrador':'pendiente',anticipo:''});
   act.newDoc = (kind,pre={}) => { loadPdf(); setNote(''); setPay(null); setF({...blank(kind),...pre}); };
+  act.noteFromAppt = a => {
+    const ex = noteOfAppt(db,a);
+    if(ex){ act.editDoc(ex); return; }
+    const cl = clientOf(db,a.clientId)||{};
+    act.newDoc('nv',{client:clientName(db,a),phone:cl.phone||'',apptId:a.id,date:today,
+      items:[{id:uid(),desc:apptName(db,a)+(a.date?' · '+fmtLong(a.date):''),qty:1,price:String(Number(a.price)||0),svcId:a.serviceId||''}]});
+  };
   act.editDoc = d => { loadPdf(); setNote(''); setPay(null); setF({...d,client:clientName(db,d),phone:(clientOf(db,d.clientId)||{}).phone||'',
     items:(d.items||[]).map(i=>({...i,price:String(i.price)})),discount:d.discount?String(d.discount):'',anticipo:''}); };
   const setItem = (ix,patch) => setF({...f,items:f.items.map((it,i)=>i===ix?{...it,...patch}:it)});
@@ -851,7 +860,7 @@ const DocForm = ({db,put,biz,profile}) => {
     setF({...item,client:nm,phone:f.phone,items:item.items.map(i=>({...i,price:String(i.price)})),discount:item.discount?String(item.discount):'',anticipo:''});
     return item;
   };
-  const ctx = d => ({biz,profile,clientName:(f.client||'').trim(),phone:(f.phone||'').trim(),paid:docPaid(txns,d.id)});
+  const ctx = d => ({biz,profile,clientName:(f.client||'').trim(),phone:(f.phone||'').trim(),paid:docPaid(txns,d.id,d.apptId)});
   const doPdf = async () => {
     const d=persist(); if(!d) return;
     try{ await loadPdf(); buildPdf(d,ctx(d)).save(`${folioOf(d)}.pdf`); setNote(''); }
@@ -882,15 +891,15 @@ const DocForm = ({db,put,biz,profile}) => {
   const toCita = () => { const d=persist(); if(!d) return; setF(null); act.newAppt({client:f.client,phone:f.phone,price:String(docTotal(d)),note:folioOf(d)}); };
   const savePay = () => {
     if(!(Number(pay.amount)>0)) return;
-    const paidNow=docPaid(txns,f.id);
-    put('txns',[{id:uid(),type:'income',amount:Number(pay.amount),category:paidNow>0?'Abono':'Anticipo',note:`${folioOf(f)}${f.client?' — '+f.client:''}`,date:pay.date,docId:f.id,projectId:''},...txns]);
+    const paidNow=docPaid(txns,f.id,f.apptId);
+    put('txns',[{id:uid(),type:'income',amount:Number(pay.amount),category:paidNow>0?'Abono':'Anticipo',note:`${folioOf(f)}${f.client?' — '+f.client:''}`,date:pay.date,docId:f.id,apptId:f.apptId||'',projectId:''},...txns]);
     setPay(null);
   };
   const del = id => put('docs',docs.filter(d=>d.id!==id));
   if(!f) return null;
   const sub=docSub(f), tot=docTotal(f), isNv=f.kind==='nv';
-  const paid=f.id?docPaid(txns,f.id):0, owe=isNv?Math.max(0,tot-paid):0;
-  const pays=f.id?txns.filter(t=>t.docId===f.id):[];
+  const paid=f.id?docPaid(txns,f.id,f.apptId):0, owe=isNv?Math.max(0,tot-paid):0;
+  const pays=f.id?txns.filter(t=>t.type==='income'&&(t.docId===f.id||(f.apptId&&t.apptId===f.apptId))):[];
   const st=f.id?docStatus(txns,f):null;
   return html`<${Modal} open=${true} wide=${true} onClose=${()=>setF(null)} title=${(f.id?folioOf(f)+' · ':'Nueva ')+D_KIND[f.kind].l.toLowerCase().replace(/^./,c=>f.id?c.toUpperCase():c)}>
     <div class="stack" style="gap:14px">
@@ -940,7 +949,8 @@ const DocForm = ({db,put,biz,profile}) => {
           <div class="rowx" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><b>Total</b><b class="num" style="font-size:16px">${fmtMoney(tot)}</b></div>
           ${isNv&&f.id&&html`<div class="rowx" style="justify-content:space-between"><span class="muted">Pagado</span><span class="num">${fmtMoney(paid)}</span></div>
             <div class="rowx" style="justify-content:space-between"><span class="muted">Saldo</span><b class="num">${fmtMoney(owe)}</b></div>`}
-          ${isNv&&!f.id&&html`<div class="rowx" style="justify-content:space-between"><span class="muted">Anticipo</span><input type="number" min="0" value=${f.anticipo} placeholder="0" style="width:100px;text-align:right;padding:4px 8px" onInput=${e=>setF({...f,anticipo:e.target.value})}/></div>`}
+          ${isNv&&!f.id&&f.apptId&&html`<p class="tiny">Los pagos de la cita se cuentan en esta nota.</p>`}
+          ${isNv&&!f.id&&!f.apptId&&html`<div class="rowx" style="justify-content:space-between"><span class="muted">Anticipo</span><input type="number" min="0" value=${f.anticipo} placeholder="0" style="width:100px;text-align:right;padding:4px 8px" onInput=${e=>setF({...f,anticipo:e.target.value})}/></div>`}
         </div>
       </div>
 
@@ -1376,7 +1386,10 @@ const PageAppts = ({db,put,setTab}) => {
                     </div>
                     <div class="rowx" style="margin-top:8px;justify-content:space-between">
                       ${a.status==='cancelada'?html`<span class="tiny">Cancelada, no se cobra</span>`:owed(a)>0?html`<span class="badge b-warn">Debe ${fmtMoney(owed(a))}</span>`:html`<span class="badge b-good">Pagado</span>`}
-                      ${owed(a)>0&&html`<button class="btn-g" style="padding:6px 12px;font-size:12px;min-height:0" onClick=${()=>act.pay(a)}><${Ic} n="plus" s=${12}/>Agregar pago</button>`}
+                      <span class="rowx" style="gap:6px">
+                        ${planOf().tabs.includes('docs')&&a.status!=='cancelada'&&html`<button class="btn-g" style="padding:6px 12px;font-size:12px;min-height:0" onClick=${()=>act.noteFromAppt(a)}><${Ic} n="doc" s=${12}/>${noteOfAppt(db,a)?folioOf(noteOfAppt(db,a)):'Nota de venta'}</button>`}
+                        ${owed(a)>0&&html`<button class="btn-g" style="padding:6px 12px;font-size:12px;min-height:0" onClick=${()=>act.pay(a)}><${Ic} n="plus" s=${12}/>Agregar pago</button>`}
+                      </span>
                     </div>`}
                 </div>
                 <button class="icon-btn" onClick=${()=>act.editAppt(a)} aria-label="Editar"><${Ic} n="edit" s=${14}/></button>
