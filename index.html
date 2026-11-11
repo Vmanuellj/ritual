@@ -259,7 +259,7 @@ const load = (k,fb) => { try{const v=localStorage.getItem(k);return v?JSON.parse
 const save = (k,v) => { try{localStorage.setItem(k,JSON.stringify(v));}catch{} };
 const uid  = () => Date.now()+Math.random().toString(36).slice(2,6);
 const fmtDate = d => new Date(d+'T12:00:00').toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'});
-const fmtMoney = n => new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:0,maximumFractionDigits:0}).format(n||0);
+const fmtMoney = n => { const v=Number(n)||0, dec=Math.abs(v%1)>0.004?2:0; return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:dec,maximumFractionDigits:dec}).format(v); };
 const fmtMonth = ym => { const s=new Date(ym+'-15T12:00:00').toLocaleDateString('es-MX',{month:'long',year:'numeric'}); return s[0].toUpperCase()+s.slice(1); };
 const shiftMonth = (ym,n) => { const [y,m]=ym.split('-').map(Number); const d=new Date(y,m-1+n,1); return `${d.getFullYear()}-${pad(d.getMonth()+1)}`; };
 const sum = (list,type) => list.filter(t=>t.type===type).reduce((s,t)=>s+(Number(t.amount)||0),0);
@@ -293,7 +293,10 @@ const D_STATUS = {borrador:{l:'Borrador',b:'b-mute'},enviada:{l:'Enviada',b:'b-p
   pendiente:{l:'Pendiente',b:'b-warn'},parcial:{l:'Pago parcial',b:'b-pink'},pagada:{l:'Pagada',b:'b-good'},cancelada:{l:'Cancelada',b:'b-mute'}};
 const folioOf = d => `${D_KIND[d.kind].pre}-${String(d.folio||0).padStart(4,'0')}`;
 const docSub = d => (d.items||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.price)||0),0);
-const docTotal = d => Math.max(0,docSub(d)-(Number(d.discount)||0));
+const docBase = d => Math.max(0,docSub(d)-(Number(d.discount)||0));
+const docTax = d => Math.round(docBase(d)*(Number(d.taxRate)||0))/100;
+const docTotal = d => Math.round((docBase(d)+docTax(d))*100)/100;
+const taxLabel = d => `${d.taxName||'Impuesto'} ${Number(d.taxRate)||0}%`;
 const docPaid = (txns,id) => txns.filter(t=>t.docId===id&&t.type==='income').reduce((s,t)=>s+(Number(t.amount)||0),0);
 const docValidUntil = d => d.kind==='cot'&&Number(d.validDays)>0 ? dKey(addDays(new Date(d.date+'T12:00:00'),Number(d.validDays))) : '';
 const docStatus = (txns,d) => {
@@ -306,58 +309,76 @@ const docOwed = (txns,d) => d.kind==='nv'&&d.status!=='cancelada' ? Math.max(0,d
 const nextFolio = (docs,kind) => Math.max(0,...docs.filter(d=>d.kind===kind).map(d=>Number(d.folio)||0))+1;
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtLong = d => new Date(d+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
-// PDF: se abre una hoja lista para imprimir o "Guardar como PDF".
-const printDoc = (d,{biz,profile,clientName:cn,phone,paid}) => {
-  const w = window.open('','_blank');
-  if(!w){ alert('Permite las ventanas emergentes para generar el PDF.'); return; }
-  const k=D_KIND[d.kind], sub=docSub(d), tot=docTotal(d), disc=Number(d.discount)||0, until=docValidUntil(d);
-  const pr=profile||{};
-  const contact=[pr.phone&&('WhatsApp '+pr.phone),pr.instagram&&('@'+pr.instagram.replace(/^@/,'')),pr.email,pr.address].filter(Boolean).map(esc).join(' &nbsp;·&nbsp; ');
-  const rows=(d.items||[]).map(i=>`<tr><td>${esc(i.desc)}</td><td class="r">${esc(i.qty)}</td><td class="r">${fmtMoney(i.price)}</td><td class="r">${fmtMoney((Number(i.qty)||0)*(Number(i.price)||0))}</td></tr>`).join('');
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${folioOf(d)} · ${esc(biz||'ritual.')}</title><style>
-    @page{margin:16mm}*{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,'Segoe UI',Inter,system-ui,sans-serif;color:#141416;font-size:13px;line-height:1.5;padding:32px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .top{display:flex;justify-content:space-between;gap:24px;padding-bottom:20px;border-bottom:2px solid #141416}
-    .brand{display:flex;gap:12px;align-items:center}.brand img{width:40px;height:40px;border-radius:9px}
-    .bn{font-size:18px;font-weight:700;letter-spacing:-.01em}.muted{color:#6b6b74}.small{font-size:11.5px}
-    .doc{text-align:right}.dt{font-size:12px;letter-spacing:.14em;font-weight:700;color:#6b6b74}.fo{font-size:22px;font-weight:700;letter-spacing:-.01em}
-    .meta{display:flex;justify-content:space-between;gap:24px;margin:22px 0}.lbl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b6b74;margin-bottom:3px}
-    table{width:100%;border-collapse:collapse;margin-top:6px}th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#6b6b74;text-align:left;padding:8px 6px;border-bottom:1px solid #d9d9de}
-    td{padding:10px 6px;border-bottom:1px solid #ececf0;vertical-align:top}.r{text-align:right;white-space:nowrap}
-    .tot{margin-left:auto;width:280px;margin-top:16px}.tot div{display:flex;justify-content:space-between;padding:5px 0}.tot .big{font-size:17px;font-weight:700;border-top:2px solid #141416;margin-top:6px;padding-top:9px}
-    .notes{margin-top:26px;padding:14px 16px;background:#f5f5f7;border-radius:8px;white-space:pre-wrap}
-    .foot{margin-top:34px;padding-top:12px;border-top:1px solid #ececf0;font-size:11px;color:#8a8a93;display:flex;justify-content:space-between}
-  </style></head><body>
-    <div class="top">
-      <div class="brand"><img src="${location.origin}/icon.svg" alt=""><div><div class="bn">${esc(biz||'Mi negocio')}</div>${contact?`<div class="muted small">${contact}</div>`:''}</div></div>
-      <div class="doc"><div class="dt">${k.title}</div><div class="fo">${folioOf(d)}</div><div class="muted small">${fmtLong(d.date)}</div></div>
-    </div>
-    <div class="meta">
-      <div><div class="lbl">Cliente</div><div style="font-weight:600">${esc(cn||'—')}</div>${phone?`<div class="muted small">${esc(phone)}</div>`:''}</div>
-      ${until?`<div style="text-align:right"><div class="lbl">Válida hasta</div><div>${fmtLong(until)}</div></div>`:''}
-    </div>
-    <table><thead><tr><th>Concepto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="tot">
-      <div><span class="muted">Subtotal</span><span>${fmtMoney(sub)}</span></div>
-      ${disc?`<div><span class="muted">Descuento</span><span>− ${fmtMoney(disc)}</span></div>`:''}
-      <div class="big"><span>Total</span><span>${fmtMoney(tot)}</span></div>
-      ${d.kind==='nv'?`<div><span class="muted">Pagado</span><span>${fmtMoney(paid)}</span></div><div style="font-weight:600"><span>Saldo</span><span>${fmtMoney(Math.max(0,tot-paid))}</span></div>`:''}
-    </div>
-    ${d.notes?`<div class="notes">${esc(d.notes)}</div>`:''}
-    <div class="foot"><span>Este documento no es un comprobante fiscal.</span><span>${folioOf(d)}</span></div>
-  </body></html>`);
-  w.document.close();
-  setTimeout(()=>{ w.focus(); w.print(); },500);
+// PDF generado en el navegador con jsPDF (se carga la primera vez que abres un documento).
+let JsPDF = null;
+const loadPdf = () => JsPDF ? Promise.resolve(JsPDF) : import('https://esm.sh/jspdf@2.5.2').then(m=>(JsPDF=m.jsPDF));
+const pdfTxt = v => String(v??'').replace(/[—–]/g,'-').replace(/−/g,'-').replace(/[^\x00-\xFF]/g,'');
+const buildPdf = (d,{biz,profile,clientName:cn,phone,paid}) => {
+  const doc = new JsPDF({unit:'pt',format:'letter'});
+  const W=612, H=792, M=48, R=W-M;
+  const pr=profile||{}, k=D_KIND[d.kind], until=docValidUntil(d);
+  const ink=[20,20,22], gray=[107,107,116], hair=[225,225,230];
+  const T=(t,x,y,o={})=>doc.text(pdfTxt(t),x,y,o);
+  const font=(size,style='normal',c=ink)=>{ doc.setFont('helvetica',style); doc.setFontSize(size); doc.setTextColor(...c); };
+  // Encabezado
+  font(17,'bold'); T(biz||'Mi negocio',M,62);
+  const contact=[pr.phone&&('WhatsApp '+pr.phone),pr.instagram&&('@'+pr.instagram.replace(/^@/,'')),pr.email,pr.address].filter(Boolean).join('  ·  ');
+  if(contact){ font(9,'normal',gray); doc.text(doc.splitTextToSize(pdfTxt(contact),300),M,78); }
+  font(9,'bold',gray); T(k.title,R,52,{align:'right'});
+  font(20,'bold'); T(folioOf(d),R,74,{align:'right'});
+  font(9,'normal',gray); T(fmtLong(d.date),R,90,{align:'right'});
+  doc.setDrawColor(...ink); doc.setLineWidth(1.5); doc.line(M,108,R,108);
+  // Cliente
+  let y=134;
+  font(8,'bold',gray); T('CLIENTE',M,y); if(until) T('VÁLIDA HASTA',R,y,{align:'right'});
+  font(11,'bold'); T(cn||'-',M,y+16); if(until){ font(10); T(fmtLong(until),R,y+16,{align:'right'}); }
+  if(phone){ font(9,'normal',gray); T(phone,M,y+30); }
+  // Conceptos
+  y=192;
+  const cols={qty:380,price:470,amt:R};
+  const head=()=>{ font(8,'bold',gray); T('CONCEPTO',M,y); T('CANT.',cols.qty,y,{align:'right'}); T('PRECIO',cols.price,y,{align:'right'}); T('IMPORTE',cols.amt,y,{align:'right'});
+    doc.setDrawColor(...hair); doc.setLineWidth(0.8); doc.line(M,y+8,R,y+8); y+=26; };
+  head();
+  (d.items||[]).forEach(i=>{
+    const lines=doc.splitTextToSize(pdfTxt(i.desc),300), h=lines.length*13;
+    if(y+h>H-140){ doc.addPage(); y=60; head(); }
+    font(10); doc.text(lines,M,y);
+    T(String(i.qty),cols.qty,y,{align:'right'}); T(fmtMoney(i.price),cols.price,y,{align:'right'});
+    T(fmtMoney((Number(i.qty)||0)*(Number(i.price)||0)),cols.amt,y,{align:'right'});
+    y+=h+8; doc.setDrawColor(...hair); doc.line(M,y-4,R,y-4); y+=10;
+  });
+  // Totales
+  if(y>H-220){ doc.addPage(); y=60; }
+  y+=6;
+  const row=(l,v,bold)=>{ font(bold?12:10,bold?'bold':'normal',bold?ink:gray); T(l,400,y); font(bold?12:10,bold?'bold':'normal'); T(v,R,y,{align:'right'}); y+=bold?20:16; };
+  row('Subtotal',fmtMoney(docSub(d)));
+  if(Number(d.discount)) row('Descuento','- '+fmtMoney(d.discount));
+  if(Number(d.taxRate)) row(taxLabel(d),fmtMoney(docTax(d)));
+  doc.setDrawColor(...ink); doc.setLineWidth(1.5); doc.line(400,y-8,R,y-8); y+=8;
+  row('Total',fmtMoney(docTotal(d)),true);
+  if(d.kind==='nv'){ row('Pagado',fmtMoney(paid)); row('Saldo',fmtMoney(Math.max(0,docTotal(d)-paid)),true); }
+  // Notas
+  if(d.notes){
+    const lines=doc.splitTextToSize(pdfTxt(d.notes),R-M-28), h=lines.length*13+22;
+    if(y+h>H-70){ doc.addPage(); y=60; }
+    y+=12; doc.setFillColor(245,245,247); doc.roundedRect(M,y,R-M,h,6,6,'F');
+    font(9.5,'normal',[60,60,66]); doc.text(lines,M+14,y+18); y+=h;
+  }
+  // Pie
+  const pages=doc.getNumberOfPages();
+  for(let pg=1;pg<=pages;pg++){ doc.setPage(pg); doc.setDrawColor(...hair); doc.setLineWidth(0.8); doc.line(M,H-46,R,H-46);
+    font(8,'normal',[138,138,147]); T('Este documento no es un comprobante fiscal.',M,H-32); T(folioOf(d)+(pages>1?`  ·  ${pg}/${pages}`:''),R,H-32,{align:'right'}); }
+  return doc;
 };
-const docWaUrl = (d,{biz,clientName:cn,phone,paid}) => {
+const docWaText = (d,{biz,clientName:cn,paid}) => {
   const first=(cn||'').trim().split(/\s+/)[0];
   const tot=docTotal(d), until=docValidUntil(d);
   const msg = d.kind==='cot'
     ? `Hola${first?' '+first:''}, te comparto tu cotización ${folioOf(d)}${biz?' de '+biz:''} por ${fmtMoney(tot)}${until?` (válida hasta el ${fmtLong(until)})`:''}. Quedo al pendiente de cualquier duda.`
     : `Hola${first?' '+first:''}, te comparto tu nota de venta ${folioOf(d)}${biz?' de '+biz:''} por ${fmtMoney(tot)}. Pagado: ${fmtMoney(paid)} · Saldo: ${fmtMoney(Math.max(0,tot-paid))}. ¡Gracias por tu preferencia!`;
-  const base = waLink(phone) || 'https://wa.me/';
-  return base+'?text='+encodeURIComponent(msg);
+  return msg;
 };
+const docWaUrl = (d,c) => (waLink(c.phone)||'https://wa.me/')+'?text='+encodeURIComponent(docWaText(d,c));
 const projOf = (db,id) => db.projects.find(p=>p.id===id);
 const apptName = (db,a) => (projOf(db,a.projectId)||{}).name || a.title || 'Cita';
 // Avance del proyecto: por ventas (suma de precios de sus citas) o por cantidad de citas.
@@ -679,10 +700,12 @@ const DocForm = ({db,put,biz,profile}) => {
   const [f,setF] = useState(null);
   const [pay,setPay] = useState(null);
   const blankItem = () => ({id:uid(),desc:'',qty:1,price:''});
-  const blank = kind => ({kind,client:'',phone:'',date:today,validDays:kind==='cot'?15:'',items:[blankItem()],discount:'',
+  const pTax = Number(profile&&profile.taxRate)||0, pTaxName = (profile&&profile.taxName)||'IVA';
+  const [note,setNote] = useState('');
+  const blank = kind => ({kind,client:'',phone:'',date:today,validDays:kind==='cot'?15:'',items:[blankItem()],discount:'',taxRate:pTax,taxName:pTaxName,
     notes:(profile&&profile.terms)||'',status:kind==='cot'?'borrador':'pendiente',anticipo:''});
-  act.newDoc = (kind,pre={}) => { setPay(null); setF({...blank(kind),...pre}); };
-  act.editDoc = d => { setPay(null); setF({...d,client:clientName(db,d),phone:(clientOf(db,d.clientId)||{}).phone||'',
+  act.newDoc = (kind,pre={}) => { loadPdf(); setNote(''); setPay(null); setF({...blank(kind),...pre}); };
+  act.editDoc = d => { loadPdf(); setNote(''); setPay(null); setF({...d,client:clientName(db,d),phone:(clientOf(db,d.clientId)||{}).phone||'',
     items:(d.items||[]).map(i=>({...i,price:String(i.price)})),discount:d.discount?String(d.discount):'',anticipo:''}); };
   const setItem = (ix,patch) => setF({...f,items:f.items.map((it,i)=>i===ix?{...it,...patch}:it)});
   // Guarda sin cerrar y devuelve el documento guardado (para PDF y WhatsApp).
@@ -692,7 +715,7 @@ const DocForm = ({db,put,biz,profile}) => {
     const nm=(f.client||'').trim();
     const cid=ensureClient(clients,put,nm,f.phone,today);
     const {phone,anticipo,...rest} = f;
-    const item = {...rest,...extra,client:nm,clientId:cid,items,discount:Number(f.discount)||0,validDays:Number(f.validDays)||0,
+    const item = {...rest,...extra,client:nm,clientId:cid,items,discount:Number(f.discount)||0,validDays:Number(f.validDays)||0,taxRate:Number(f.taxRate)||0,taxName:f.taxName||pTaxName,
       id:f.id||uid(),folio:f.folio||nextFolio(docs,f.kind),createdAt:f.createdAt||today};
     put('docs',f.id?docs.map(x=>x.id===item.id?item:x):[...docs,item]);
     if(!f.id&&f.kind==='nv'&&Number(anticipo)>0)
@@ -701,11 +724,31 @@ const DocForm = ({db,put,biz,profile}) => {
     return item;
   };
   const ctx = d => ({biz,profile,clientName:(f.client||'').trim(),phone:(f.phone||'').trim(),paid:docPaid(txns,d.id)});
-  const doPdf = () => { const d=persist(); if(d) printDoc(d,ctx(d)); };
-  const doWa = () => { const d=persist(f.kind==='cot'&&(!f.status||f.status==='borrador')?{status:'enviada'}:{}); if(d) window.open(docWaUrl(d,ctx(d)),'_blank','noopener'); };
+  const doPdf = async () => {
+    const d=persist(); if(!d) return;
+    try{ await loadPdf(); buildPdf(d,ctx(d)).save(`${folioOf(d)}.pdf`); setNote(''); }
+    catch(e){ setNote('No se pudo generar el PDF. Revisa tu conexión e intenta de nuevo.'); }
+  };
+  // WhatsApp: en celular se comparte el PDF + mensaje con el menú de Compartir; si no se puede, se descarga y se abre el chat.
+  const doWa = async () => {
+    const d=persist(f.kind==='cot'&&(!f.status||f.status==='borrador')?{status:'enviada'}:{}); if(!d) return;
+    const c=ctx(d);
+    let pdf=null;
+    try{ await loadPdf(); pdf=buildPdf(d,c); }catch(e){}
+    if(pdf){
+      const file=new File([pdf.output('blob')],`${folioOf(d)}.pdf`,{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file],text:docWaText(d,c)}); setNote(''); return; }
+        catch(e){ if(e&&e.name==='AbortError') return; }
+      }
+      pdf.save(`${folioOf(d)}.pdf`);
+    }
+    window.open(docWaUrl(d,c),'_blank','noopener');
+    setNote(pdf?'Se descargó el PDF y se abrió el chat: adjunta el archivo en WhatsApp.':'Se abrió el chat de WhatsApp, pero no se pudo generar el PDF.');
+  };
   const toNota = () => {
     const d=persist({status:'aceptada'}); if(!d) return;
-    setF({...blank('nv'),client:f.client,phone:f.phone,notes:d.notes,discount:d.discount?String(d.discount):'',fromId:d.id,
+    setF({...blank('nv'),client:f.client,phone:f.phone,notes:d.notes,discount:d.discount?String(d.discount):'',taxRate:d.taxRate||0,taxName:d.taxName||pTaxName,fromId:d.id,
       items:d.items.map(i=>({...i,id:uid(),price:String(i.price)}))});
   };
   const toCita = () => { const d=persist(); if(!d) return; setF(null); act.newAppt({client:f.client,phone:f.phone,price:String(docTotal(d)),note:folioOf(d)}); };
@@ -759,6 +802,10 @@ const DocForm = ({db,put,biz,profile}) => {
         <div class="stack" style="gap:6px;padding:12px;background:var(--surface-2);border-radius:8px">
           <div class="rowx" style="justify-content:space-between"><span class="muted">Subtotal</span><span class="num">${fmtMoney(sub)}</span></div>
           <div class="rowx" style="justify-content:space-between"><span class="muted">Descuento</span><input type="number" min="0" value=${f.discount} placeholder="0" style="width:100px;text-align:right;padding:4px 8px" onInput=${e=>setF({...f,discount:e.target.value})}/></div>
+          ${(pTax>0||Number(f.taxRate)>0)&&html`<label class="rowx" style="justify-content:space-between;cursor:pointer">
+            <span class="muted rowx" style="gap:6px"><input type="checkbox" style="width:auto" checked=${Number(f.taxRate)>0} onChange=${e=>setF({...f,taxRate:e.target.checked?(pTax||Number(f.taxRate)):0,taxName:f.taxName||pTaxName})}/>${taxLabel({taxName:f.taxName||pTaxName,taxRate:Number(f.taxRate)||pTax})}</span>
+            <span class="num">${fmtMoney(docTax(f))}</span>
+          </label>`}
           <div class="rowx" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><b>Total</b><b class="num" style="font-size:16px">${fmtMoney(tot)}</b></div>
           ${isNv&&f.id&&html`<div class="rowx" style="justify-content:space-between"><span class="muted">Pagado</span><span class="num">${fmtMoney(paid)}</span></div>
             <div class="rowx" style="justify-content:space-between"><span class="muted">Saldo</span><b class="num">${fmtMoney(owe)}</b></div>`}
@@ -777,11 +824,12 @@ const DocForm = ({db,put,biz,profile}) => {
       </div>`}
 
       <div class="rowx" style="flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid var(--line)">
-        <button class="btn-g" onClick=${doPdf}><${Ic} n="doc" s=${14}/>PDF</button>
-        <button class="btn-g" onClick=${doWa}><${Ic} n="user" s=${14}/>Enviar por WhatsApp</button>
+        <button class="btn-g" onClick=${doPdf}><${Ic} n="doc" s=${14}/>Descargar PDF</button>
+        <button class="btn-g" onClick=${doWa}><${Ic} n="user" s=${14}/>Enviar PDF por WhatsApp</button>
         ${f.kind==='cot'&&f.id&&f.status!=='rechazada'&&html`<button class="btn-g" onClick=${toNota}>Convertir en nota de venta</button>`}
         ${f.id&&html`<button class="btn-g" onClick=${toCita}><${Ic} n="cal" s=${14}/>Agendar cita</button>`}
       </div>
+      ${note&&html`<p class="tiny" style="margin-top:-6px">${note}</p>`}
       <${FormActions} isEdit=${!!f.id} label=${isNv?'Guardar nota':'Guardar cotización'} what=${f.id?folioOf(f):'este documento'} detail=${isNv?'Sus pagos se quedan en Finanzas.':''} onSave=${()=>{ if(persist()) setF(null); }} onDelete=${()=>{del(f.id);setF(null);}}/>
     </div>
   <//>`;
@@ -1488,7 +1536,7 @@ const BIZ_ICONS = ['','✦','⭐','🎀','🌸','💎','🔥','🌙','📸','�
 const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,session,theme,setTheme}) => {
   const [name,setName] = useState(biz);
   const [ic,setIc] = useState(icon);
-  const [pf,setPf] = useState({phone:'',instagram:'',email:'',address:'',terms:'',...(profile||{})});
+  const [pf,setPf] = useState({phone:'',instagram:'',email:'',address:'',terms:'',taxName:'IVA',taxRate:'',...(profile||{})});
   const setP = (k,v) => setPf({...pf,[k]:v});
   return html`
     <${Modal} open=${open} onClose=${onClose} title="Ajustes">
@@ -1513,6 +1561,11 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,sessi
               <div><label class="lbl">Correo</label><input type="email" value=${pf.email} onInput=${e=>setP('email',e.target.value)} placeholder="opcional"/></div>
               <div><label class="lbl">Dirección o ciudad</label><input value=${pf.address} onInput=${e=>setP('address',e.target.value)} placeholder="opcional"/></div>
             </div>
+            <div class="grid2">
+              <div><label class="lbl">Nombre del impuesto</label><input value=${pf.taxName} onInput=${e=>setP('taxName',e.target.value)} placeholder="IVA, VAT, ITBMS…"/></div>
+              <div><label class="lbl">Porcentaje (%)</label><input type="number" inputmode="decimal" min="0" max="100" step="0.01" value=${pf.taxRate} onInput=${e=>setP('taxRate',e.target.value)} placeholder="Ej. 16 (0 = sin impuesto)"/></div>
+            </div>
+            <p class="tiny" style="margin-top:-4px">Se suma al total de tus cotizaciones y notas nuevas. Puedes quitarlo en cada documento.</p>
             <div><label class="lbl">Condiciones por defecto en cotizaciones</label><textarea rows="2" style="resize:vertical" value=${pf.terms} onInput=${e=>setP('terms',e.target.value)} placeholder="Ej. Anticipo del 50% para apartar la fecha. Precios en MXN."/></div>
             ${waLink(pf.phone)&&html`<a class="tiny" style="color:var(--ink-2)" href=${waLink(pf.phone)} target="_blank" rel="noopener">Probar que el número abre tu WhatsApp →</a>`}
             <p class="tiny">Los mensajes a tus clientes se mandan desde el WhatsApp de tu celular o WhatsApp Web: la app abre el chat con el texto listo y tú lo envías.</p>
