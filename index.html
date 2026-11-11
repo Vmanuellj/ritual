@@ -390,6 +390,49 @@ const docWaText = (d,{biz,clientName:cn,paid}) => {
   return msg;
 };
 const docWaUrl = (d,c) => (waLink(c.phone)||'https://wa.me/')+'?text='+encodeURIComponent(docWaText(d,c));
+// ── Planes (el plan lo asigna el administrador en Supabase; aquí solo se lee) ──
+const PLANS = {
+  sencillo:   {l:'Sencillo',   tabs:['home','finance','appts','clients','cal'], feat:[]},
+  mediano:    {l:'Mediano',    tabs:['home','finance','appts','clients','docs','services','projects','cal'], feat:['scan']},
+  profesional:{l:'Profesional',tabs:['home','finance','appts','clients','docs','services','projects','cal'], feat:['scan','team']},
+};
+const PLAN_TXT = {
+  sencillo:'Citas, clientes, finanzas, calendario y meta del mes.',
+  mediano:'Todo lo de Sencillo + cotizaciones y notas, catálogo de servicios, proyectos y gastos con foto.',
+  profesional:'Todo lo de Mediano + colaboradores con su agenda de trabajos.',
+};
+const APP = {plan:'profesional', members:[]};
+const planOf = () => PLANS[APP.plan]||PLANS.profesional;
+const planHas = f => planOf().feat.includes(f);
+const FAB_OK = ([,l]) => (l!=='Gasto con foto'||planHas('scan')) && (!['Cotización','Nota de venta'].includes(l)||planOf().tabs.includes('docs'));
+// ── Agregar a Google Calendar / Apple (una cita) ──
+const evRange = ev => {
+  const s=ev.date.replace(/-/g,'')+(ev.time?'T'+ev.time.replace(':','')+'00':'');
+  if(!ev.time) return [s,dKey(addDays(new Date(ev.date+'T12:00:00'),1)).replace(/-/g,'')];
+  const [y,m,d]=ev.date.split('-').map(Number), [h,mi]=ev.time.split(':').map(Number);
+  const t=new Date(y,m-1,d,h,mi+(Number(ev.dur)||60));
+  return [s,dKey(t).replace(/-/g,'')+'T'+pad(t.getHours())+pad(t.getMinutes())+'00'];
+};
+const gcalUrl = ev => { const [a,b]=evRange(ev); return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(ev.title)+'&dates='+a+'/'+b+'&details='+encodeURIComponent(ev.details||'')+'&location='+encodeURIComponent(ev.location||''); };
+const icsEsc = v => String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+const downloadIcs = ev => {
+  const [a,b]=evRange(ev), day=!ev.time;
+  const txt=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//ritual.//ES','BEGIN:VEVENT','UID:'+ev.id+'@ritual','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z',
+    (day?'DTSTART;VALUE=DATE:':'DTSTART:')+a,(day?'DTEND;VALUE=DATE:':'DTEND:')+b,'SUMMARY:'+icsEsc(ev.title),
+    ev.location&&('LOCATION:'+icsEsc(ev.location)),ev.details&&('DESCRIPTION:'+icsEsc(ev.details)),'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
+  const el=document.createElement('a'); el.href=URL.createObjectURL(new Blob([txt],{type:'text/calendar'})); el.download=(ev.title||'cita').replace(/[^\w\sáéíóúñ-]/gi,'').slice(0,40)+'.ics';
+  document.body.appendChild(el); el.click(); el.remove();
+};
+const evOfAppt = (db,a) => { const cl=clientOf(db,a.clientId)||{}, cn=clientName(db,a);
+  return {id:a.id,date:a.date,time:a.time,dur:(svcOf(db,a.serviceId)||{}).duration||60,title:apptName(db,a)+(cn?' · '+cn:''),location:a.address||'',
+    details:[cn&&'Cliente: '+cn,cl.phone&&'Tel: '+cl.phone,a.note].filter(Boolean).join('\n')}; };
+// Lo que ve un colaborador de cada cita asignada (sin precios ni pagos).
+const toJob = (db,a) => { const cl=clientOf(db,a.clientId)||{};
+  return {id:a.id,date:a.date,time:a.time||'',dur:(svcOf(db,a.serviceId)||{}).duration||60,title:apptName(db,a),client:clientName(db,a),phone:cl.phone||'',address:a.address||'',notes:a.note||'',status:a.status||'pendiente'}; };
+const CalButtons = ({ev}) => html`<div class="rowx" style="flex-wrap:wrap;gap:6px">
+  <a class="btn-g" style="text-decoration:none;min-height:28px;font-size:12px" href=${gcalUrl(ev)} target="_blank" rel="noopener"><${Ic} n="cal" s=${13}/>Google Calendar</a>
+  <button class="btn-g" style="min-height:28px;font-size:12px" onClick=${()=>downloadIcs(ev)}><${Ic} n="cal" s=${13}/>Apple / iPhone</button>
+</div>`;
 const projOf = (db,id) => db.projects.find(p=>p.id===id);
 const svcOf = (db,id) => id ? (db.services||[]).find(x=>x.id===id) : null;
 const apptName = (db,a) => (projOf(db,a.projectId)||{}).name || (svcOf(db,a.serviceId)||{}).name || a.title || 'Cita';
@@ -551,7 +594,7 @@ const ApptForms = ({db,put,setTab}) => {
   const [f,setF] = useState(null);
   const [pay,setPay] = useState(null);
   const [view,setView] = useState(null);
-  const blank = {projectId:'',serviceId:'',address:'',title:'',client:'',clientId:'',phone:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
+  const blank = {projectId:'',serviceId:'',address:'',assignee:'',title:'',client:'',clientId:'',phone:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
   const name = a => apptName(db,a);
   const paid = a => apptPaid(txns,a.id);
   const owed = a => apptOwed(txns,a);
@@ -597,6 +640,9 @@ const ApptForms = ({db,put,setTab}) => {
             </select></div>`}
           <${ClientField} clients=${clients} name=${f.client} phone=${f.phone||''} onChange=${v=>setF({...f,...v})}/>
           <div><label class="lbl">Dirección (opcional)</label><input value=${f.address||''} onInput=${e=>setF({...f,address:e.target.value})} placeholder="Calle, número, colonia o link de Maps"/></div>
+          ${APP.members.length>0&&html`<div><label class="lbl">Asignar a</label><select value=${f.assignee||''} onChange=${e=>setF({...f,assignee:e.target.value})}>
+            <option value="">Yo (sin asignar)</option>${APP.members.map(m=>html`<option value=${m.email}>${m.name||m.email}</option>`)}</select>
+            ${f.assignee&&html`<p class="tiny" style="margin-top:6px">Le aparecerá en "Mis trabajos" con fecha, hora, dirección, cliente y notas. No verá precios ni pagos.</p>`}</div>`}
           <div class="grid2">
             <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
             <div><label class="lbl">Hora</label><${TimePick} value=${f.time} onChange=${v=>setF({...f,time:v})}/></div>
@@ -658,7 +704,10 @@ const ApptForms = ({db,put,setTab}) => {
             ${curPays.map(t=>html`<div class="list-row" style="padding:7px 0"><span class="muted" style="flex:1;text-transform:capitalize">${fmtDate(t.date)} · ${t.category}</span><b class="num" style="font-size:13px">${fmtMoney(t.amount)}</b></div>`)}
           </div>`}
           ${cur.address&&html`<a class="muted rowx" style="gap:6px;text-decoration:none" href=${/^https?:/.test(cur.address)?cur.address:mapsLink(cur.address)} target="_blank" rel="noopener"><${Ic} n="pin" s=${14} c="var(--ink-3)"/><span style="text-decoration:underline">${cur.address}</span></a>`}
+          ${cur.assignee&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${14} c="var(--ink-3)"/>Asignada a <b style="color:var(--ink)">${(APP.members.find(m=>m.email===cur.assignee)||{}).name||cur.assignee}</b></span>`}
+          ${cur.report&&html`<div style="padding:10px 12px;background:var(--surface-2);border-radius:8px"><p class="over" style="margin-bottom:4px">Nota del colaborador</p><p class="muted">${cur.report}</p></div>`}
           ${cur.note&&html`<p class="muted">${cur.note}</p>`}
+          <${CalButtons} ev=${evOfAppt(db,cur)}/>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${cur.status!=='cancelada'&&html`<button class="btn-g" style="flex:1" onClick=${()=>act.toggleDone(cur)}><${Ic} n="check" s=${14}/>${cur.status==='hecha'?'Marcar pendiente':'Marcar realizada'}</button>`}
             ${owed(cur)>0&&html`<button class="btn-g" style="flex:1" onClick=${()=>act.pay(cur)}><${Ic} n="plus" s=${14}/>Agregar pago</button>`}
@@ -728,7 +777,7 @@ const TxnForm = ({db,put}) => {
           <div class="seg">
             ${[['income','Ingreso'],['expense','Gasto']].map(([tp,l])=>html`<button class=${f.type===tp?'on':''} onClick=${()=>setF({...f,type:tp,category:FCATS[tp][0]})}>${l}</button>`)}
           </div>
-          ${f.type==='expense'&&!f.id&&html`
+          ${f.type==='expense'&&!f.id&&planHas('scan')&&html`
             <button class="btn-g" style="width:100%;min-height:38px" disabled=${scan&&scan.busy} onClick=${()=>fileRef.current&&fileRef.current.click()}>
               <${Ic} n="cam" s=${15}/>${scan&&scan.busy?'Leyendo el ticket…':'Llenar con foto del ticket'}
             </button>
@@ -1297,6 +1346,7 @@ const PageAppts = ({db,put,setTab}) => {
                   <div class="stack" style="gap:4px;margin-top:8px">
                     <span class="muted rowx" style="gap:6px;text-transform:capitalize"><${Ic} n="clock" s=${13} c="var(--ink-3)"/>${fmtDate(a.date)}${a.time?` · ${a.time}`:''}</span>
                     ${clientName(db,a)&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${13} c="var(--ink-3)"/>${clientName(db,a)}</span>`}
+                    ${a.assignee&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${13} c="var(--ink-3)"/>Asignada a ${(APP.members.find(m=>m.email===a.assignee)||{}).name||a.assignee}</span>`}
                     ${a.note&&html`<p class="tiny" style="margin-top:4px">${a.note}</p>`}
                   </div>
                   ${(a.price>0||paid(a)>0)&&html`
@@ -1687,8 +1737,90 @@ const PageCalendar = ({db,setTab}) => {
 // ══════════════════════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════
+// EQUIPO Y CALENDARIO
+// ══════════════════════════════════════════════════════════════════════════
+const TeamCal = ({owner,plan,members,addMember,removeMember,calTok,getCalLink}) => {
+  const [nm,setNm] = useState(''), [em,setEm] = useState(''), [err,setErr] = useState(''), [busy,setBusy] = useState(false), [copied,setCopied] = useState(false);
+  const https = calTok ? `${location.origin}/api/calendar?t=${calTok}` : '';
+  const webcal = https.replace(/^https?:/,'webcal:');
+  const add = async () => { setBusy(true); const e=await addMember(nm,em); setBusy(false); setErr(e||''); if(!e){ setNm(''); setEm(''); } };
+  const sect = 'padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)';
+  return html`
+    ${owner&&html`<div style=${sect}>
+      <div class="rowx" style="justify-content:space-between"><p class="h3">Tu plan</p><span class="badge b-pink">${(PLANS[plan]||PLANS.profesional).l}</span></div>
+      <p class="tiny" style="margin-top:4px">${PLAN_TXT[plan]||PLAN_TXT.profesional}</p>
+    </div>`}
+    ${owner&&html`<div style=${sect}>
+      <p class="h3" style="margin-bottom:4px">Equipo</p>
+      ${plan!=='profesional' ? html`<p class="tiny">Los colaboradores están incluidos en el plan Profesional.</p>` : html`
+        <p class="tiny" style="margin-bottom:10px">Agrega a tus colaboradores con el correo con el que entrarán a la app (puede ser su Gmail). Verán solo los trabajos que les asignes: fecha, hora, dirección, cliente y notas. Nada de finanzas ni precios.</p>
+        ${members.map(m=>html`<div class="list-row" style="padding:8px 0">
+          <div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:500" class="ellip">${m.name||m.email}</p><p class="tiny ellip">${m.email}</p></div>
+          <button class="icon-btn" aria-label="Quitar del equipo" onClick=${()=>removeMember(m.email)}><${Ic} n="x" s=${14}/></button></div>`)}
+        <div class="grid2" style="margin-top:8px"><input value=${nm} onInput=${e=>setNm(e.target.value)} placeholder="Nombre"/><input type="email" value=${em} onInput=${e=>setEm(e.target.value)} placeholder="correo@gmail.com"/></div>
+        ${err&&html`<p class="tiny" style="color:var(--bad);margin-top:6px">${err}</p>`}
+        <button class="btn-g" style="margin-top:8px" disabled=${busy||!em.trim()} onClick=${add}><${Ic} n="plus" s=${14}/>Agregar colaborador</button>`}
+    </div>`}
+    <div style=${sect}>
+      <p class="h3" style="margin-bottom:4px">Sincronizar con tu calendario</p>
+      <p class="tiny" style="margin-bottom:10px">${owner?'Tus citas':'Tus trabajos'} aparecen solos en el calendario de tu celular, y se actualizan cuando hay cambios.</p>
+      ${!calTok ? html`<button class="btn-g" onClick=${getCalLink}><${Ic} n="cal" s=${14}/>Obtener mi link de calendario</button>` : html`
+        <div class="rowx" style="flex-wrap:wrap;gap:6px">
+          <a class="btn-g" style="text-decoration:none" href=${'https://calendar.google.com/calendar/r?cid='+encodeURIComponent(webcal)} target="_blank" rel="noopener">Agregar a Google Calendar</a>
+          <a class="btn-g" style="text-decoration:none" href=${webcal}>Agregar a Apple / iPhone</a>
+          <button class="btn-g" onClick=${()=>{navigator.clipboard&&navigator.clipboard.writeText(https).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}}>${copied?'¡Copiado!':'Copiar link'}</button>
+        </div>
+        <p class="tiny" style="margin-top:8px">Google Calendar puede tardar unas horas en mostrar los cambios; en iPhone se actualiza más seguido. No compartas este link: quien lo tenga puede ver tu agenda.</p>`}
+    </div>`;
+};
+
+const CollabHome = ({collab,updateJob,email}) => {
+  const today = todayKey(), tomorrow = dKey(addDays(new Date(),1));
+  const [rep,setRep] = useState({});
+  const all = collab.flatMap(g=>(g.jobs||[]).map(j=>({...j,owner:g.owner,biz:g.biz}))).filter(j=>j.status!=='cancelada');
+  const key = j => j.date+(j.time||'99');
+  const upcoming = all.filter(j=>j.date>=today).sort((a,b)=>key(a).localeCompare(key(b)));
+  const past = all.filter(j=>j.date<today).sort((a,b)=>key(b).localeCompare(key(a))).slice(0,10);
+  const groups = {}; upcoming.forEach(j=>{ (groups[j.date]=groups[j.date]||[]).push(j); });
+  const label = d => d===today?'Hoy':d===tomorrow?'Mañana':(()=>{const t=new Date(d+'T12:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});return t[0].toUpperCase()+t.slice(1);})();
+  const multi = new Set(collab.map(g=>g.owner)).size>1;
+  const Card = ({j}) => { const done=j.status==='hecha', r=rep[j.id]??(j.report||'');
+    return html`<div class="card" style=${{opacity:done?0.7:1}}>
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div style="min-width:0">
+          <p class="num" style="font-size:20px;font-weight:600;letter-spacing:-0.02em">${j.time||'Sin hora'}</p>
+          <p style=${{fontSize:15,fontWeight:600,textDecoration:done?'line-through':'none'}}>${j.title}</p>
+          ${multi&&html`<p class="tiny">${j.biz}</p>`}
+        </div>
+        <span class=${'badge '+(done?'b-good':'b-pink')}>${done?'Realizado':'Pendiente'}</span>
+      </div>
+      <div class="stack" style="gap:8px;margin-top:10px">
+        ${j.client&&html`<div class="rowx" style="flex-wrap:wrap;gap:6px"><span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${14} c="var(--ink-3)"/>${j.client}</span>
+          ${j.phone&&html`<a class="btn-g" style="text-decoration:none;min-height:28px;font-size:12px" href=${'tel:'+j.phone.replace(/[^\d+]/g,'')}>Llamar</a>`}
+          ${waLink(j.phone)&&html`<a class="btn-g" style="text-decoration:none;min-height:28px;font-size:12px" href=${waLink(j.phone)} target="_blank" rel="noopener">WhatsApp</a>`}</div>`}
+        ${j.address&&html`<a class="muted rowx" style="gap:6px;text-decoration:none" href=${/^https?:/.test(j.address)?j.address:mapsLink(j.address)} target="_blank" rel="noopener"><${Ic} n="pin" s=${14} c="var(--ink-3)"/><span style="text-decoration:underline">${j.address}</span></a>`}
+        ${j.notes&&html`<div style="padding:10px 12px;background:var(--surface-2);border-radius:8px"><p class="over" style="margin-bottom:4px">Indicaciones</p><p class="muted" style="white-space:pre-wrap">${j.notes}</p></div>`}
+        <div><label class="lbl">Nota para tu jefe (opcional)</label>
+          <div class="rowx"><input value=${r} onInput=${e=>setRep({...rep,[j.id]:e.target.value})} placeholder="Ej. Cliente pidió reagendar"/>
+          ${r!==(j.report||'')&&html`<button class="btn-g" onClick=${()=>{updateJob(j.owner,j.id,{report:r});setRep({...rep,[j.id]:undefined});}}>Enviar</button>`}</div></div>
+        <div class="rowx" style="flex-wrap:wrap;gap:6px;justify-content:space-between">
+          <${CalButtons} ev=${{id:'job-'+j.id,date:j.date,time:j.time,dur:j.dur,title:j.title+(j.client?' · '+j.client:''),location:j.address,details:[j.client&&'Cliente: '+j.client,j.phone&&'Tel: '+j.phone,j.notes].filter(Boolean).join('\n')}}/>
+          <button class=${done?'btn-g':'btn-p'} onClick=${()=>updateJob(j.owner,j.id,{status:done?'pendiente':'hecha',doneAt:done?'':new Date().toISOString()})}><${Ic} n="check" s=${14} c=${done?'currentColor':'var(--on-acc)'}/>${done?'Marcar pendiente':'Marcar realizado'}</button>
+        </div>
+      </div>
+    </div>`; };
+  return html`<div class="page fade-up" style="max-width:760px;margin:0 auto">
+    <div class="page-header"><div class="col"><h2 class="h1">Mis trabajos</h2><p class="muted">${upcoming.filter(j=>j.status!=='hecha').length} pendientes · ${email}</p></div></div>
+    ${upcoming.length===0&&html`<${Empty} emo="📅" title="No tienes trabajos asignados" text="Cuando te asignen una cita aparecerá aquí con la dirección y los datos del cliente."/>`}
+    ${Object.entries(groups).map(([d,js])=>html`<div style="margin-bottom:20px"><p class="over" style="margin-bottom:8px">${label(d)}</p><div class="stack" style="gap:12px">${js.map(j=>html`<${Card} j=${j}/>`)}</div></div>`)}
+    ${past.length>0&&html`<p class="over" style="margin:10px 0 8px">Anteriores</p><div class="card" style="padding:4px 16px">${past.map(j=>html`
+      <div class="list-row"><span class="tiny" style="width:90px;text-transform:capitalize">${fmtDate(j.date)}</span><span class="ellip" style="flex:1;font-size:13px">${j.title}${j.client?' · '+j.client:''}</span><span class=${'badge '+(j.status==='hecha'?'b-good':'b-warn')}>${j.status==='hecha'?'Realizado':'Sin marcar'}</span></div>`)}</div>`}
+  </div>`;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
 const BIZ_ICONS = ['','✦','⭐','🎀','🌸','💎','🔥','🌙','📸','🎨','💄','💅','✂️','💼','☕','🧁'];
-const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,session,theme,setTheme,exportBackup,importBackup}) => {
+const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,session,theme,setTheme,exportBackup,importBackup,team}) => {
   const [name,setName] = useState(biz);
   const [ic,setIc] = useState(icon);
   const [pf,setPf] = useState({phone:'',instagram:'',email:'',address:'',terms:'',taxName:'IVA',taxRate:'',...(profile||{})});
@@ -1727,6 +1859,7 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,sessi
           </div>
         </div>
         <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{if(name.trim()!==biz)setBiz(name.trim());if(ic!==icon)setIcon(ic);if(JSON.stringify(pf)!==JSON.stringify(profile||{}))setProfile(pf);onClose();}}>Guardar ajustes</button>
+        ${team&&html`<${TeamCal} owner=${true} ...${team}/>`}
         <div style="padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)">
           <p class="h3" style="margin-bottom:4px">Respaldo</p>
           <p class="tiny" style="margin-bottom:10px">Descarga todos tus datos en un archivo y guárdalo donde quieras (Drive, OneDrive, correo).</p>
@@ -1845,12 +1978,24 @@ const App = () => {
   const [theme,setThemeS] = useState(()=>document.documentElement.dataset.theme||'dark');
   const setTheme = v => { setThemeS(v); document.documentElement.dataset.theme=v; try{localStorage.setItem('ritual-theme',v);}catch{} };
   const uidNow = session&&session.user.id;
+  const myEmail = session ? (session.user.email||'').toLowerCase() : '';
+  const [plan,setPlan] = useState('profesional');
+  const [members,setMembers] = useState([]);
+  const [invites,setInvites] = useState([]);
+  const [mode,setModeS] = useState('own');
+  const setMode = v => { setModeS(v); try{localStorage.setItem('ritual-mode-'+uidNow,JSON.stringify(v));}catch{} setMenu(false); window.scrollTo(0,0); };
+  const [jobsRemote,setJobsRemote] = useState({});
+  const [collab,setCollab] = useState([]);
+  const [calTok,setCalTok] = useState('');
+  const lastPush = useRef({});
+  APP.plan = plan; APP.members = (PLANS[plan]||PLANS.profesional).feat.includes('team') ? members : [];
 
   // Cada guardado se rastrea: "Guardando…", "Guardado" o "Sin conexión" con reintento.
   const pushCloud = async (k,v) => {
     if(!sb||!uidNow)return;
     setSaving(n=>n+1);
     let error=null;
+    lastPush.current[k]=Date.now();
     try{ ({error} = await sb.from('ritual_data').upsert({owner:uidNow,key:k,value:v,updated_at:new Date().toISOString()},{onConflict:'owner,key'})); }catch(e){ error=e; }
     setSaving(n=>n-1);
     setFailed(f=>{ const n={...f}; if(error) n[k]=v; else delete n[k]; return n; });
@@ -1914,10 +2059,102 @@ const App = () => {
       if(error){ setCloud('error'); return; }
       const m = Object.fromEntries(data.map(r=>[r.key,r.value]));
       const n = {...EMPTY}; KEYS.forEach(k=>{ if(Array.isArray(m[k])) n[k]=m[k]; });
+      setJobsRemote(Object.fromEntries(data.filter(r=>r.key.startsWith('jobs:')).map(r=>[r.key.slice(5),r.value])));
       setDb(n); setBizS(typeof m.name==='string'?m.name:''); setIconS(typeof m.icon==='string'?m.icon:''); setProfileS(m.profile&&typeof m.profile==='object'?m.profile:{}); setCloud('ok');
     });
     return ()=>{dead=true;};
   },[uidNow]);
+
+  // Plan, equipo e invitaciones de la cuenta.
+  useEffect(()=>{
+    setPlan('profesional'); setMembers([]); setInvites([]); setCollab([]); setCalTok(''); setModeS('own');
+    if(!sb||!uidNow) return;
+    let dead=false;
+    (async()=>{
+      const [pl,mem] = await Promise.all([sb.from('ritual_plans').select('plan').maybeSingle(), sb.from('ritual_members').select('owner,email,name')]);
+      if(dead) return;
+      if(pl.data&&PLANS[pl.data.plan]) setPlan(pl.data.plan);
+      const rows = mem.data||[];
+      setMembers(rows.filter(r=>r.owner===uidNow));
+      const inv = rows.filter(r=>r.owner!==uidNow);
+      setInvites(inv);
+      if(inv.length) setModeS(load('ritual-mode-'+uidNow,'team'));
+    })();
+    return ()=>{dead=true;};
+  },[uidNow]);
+  // Colaborador: carga sus trabajos de cada negocio que lo invitó.
+  const loadCollab = async () => {
+    if(!sb||!invites.length) return;
+    const owners=[...new Set(invites.map(i=>i.owner))];
+    const {data} = await sb.from('ritual_data').select('owner,key,value').in('owner',owners);
+    const rows=data||[];
+    setCollab(owners.map(o=>({owner:o,biz:(rows.find(r=>r.owner===o&&r.key==='name')||{}).value||'Negocio',jobs:(rows.find(r=>r.owner===o&&r.key==='jobs:'+myEmail)||{}).value||[]})));
+  };
+  const loadCollabRef = useRef(null); loadCollabRef.current = loadCollab;
+  useEffect(()=>{ if(mode==='team') loadCollab(); },[mode,invites]);
+  const updateJob = async (owner,id,patch) => {
+    const g=collab.find(x=>x.owner===owner); if(!g) return;
+    const jobs=g.jobs.map(j=>j.id===id?{...j,...patch}:j);
+    setCollab(c=>c.map(x=>x.owner===owner?{...x,jobs}:x));
+    const {error} = await sb.from('ritual_data').update({value:jobs,updated_at:new Date().toISOString()}).eq('owner',owner).eq('key','jobs:'+myEmail);
+    if(error) flash('No se pudo guardar. Revisa tu conexión.');
+  };
+  // Cambios en vivo: trabajos marcados por colaboradores y ediciones desde otro dispositivo.
+  useEffect(()=>{
+    if(!sb||!uidNow) return;
+    const owners = mode==='team' ? [...new Set(invites.map(i=>i.owner))] : [uidNow];
+    const chans = owners.map(o=>sb.channel('rd-'+o+'-'+mode).on('postgres_changes',{event:'*',schema:'public',table:'ritual_data',filter:'owner=eq.'+o},p=>{
+      const r=p.new; if(!r||!r.key) return;
+      if(mode==='team'){ loadCollabRef.current&&loadCollabRef.current(); return; }
+      if(r.key.startsWith('jobs:')){ setJobsRemote(j=>({...j,[r.key.slice(5)]:r.value})); return; }
+      if(Date.now()-(lastPush.current[r.key]||0)<5000) return;
+      if(KEYS.includes(r.key)&&JSON.stringify(dbRef.current[r.key])!==JSON.stringify(r.value)) setDb(d=>({...d,[r.key]:r.value}));
+    }).subscribe());
+    return ()=>chans.forEach(c=>sb.removeChannel(c));
+  },[uidNow,mode,invites]);
+  // Jefe: publica a cada colaborador sus trabajos y trae sus avances a las citas.
+  useEffect(()=>{
+    if(!SUPA_KEY||mode!=='own'||cloud!=='ok'||!APP.members.length) return;
+    const t=setTimeout(()=>{
+      let changed=false;
+      const appts=db.appts.map(a=>{
+        if(!a.assignee) return a;
+        const j=(jobsRemote[a.assignee]||[]).find(x=>x.id===a.id); if(!j) return a;
+        let n=a;
+        if(j.status==='hecha'&&a.status==='pendiente') n={...n,status:'hecha'};
+        if((j.report||'')!==(a.report||'')) n={...n,report:j.report||''};
+        if(n!==a) changed=true; return n;
+      });
+      if(changed){ put('appts',appts); return; }
+      const since=dKey(addDays(new Date(),-30));
+      APP.members.forEach(m=>{
+        const cur=jobsRemote[m.email]||[];
+        const jobs=db.appts.filter(a=>a.assignee===m.email&&a.date>=since).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')))
+          .map(a=>{ const j=toJob(db,a), c=cur.find(x=>x.id===a.id); return c?{...j,report:c.report||'',doneAt:c.doneAt||''}:j; });
+        if(JSON.stringify(jobs)!==JSON.stringify(cur)){ pushCloud('jobs:'+m.email,jobs); setJobsRemote(r=>({...r,[m.email]:jobs})); }
+      });
+    },800);
+    return ()=>clearTimeout(t);
+  },[db.appts,db.clients,db.services,db.projects,members,jobsRemote,cloud,mode,plan]);
+  const addMember = async (name,email) => {
+    const em=(email||'').trim().toLowerCase();
+    if(!/^\S+@\S+\.\S+$/.test(em)) return 'Escribe un correo válido.';
+    if(em===myEmail) return 'Ese es tu propio correo.';
+    const {error} = await sb.from('ritual_members').insert({owner:uidNow,email:em,name:(name||'').trim()});
+    if(error) return error.code==='23505'?'Esa persona ya está en tu equipo.':/row-level|policy/i.test(error.message||'')?'Tu plan no incluye colaboradores.':'No se pudo agregar. ¿Ya corriste el SQL de equipo en Supabase?';
+    setMembers(m=>[...m,{owner:uidNow,email:em,name:(name||'').trim()}]); return '';
+  };
+  const removeMember = em => ask(`¿Quitar a ${em} de tu equipo?`, async ()=>{
+    await sb.from('ritual_members').delete().eq('owner',uidNow).eq('email',em);
+    await sb.from('ritual_data').delete().eq('owner',uidNow).eq('key','jobs:'+em);
+    setMembers(m=>m.filter(x=>x.email!==em)); setJobsRemote(j=>{const n={...j}; delete n[em]; return n;});
+    put('appts',dbRef.current.appts.map(a=>a.assignee===em?{...a,assignee:''}:a));
+  },'Sus trabajos asignados vuelven a quedar contigo. Ya no podrá entrar a tu negocio.');
+  const getCalLink = async () => {
+    let {data} = await sb.from('ritual_cal').select('token').maybeSingle();
+    if(!data){ const r=await sb.from('ritual_cal').insert({user_id:uidNow}).select('token').single(); data=r.data; }
+    if(data&&data.token) setCalTok(data.token); else flash('No se pudo crear tu link. ¿Ya corriste el SQL de equipo y calendario en Supabase?');
+  };
 
   if(SUPA_KEY){
     if(session===undefined) return html`<${Splash} text="Cargando…"/>`;
@@ -1929,6 +2166,25 @@ const App = () => {
         <button class="btn-g" style="justify-content:center" onClick=${()=>sb.auth.signOut()}>Cerrar sesión</button>
       </div><//>`;
   }
+
+  if(SUPA_KEY&&mode==='team'&&invites.length) return html`
+    <div style="min-height:100vh">
+      <header class="topbar" style="display:flex">
+        <img src="icon.svg" width="24" height="24" alt="" style="border-radius:6px;margin-left:6px"/>
+        <span class="logo-word ellip" style="flex:1">Mis trabajos</span>
+        <button class="btn-g" style="min-height:30px;font-size:12px" onClick=${()=>setMode('own')}>Mi negocio</button>
+        <button class="icon-btn" aria-label="Ajustes" onClick=${()=>setShowSet(true)}><${Ic} n="settings" s=${20} c="var(--ink)"/></button>
+      </header>
+      <main style="padding-top:calc(52px + env(safe-area-inset-top,0px));padding-bottom:40px"><${CollabHome} collab=${collab} updateJob=${updateJob} email=${myEmail}/></main>
+      <${Modal} open=${showSet} onClose=${()=>setShowSet(false)} title="Ajustes">
+        <div class="stack" style="gap:14px">
+          <${TeamCal} owner=${false} calTok=${calTok} getCalLink=${getCalLink}/>
+          <div><label class="lbl">Tema de la app</label><div class="seg">${[['dark','Oscuro'],['rosa','Claro']].map(([k,l])=>html`<button class=${theme===k?'on':''} onClick=${()=>setTheme(k)}>${l}</button>`)}</div></div>
+          <button class="btn-g" style="justify-content:center" onClick=${()=>{setShowSet(false);sb.auth.signOut();}}>Cerrar sesión (${myEmail})</button>
+        </div>
+      <//>
+      ${toast&&html`<div class="toast">${toast.msg}</div>`}
+    </div>`;
 
   const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,clients:PageClients,docs:PageDocs,services:PageServices,projects:PageProjects,cal:PageCalendar};
   const Page  = pages[tab]||PageHome;
@@ -1945,12 +2201,13 @@ const App = () => {
         </div>
         <p class="side-label">Negocio</p>
         <div style="display:flex;flex-direction:column;gap:2px;flex:1">
-          ${TABS.map(t=>html`
+          ${TABS.filter(t=>planOf().tabs.includes(t.id)).map(t=>html`
             <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>go(t.id)}>
               <${Ic} n=${t.icon} s=${16}/>${t.label}
             </button>
           `)}
         </div>
+        ${invites.length>0&&html`<button class="nav-item" onClick=${()=>setMode('team')}><${Ic} n="user" s=${16}/>Mis trabajos (equipo)</button>`}
         <button onClick=${saveState.click} style=${{display:'flex',alignItems:'center',gap:6,padding:'4px 10px',background:'none',border:0,cursor:saveState.click?'pointer':'default',color:'var(--ink-2)',fontSize:11,textAlign:'left'}}>
           <span class="dot" style=${{width:6,height:6,background:saveState.c}}/>${saveState.t}
         </button>
@@ -1971,7 +2228,7 @@ const App = () => {
       </header>
       ${menu&&html`<div class="drawer-bg" onClick=${()=>setMenu(false)}/>`}
 
-      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} icon=${icon} setIcon=${setIcon} profile=${profile} setProfile=${setProfile} session=${session} theme=${theme} setTheme=${setTheme} exportBackup=${exportBackup} importBackup=${importBackup}/>`}
+      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} icon=${icon} setIcon=${setIcon} profile=${profile} setProfile=${setProfile} session=${session} theme=${theme} setTheme=${setTheme} exportBackup=${exportBackup} importBackup=${importBackup} team=${SUPA_KEY&&session?{plan,members,addMember,removeMember,calTok,getCalLink}:null}/>`}
       ${conf&&html`
         <div class="modal-bg" style="z-index:70" onClick=${()=>setConf(null)}>
           <div class="modal-box fade-up" style="max-width:360px" onClick=${e=>e.stopPropagation()}>
@@ -1993,7 +2250,7 @@ const App = () => {
       ${fab&&html`<div style="position:fixed;inset:0;z-index:39" onClick=${()=>setFab(false)}/>`}
       <div class="fab-wrap">
         ${fab&&html`<div class="fab-menu fade-up">
-          ${[['cal','Nueva cita',()=>act.newAppt()],['up','Ingreso',()=>act.newTxn('income')],['down','Gasto',()=>act.newTxn('expense')],['cam','Gasto con foto',()=>act.scanExpense()],['doc','Cotización',()=>act.newDoc('cot')],['doc','Nota de venta',()=>act.newDoc('nv')]].map(([ic,l,fn])=>html`
+          ${[['cal','Nueva cita',()=>act.newAppt()],['up','Ingreso',()=>act.newTxn('income')],['down','Gasto',()=>act.newTxn('expense')],['cam','Gasto con foto',()=>act.scanExpense()],['doc','Cotización',()=>act.newDoc('cot')],['doc','Nota de venta',()=>act.newDoc('nv')]].filter(FAB_OK).map(([ic,l,fn])=>html`
             <button class="nav-item" onClick=${()=>{setFab(false);fn();}}><${Ic} n=${ic} s=${15}/>${l}</button>`)}
         </div>`}
         <button class="fab" aria-label="Agregar" onClick=${()=>setFab(!fab)} style=${{transform:fab?'rotate(45deg)':'none'}}><${Ic} n="plus" s=${22} c="var(--on-acc)" sw=${2.2}/></button>
