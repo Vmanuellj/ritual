@@ -79,11 +79,21 @@
       color:var(--ink-3);cursor:pointer;border:0;background:none;}
     .bnav-item.active{color:var(--ink);}
     .main-content{min-height:100vh;max-width:1180px;padding-bottom:48px;}
-    @media(min-width:768px){.main-content{margin-left:232px;}.mobile-only{display:none!important;}}
+    @media(min-width:768px){.main-content{margin-left:232px;}}
+    .mobile-only{display:none!important;}
+    .topbar{display:none;}
     @media(max-width:767px){
-      .sidebar{display:none;}
-      .bottom-nav{display:flex;}
-      .main-content{margin-left:0;padding-bottom:92px;}
+      .sidebar{width:280px;z-index:61;transform:translateX(-105%);transition:transform .22s ease;box-shadow:var(--pop);padding-top:calc(14px + env(safe-area-inset-top,0px));}
+      .sidebar.open{transform:none;}
+      .sidebar .nav-item{height:42px;font-size:14px;}
+      .drawer-bg{position:fixed;inset:0;z-index:60;background:var(--scrim);animation:fadeUp .15s ease-out;}
+      .topbar{display:flex;align-items:center;gap:8px;position:fixed;top:0;left:0;right:0;z-index:30;height:calc(52px + env(safe-area-inset-top,0px));padding:0 8px;padding-top:env(safe-area-inset-top,0px);
+        background:var(--side);border-bottom:1px solid var(--line);}
+      .main-content{margin-left:0;padding-bottom:96px;padding-top:calc(52px + env(safe-area-inset-top,0px));}
+      .page-header{flex-wrap:wrap;}
+      .modal-bg{align-items:flex-end!important;padding:0!important;}
+      .modal-box{max-width:100%!important;border-radius:16px 16px 0 0!important;max-height:92vh!important;animation:sheetUp .22s ease-out!important;}
+      .modal-body{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));}
       .page{padding:18px 14px 0!important;}
       input,textarea,select{font-size:16px!important;}
       .btn-p,.btn-g,.btn-d{min-height:40px;}
@@ -145,6 +155,7 @@
     .b-mute{background:var(--mute);color:var(--ink-2);}
 
     ::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:rgb(var(--acc) / 0.12);border-radius:4px;}
+    @keyframes sheetUp{from{transform:translateY(40px);opacity:.4;}to{transform:none;opacity:1;}}
     @keyframes fadeUp{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
     .fade-up{animation:fadeUp .16s ease-out;}
 
@@ -201,7 +212,7 @@
       box-shadow:var(--pop);transition:transform .15s ease, opacity .12s;}
     .fab:hover{opacity:.9;}
     .fab-menu{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;min-width:170px;box-shadow:var(--pop);}
-    @media(max-width:767px){.fab-wrap{bottom:84px;right:16px;}}
+    @media(max-width:767px){.fab-wrap{bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;}.fab{width:54px;height:54px;}}
 
     /* ══ Acceso ══ */
     .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
@@ -249,7 +260,7 @@ let sb = null;
 if(SUPA_KEY){
   try{ sb = (await import('https://esm.sh/@supabase/supabase-js@2')).createClient(SUPA_URL,SUPA_KEY); }catch{}
 }
-const KEYS = ['txns','appts','projects','goals','clients','docs'];
+const KEYS = ['txns','appts','projects','goals','clients','docs','services','recurring'];
 
 // ── UTILS ──────────────────────────────────────────────────────────────────
 const pad = n => String(n).padStart(2,'0');
@@ -380,7 +391,30 @@ const docWaText = (d,{biz,clientName:cn,paid}) => {
 };
 const docWaUrl = (d,c) => (waLink(c.phone)||'https://wa.me/')+'?text='+encodeURIComponent(docWaText(d,c));
 const projOf = (db,id) => db.projects.find(p=>p.id===id);
-const apptName = (db,a) => (projOf(db,a.projectId)||{}).name || a.title || 'Cita';
+const svcOf = (db,id) => id ? (db.services||[]).find(x=>x.id===id) : null;
+const apptName = (db,a) => (projOf(db,a.projectId)||{}).name || (svcOf(db,a.serviceId)||{}).name || a.title || 'Cita';
+const mapsLink = addr => addr ? 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr) : '';
+const daysIn = ym => { const [y,m]=ym.split('-').map(Number); return new Date(y,m,0).getDate(); };
+// Gastos fijos: crea los movimientos de cada mes que ya llegó, sin duplicar.
+const runRecurring = (db,put) => {
+  const rules=db.recurring||[]; if(!rules.length) return;
+  const today=todayKey(), cur=today.slice(0,7);
+  const add=[]; let changed=false;
+  const next=rules.map(r=>{
+    if(r.active===false) return r;
+    let last=r.lastMonth||shiftMonth(r.startMonth||cur,-1), m=shiftMonth(last,1), upd=r;
+    while(m<=cur){
+      const date=`${m}-${pad(Math.min(Number(r.day)||1,daysIn(m)))}`;
+      if(date>today) break;
+      if(!db.txns.some(t=>t.recurringId===r.id&&(t.date||'').startsWith(m)))
+        add.push({id:uid(),type:'expense',amount:Number(r.amount)||0,category:r.category||'Otro gasto',note:r.note||'',date,projectId:'',recurringId:r.id});
+      upd={...upd,lastMonth:m}; changed=true; m=shiftMonth(m,1);
+    }
+    return upd;
+  });
+  if(add.length) put('txns',[...add,...db.txns]);
+  if(changed) put('recurring',next);
+};
 // Avance del proyecto: por ventas (suma de precios de sus citas) o por cantidad de citas.
 const projStats = (db,p) => {
   const ap = db.appts.filter(a=>a.projectId===p.id&&a.status!=='cancelada');
@@ -415,6 +449,10 @@ const ICON = {
   pin:  '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
   cam:  '<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>',
   doc:  '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  tag:  '<path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+  menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
+  repeat:'<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/>',
+  download:'<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
   user: '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>',
 };
@@ -439,7 +477,7 @@ const Modal = ({open,onClose,title,children,wide}) => {
     </div>
   `;
 };
-const EMPTY_IC = {'🧾':'doc','💸':'finance','📅':'cal','💖':'check','💼':'proj','👤':'user'};
+const EMPTY_IC = {'🏷️':'tag','🔁':'repeat','🧾':'doc','💸':'finance','📅':'cal','💖':'check','💼':'proj','👤':'user'};
 const Empty = ({emo,title,text}) => html`
   <div class="card empty-state"><div class="empty-ic"><${Ic} n=${EMPTY_IC[emo]||'plus'} s=${18}/></div>
     ${title&&html`<p class="h3" style="margin-bottom:4px">${title}</p>`}
@@ -497,6 +535,7 @@ const TABS = [
   {id:'appts',   label:'Citas',     icon:'clock'},
   {id:'clients', label:'Clientes',  icon:'user'},
   {id:'docs',    label:'Documentos',icon:'doc'},
+  {id:'services',label:'Servicios', icon:'tag'},
   {id:'projects',label:'Proyectos', icon:'proj'},
   {id:'cal',     label:'Calendario',icon:'cal'},
 ];
@@ -512,7 +551,7 @@ const ApptForms = ({db,put,setTab}) => {
   const [f,setF] = useState(null);
   const [pay,setPay] = useState(null);
   const [view,setView] = useState(null);
-  const blank = {projectId:'',title:'',client:'',clientId:'',phone:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
+  const blank = {projectId:'',serviceId:'',address:'',title:'',client:'',clientId:'',phone:'',date:today,time:'',price:'',abono:'',note:'',status:'pendiente'};
   const name = a => apptName(db,a);
   const paid = a => apptPaid(txns,a.id);
   const owed = a => apptOwed(txns,a);
@@ -527,6 +566,7 @@ const ApptForms = ({db,put,setTab}) => {
     if(!f.id&&Number(abono)>0) put('txns',[payTxn(item,abono,'Anticipo',today),...txns]);
     setF(null);
   };
+  const pickService = id => { const sv=(db.services||[]).find(x=>x.id===id); setF({...f,serviceId:id,price:sv?String(sv.price):f.price}); };
   const pickProject = id => { const p=projects.find(x=>x.id===id); setF({...f,projectId:id,price:f.price||(p&&p.price?String(p.price):'')}); };
   const savePay = () => { if(!(Number(pay.amount)>0))return; put('txns',[payTxn(pay.appt,pay.amount,paid(pay.appt)>0?'Abono':'Anticipo',pay.date),...txns]); setPay(null); };
   const delPay = id => put('txns',txns.filter(t=>t.id!==id));
@@ -551,7 +591,12 @@ const ApptForms = ({db,put,setTab}) => {
             </select>
             ${projects.length===0&&html`<p class="tiny" style="margin-top:6px">Aún no tienes proyectos. <a href="#" style="color:var(--pink-deep);font-weight:600" onClick=${e=>{e.preventDefault();setF(null);setTab('projects');}}>Crea uno</a> para poder elegirlo aquí.</p>`}
           </div>
+          ${(db.services||[]).length>0&&html`<div><label class="lbl">Servicio</label>
+            <select value=${f.serviceId||''} onChange=${e=>pickService(e.target.value)}><option value="">Sin servicio</option>
+              ${(db.services||[]).filter(x=>x.active!==false||x.id===f.serviceId).map(x=>html`<option value=${x.id}>${x.name} · ${fmtMoney(x.price)}</option>`)}
+            </select></div>`}
           <${ClientField} clients=${clients} name=${f.client} phone=${f.phone||''} onChange=${v=>setF({...f,...v})}/>
+          <div><label class="lbl">Dirección (opcional)</label><input value=${f.address||''} onInput=${e=>setF({...f,address:e.target.value})} placeholder="Calle, número, colonia o link de Maps"/></div>
           <div class="grid2">
             <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
             <div><label class="lbl">Hora</label><${TimePick} value=${f.time} onChange=${v=>setF({...f,time:v})}/></div>
@@ -612,6 +657,7 @@ const ApptForms = ({db,put,setTab}) => {
             <p class="over" style="margin-bottom:2px">Pagos</p>
             ${curPays.map(t=>html`<div class="list-row" style="padding:7px 0"><span class="muted" style="flex:1;text-transform:capitalize">${fmtDate(t.date)} · ${t.category}</span><b class="num" style="font-size:13px">${fmtMoney(t.amount)}</b></div>`)}
           </div>`}
+          ${cur.address&&html`<a class="muted rowx" style="gap:6px;text-decoration:none" href=${/^https?:/.test(cur.address)?cur.address:mapsLink(cur.address)} target="_blank" rel="noopener"><${Ic} n="pin" s=${14} c="var(--ink-3)"/><span style="text-decoration:underline">${cur.address}</span></a>`}
           ${cur.note&&html`<p class="muted">${cur.note}</p>`}
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${cur.status!=='cancelada'&&html`<button class="btn-g" style="flex:1" onClick=${()=>act.toggleDone(cur)}><${Ic} n="check" s=${14}/>${cur.status==='hecha'?'Marcar pendiente':'Marcar realizada'}</button>`}
@@ -627,7 +673,18 @@ const TxnForm = ({db,put}) => {
   const {txns,projects} = db;
   const [f,setF] = useState(null);
   const blank = type => ({type,amount:'',category:FCATS[type][0],note:'',date:today,projectId:''});
-  const saveF = () => { if(!Number(f.amount))return; put('txns',upsert(txns,{...f,amount:Number(f.amount)})); setF(null); };
+  const saveF = () => {
+    if(!Number(f.amount))return;
+    const {repeat,...rest} = f;
+    let item = {...rest,amount:Number(f.amount)};
+    if(repeat&&!f.id&&f.type==='expense'){
+      const rid=uid();
+      put('recurring',[...(db.recurring||[]),{id:rid,amount:item.amount,category:item.category,note:item.note,day:Number((item.date||todayKey()).slice(8))||1,
+        startMonth:(item.date||todayKey()).slice(0,7),lastMonth:(item.date||todayKey()).slice(0,7),active:true}]);
+      item={...item,recurringId:rid};
+    }
+    put('txns',upsert(txns,item)); setF(null);
+  };
   const del = id => put('txns',txns.filter(x=>x.id!==id));
   const cats = f ? [...new Set([...FCATS[f.type],f.category])] : [];
   act.newTxn = type => { setScan(null); setF(blank(type)); };
@@ -683,6 +740,7 @@ const TxnForm = ({db,put}) => {
             <div><label class="lbl">Fecha</label><input type="date" value=${f.date} onInput=${e=>setF({...f,date:e.target.value})}/></div>
           </div>
           <div><label class="lbl">Descripción</label><input value=${f.note} onInput=${e=>setF({...f,note:e.target.value})} placeholder="Cliente, proveedor o concepto"/></div>
+          ${f.type==='expense'&&!f.id&&html`<label class="rowx" style="cursor:pointer"><input type="checkbox" style="width:auto" checked=${!!f.repeat} onChange=${e=>setF({...f,repeat:e.target.checked})}/><span class="muted">Repetir cada mes (gasto fijo: renta, suscripciones…)</span></label>`}
           ${projects.length>0&&html`<div><label class="lbl">Proyecto (opcional)</label><select value=${f.projectId||''} onChange=${e=>setF({...f,projectId:e.target.value})}><option value="">Sin proyecto</option>${projects.map(p=>html`<option value=${p.id}>${p.name}</option>`)}</select></div>`}
           <${FormActions} isEdit=${!!f.id} label="Guardar" what="este movimiento" onSave=${saveF} onDelete=${()=>{del(f.id);setF(null);}}/>
         </div>`}
@@ -710,7 +768,7 @@ const DocForm = ({db,put,biz,profile}) => {
   const setItem = (ix,patch) => setF({...f,items:f.items.map((it,i)=>i===ix?{...it,...patch}:it)});
   // Guarda sin cerrar y devuelve el documento guardado (para PDF y WhatsApp).
   const persist = (extra={}) => {
-    const items = f.items.filter(i=>(i.desc||'').trim()||Number(i.price)).map(i=>({id:i.id||uid(),desc:(i.desc||'').trim(),qty:Number(i.qty)||1,price:Number(i.price)||0}));
+    const items = f.items.filter(i=>(i.desc||'').trim()||Number(i.price)).map(i=>({id:i.id||uid(),desc:(i.desc||'').trim(),qty:Number(i.qty)||1,price:Number(i.price)||0,svcId:i.svcId||''}));
     if(!items.length){ alert('Agrega al menos un concepto.'); return null; }
     const nm=(f.client||'').trim();
     const cid=ensureClient(clients,put,nm,f.phone,today);
@@ -782,6 +840,9 @@ const DocForm = ({db,put,biz,profile}) => {
       </div>
 
       <div>
+        ${(db.services||[]).filter(x=>x.active!==false).length>0&&html`<select value="" style="margin-bottom:8px" onChange=${e=>{const sv=(db.services||[]).find(x=>x.id===e.target.value); if(sv) setF({...f,items:[...f.items.filter(i=>(i.desc||'').trim()||Number(i.price)),{id:uid(),desc:sv.name,qty:1,price:String(sv.price),svcId:sv.id}]}); e.target.value='';}}>
+          <option value="">+ Agregar del catálogo…</option>${(db.services||[]).filter(x=>x.active!==false).map(x=>html`<option value=${x.id}>${x.name} · ${fmtMoney(x.price)}</option>`)}
+        </select>`}
         <div style="display:grid;grid-template-columns:1fr 64px 110px 28px;gap:6px;margin-bottom:5px">
           <span class="lbl" style="margin:0">Concepto</span><span class="lbl" style="margin:0">Cant.</span><span class="lbl" style="margin:0">Precio</span><span/>
         </div>
@@ -905,7 +966,8 @@ const chartBuckets = per => {
   const mo = todayKey().slice(0,7);
   return Array.from({length:6},(_,i)=>shiftMonth(mo,i-5)).map(ym=>({id:ym,l:new Date(ym+'-15T12:00:00').toLocaleDateString('es-MX',{month:'short'}).replace('.',''),full:fmtMonth(ym),from:ym+'-01',to:ym+'-31'}));
 };
-const PageHome = ({db,setTab,biz,icon,openSettings}) => {
+const PageHome = ({db,setTab,biz,icon,openSettings,profile,setProfile}) => {
+  const [gEdit,setGEdit] = useState(null);
   const today = todayKey();
   const mo = today.slice(0,7);
   const {txns,appts,projects} = db;
@@ -979,6 +1041,17 @@ const PageHome = ({db,setTab,biz,icon,openSettings}) => {
           </div>
         `)}
       </div>
+
+      ${(()=>{ const goal=Number((profile||{}).monthGoal)||0, left=daysIn(mo)-Number(today.slice(8))+1, falta=Math.max(0,goal-inc), pct=goal?Math.min(100,Math.round(inc/goal*100)):0;
+        return html`<div class="card" style="margin-bottom:16px">
+          <${CardHead} title="Meta del mes" action=${gEdit===null?(goal?'Cambiar':'+ Definir meta'):''} onAction=${()=>setGEdit(goal?String(goal):'')}/>
+          ${gEdit!==null?html`<div class="rowx" style="flex-wrap:wrap"><input type="number" min="0" value=${gEdit} onInput=${e=>setGEdit(e.target.value)} placeholder="Ingresos que quieres este mes" style="max-width:220px"/>
+              <button class="btn-p" onClick=${()=>{setProfile({...(profile||{}),monthGoal:Number(gEdit)||0});setGEdit(null);}}>Guardar</button><button class="btn-g" onClick=${()=>setGEdit(null)}>Cancelar</button></div>`
+          : !goal ? html`<p class="muted">Ponte una meta de ingresos y te digo cuánto te falta cada día.</p>`
+          : html`<div class="rowx" style="justify-content:space-between;margin-bottom:8px;flex-wrap:wrap"><span class="num" style="font-size:20px;font-weight:600">${fmtMoney(inc)} <span class="muted" style="font-size:13px;font-weight:400">de ${fmtMoney(goal)}</span></span><span class="num muted" style="font-weight:600">${pct}%</span></div>
+              <div class="prog-track" style="height:6px"><div class="prog-fill" style=${{width:pct+'%'}}/></div>
+              <p class="tiny" style="margin-top:8px">${falta>0?`Te faltan ${fmtMoney(falta)} en ${left} día${left===1?'':'s'}: unos ${fmtMoney(Math.ceil(falta/left))} por día.`:'¡Meta cumplida este mes!'}</p>`}
+        </div>`; })()}
 
       <div class="cols2">
         <div class="stack" style="gap:16px">
@@ -1068,6 +1141,12 @@ const PageHome = ({db,setTab,biz,icon,openSettings}) => {
 // PAGE: FINANCE  (ingresos y egresos)
 // ══════════════════════════════════════════════════════════════════════════
 const PageFinance = ({db,put}) => {
+  const [rf,setRf] = useState(null);
+  const rules = db.recurring||[];
+  const saveRf = () => { if(!Number(rf.amount)||!rf.note.trim())return; const it={...rf,amount:Number(rf.amount),day:Math.min(28,Math.max(1,Number(rf.day)||1))};
+    if(!rf.id){ const cur=todayKey().slice(0,7); it.id=uid(); it.startMonth=rf.thisMonth?cur:shiftMonth(cur,1); delete it.thisMonth; put('recurring',[...rules,it]); }
+    else put('recurring',rules.map(r=>r.id===it.id?it:r));
+    setRf(null); setTimeout(()=>runRecurring({...db,recurring:rf.id?rules.map(r=>r.id===it.id?it:r):[...rules,it]},put),0); };
   const today = todayKey();
   const {txns,projects} = db;
   const [ym,setYm] = useState(today.slice(0,7));
@@ -1139,6 +1218,33 @@ const PageFinance = ({db,put}) => {
         </div>`)}
 
 
+
+      <div class="card" style="margin-top:8px;margin-bottom:24px">
+        <${CardHead} title="Gastos fijos" action="+ Nuevo gasto fijo" onAction=${()=>setRf({note:'',amount:'',category:FCATS.expense[1],day:String(Math.min(28,Number(todayKey().slice(8)))),active:true,thisMonth:true})}/>
+        <p class="tiny" style="margin:-4px 0 6px">Se registran solos cada mes en el día que elijas.</p>
+        ${rules.length===0&&html`<p class="muted" style="padding:6px 0">Sin gastos fijos. Ej. renta, internet, suscripciones.</p>`}
+        ${rules.map(r=>html`
+          <div class="list-row" style=${{cursor:'pointer',opacity:r.active===false?0.5:1}} onClick=${()=>setRf({...r,amount:String(r.amount),day:String(r.day)})}>
+            <div class="chip" style="background:var(--violet-soft)"><${Ic} n="repeat" s=${14} c=${C_EXP}/></div>
+            <div style="flex:1;min-width:0"><p class="ellip" style="font-size:13px;font-weight:500">${r.note}</p><p class="tiny">${r.category} · día ${r.day} de cada mes${r.active===false?' · pausado':''}</p></div>
+            <b class="num">${fmtMoney(r.amount)}</b>
+          </div>`)}
+      </div>
+
+      <${Modal} open=${!!rf} onClose=${()=>setRf(null)} title=${rf&&rf.id?'Editar gasto fijo':'Nuevo gasto fijo'}>
+        ${rf&&html`<div class="stack" style="gap:12px">
+          <div><label class="lbl">Concepto</label><input value=${rf.note} onInput=${e=>setRf({...rf,note:e.target.value})} placeholder="Ej. Renta del estudio" autoFocus/></div>
+          <div class="grid2">
+            <div><label class="lbl">Monto</label><input type="number" inputmode="decimal" min="0" value=${rf.amount} onInput=${e=>setRf({...rf,amount:e.target.value})} placeholder="0"/></div>
+            <div><label class="lbl">Día del mes</label><input type="number" min="1" max="28" value=${rf.day} onInput=${e=>setRf({...rf,day:e.target.value})}/></div>
+          </div>
+          <div><label class="lbl">Categoría</label><select value=${rf.category} onChange=${e=>setRf({...rf,category:e.target.value})}>${FCATS.expense.map(c=>html`<option value=${c}>${c}</option>`)}</select></div>
+          ${!rf.id&&html`<label class="rowx" style="cursor:pointer"><input type="checkbox" style="width:auto" checked=${!!rf.thisMonth} onChange=${e=>setRf({...rf,thisMonth:e.target.checked})}/><span class="muted">Registrar también este mes</span></label>`}
+          ${rf.id&&html`<label class="rowx" style="cursor:pointer"><input type="checkbox" style="width:auto" checked=${rf.active!==false} onChange=${e=>setRf({...rf,active:e.target.checked})}/><span class="muted">Activo</span></label>`}
+          <p class="tiny">Si cambias el monto, aplica a los meses siguientes; lo ya registrado no cambia.</p>
+          <${FormActions} isEdit=${!!rf.id} label="Crear gasto fijo" what="este gasto fijo" detail="Los gastos ya registrados se quedan en Finanzas." onSave=${saveRf} onDelete=${()=>{put('recurring',rules.filter(r=>r.id!==rf.id));setRf(null);}}/>
+        </div>`}
+      <//>
     </div>
   `;
 };
@@ -1370,6 +1476,55 @@ const PageClients = ({db,put}) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
+// PAGE: SERVICIOS  (catálogo de precios y qué se vende más)
+// ══════════════════════════════════════════════════════════════════════════
+const PageServices = ({db,put}) => {
+  const today=todayKey(), mo=today.slice(0,7);
+  const services=db.services||[];
+  const [f,setF] = useState(null);
+  const blank={name:'',price:'',duration:'',desc:'',active:true};
+  const saveF = () => { if(!f.name.trim())return; put('services',upsert(services,{...f,name:f.name.trim(),price:Number(f.price)||0,duration:Number(f.duration)||0})); setF(null); };
+  const statOf = sv => {
+    const ap=db.appts.filter(a=>a.serviceId===sv.id&&a.status!=='cancelada');
+    const items=(db.docs||[]).filter(d=>d.kind==='nv'&&d.status!=='cancelada').flatMap(d=>(d.items||[]).filter(i=>i.svcId===sv.id).map(i=>({...i,date:d.date})));
+    const all=[...ap.map(a=>({n:1,v:Number(a.price)||0,date:a.date})),...items.map(i=>({n:Number(i.qty)||1,v:(Number(i.qty)||0)*(Number(i.price)||0),date:i.date}))];
+    return {n:all.reduce((s,x)=>s+x.n,0),v:all.reduce((s,x)=>s+x.v,0),nMo:all.filter(x=>(x.date||'').startsWith(mo)).reduce((s,x)=>s+x.n,0)};
+  };
+  const rows=services.map(sv=>({sv,st:statOf(sv)})).sort((a,b)=>(b.sv.active!==false)-(a.sv.active!==false)||b.st.v-a.st.v);
+  const top=rows.find(r=>r.st.v>0);
+  return html`
+    <div class="page fade-up">
+      <div class="page-header">
+        <div class="col"><h2 class="h1">Servicios</h2><p class="muted">Tu catálogo de precios para citas y cotizaciones</p></div>
+        <button class="btn-p" onClick=${()=>setF({...blank})}><${Ic} n="plus" s=${15} c="var(--on-acc)"/>Nuevo servicio</button>
+      </div>
+      ${services.length===0&&html`<${Empty} emo="🏷️" title="Aún no tienes servicios" text="Agrega lo que vendes con su precio y elígelo al agendar o cotizar."/>`}
+      ${rows.length>0&&html`<div class="card" style="padding:4px 16px">
+        ${rows.map(({sv,st})=>html`
+          <div class="list-row" style=${{cursor:'pointer',opacity:sv.active===false?0.5:1}} onClick=${()=>setF({...blank,...sv,price:String(sv.price),duration:sv.duration?String(sv.duration):''})}>
+            <div style="flex:1;min-width:0">
+              <p class="ellip" style="font-size:13px;font-weight:600">${sv.name} ${top&&top.sv.id===sv.id?html`<span class="badge b-good" style="margin-left:6px">Más vendido</span>`:''}${sv.active===false?html`<span class="badge b-mute" style="margin-left:6px">Pausado</span>`:''}</p>
+              <p class="tiny ellip">${sv.duration?sv.duration+' min · ':''}${st.n} vendido${st.n===1?'':'s'} (${st.nMo} este mes) · ${fmtMoney(st.v)} en total</p>
+            </div>
+            <b class="num" style="font-size:14px">${fmtMoney(sv.price)}</b>
+          </div>`)}
+      </div>`}
+      <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar servicio':'Nuevo servicio'}>
+        ${f&&html`<div class="stack" style="gap:12px">
+          <div><label class="lbl">Nombre</label><input value=${f.name} onInput=${e=>setF({...f,name:e.target.value})} placeholder="Ej. Sesión individual 1 hora" autoFocus/></div>
+          <div class="grid2">
+            <div><label class="lbl">Precio</label><input type="number" inputmode="decimal" min="0" value=${f.price} onInput=${e=>setF({...f,price:e.target.value})} placeholder="0"/></div>
+            <div><label class="lbl">Duración (min, opcional)</label><input type="number" min="0" value=${f.duration} onInput=${e=>setF({...f,duration:e.target.value})} placeholder="60"/></div>
+          </div>
+          <textarea rows="2" style="resize:vertical" value=${f.desc} onInput=${e=>setF({...f,desc:e.target.value})} placeholder="Qué incluye (opcional)"/>
+          ${f.id&&html`<label class="rowx" style="cursor:pointer"><input type="checkbox" style="width:auto" checked=${f.active!==false} onChange=${e=>setF({...f,active:e.target.checked})}/><span class="muted">Disponible para nuevas citas y cotizaciones</span></label>`}
+          <${FormActions} isEdit=${!!f.id} label="Guardar servicio" what="este servicio" detail="Tus citas y documentos anteriores no cambian." onSave=${saveF} onDelete=${()=>{put('services',services.filter(x=>x.id!==f.id));setF(null);}}/>
+        </div>`}
+      <//>
+    </div>`;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
 // PAGE: PROYECTOS  (promoción o conjunto de trabajos con meta por ventas o citas)
 // ══════════════════════════════════════════════════════════════════════════
 const PageProjects = ({db,put}) => {
@@ -1533,7 +1688,7 @@ const PageCalendar = ({db,setTab}) => {
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════
 const BIZ_ICONS = ['','✦','⭐','🎀','🌸','💎','🔥','🌙','📸','🎨','💄','💅','✂️','💼','☕','🧁'];
-const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,session,theme,setTheme}) => {
+const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,session,theme,setTheme,exportBackup,importBackup}) => {
   const [name,setName] = useState(biz);
   const [ic,setIc] = useState(icon);
   const [pf,setPf] = useState({phone:'',instagram:'',email:'',address:'',terms:'',taxName:'IVA',taxRate:'',...(profile||{})});
@@ -1572,6 +1727,14 @@ const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,sessi
           </div>
         </div>
         <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{if(name.trim()!==biz)setBiz(name.trim());if(ic!==icon)setIcon(ic);if(JSON.stringify(pf)!==JSON.stringify(profile||{}))setProfile(pf);onClose();}}>Guardar ajustes</button>
+        <div style="padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)">
+          <p class="h3" style="margin-bottom:4px">Respaldo</p>
+          <p class="tiny" style="margin-bottom:10px">Descarga todos tus datos en un archivo y guárdalo donde quieras (Drive, OneDrive, correo).</p>
+          <div class="rowx" style="flex-wrap:wrap">
+            <button class="btn-g" onClick=${exportBackup}><${Ic} n="download" s=${14}/>Descargar respaldo</button>
+            <label class="btn-g" style="cursor:pointer">Restaurar desde archivo<input type="file" accept="application/json,.json" style="display:none" onChange=${e=>{const fl=e.target.files&&e.target.files[0]; e.target.value=''; if(!fl)return; fl.text().then(t=>{let o=null; try{o=JSON.parse(t);}catch{} onClose(); importBackup(o);});}}/></label>
+          </div>
+        </div>
         <div>
           <label class="lbl">Tema de la app</label>
           <div class="seg">
@@ -1657,20 +1820,23 @@ const AuthScreen = () => {
 // ══════════════════════════════════════════════════════════════════════════
 // APP ROOT  — all data lives in `db`; `put` is the single write path
 // ══════════════════════════════════════════════════════════════════════════
-const EMPTY = {txns:[],appts:[],projects:[],goals:[],clients:[],docs:[]};
+const EMPTY = {txns:[],appts:[],projects:[],goals:[],clients:[],docs:[],services:[],recurring:[]};
 const App = () => {
   const [tab,setTab] = useState('home');
   const [showSet,setShowSet] = useState(false);
   const [biz,setBizS] = useState(()=>SUPA_KEY?'':load('ritual-name',''));
   const [icon,setIconS] = useState(()=>SUPA_KEY?'':load('ritual-icon',''));
   const [profile,setProfileS] = useState(()=>SUPA_KEY?{}:load('ritual-profile',{}));
-  const [db,setDb] = useState(()=>SUPA_KEY?EMPTY:{txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[]),clients:load('clients',[]),docs:load('docs',[])});
+  const [db,setDb] = useState(()=>SUPA_KEY?EMPTY:{txns:load('txns',[]),appts:load('appts',[]),projects:load('projects',[]),goals:load('goals',[]),clients:load('clients',[]),docs:load('docs',[]),services:load('services',[]),recurring:load('recurring',[])});
   const [session,setSession] = useState(SUPA_KEY&&sb?undefined:null);   // undefined = revisando sesión
   const [cloud,setCloud] = useState(SUPA_KEY?'cargando':'local');
   const [toast,setToast] = useState(null);
   const toastT = useRef(0);
   const flash = (msg,undo) => { clearTimeout(toastT.current); setToast({msg,undo}); toastT.current=setTimeout(()=>setToast(null),undo?7000:4000); };
   const [fab,setFab] = useState(false);
+  const [menu,setMenu] = useState(false);
+  const go = t => { setTab(t); setMenu(false); window.scrollTo(0,0); };
+  const recRan = useRef('');
   const [saving,setSaving] = useState(0);
   const [failed,setFailed] = useState({});
   const dbRef = useRef(db); dbRef.current = db;
@@ -1707,6 +1873,21 @@ const App = () => {
     const fn=conf.fn, snap=dbRef.current;
     setConf(null); fn();
     flash('Eliminado.',()=>{ const now=dbRef.current; KEYS.forEach(k=>{ if(now[k]!==snap[k]) put(k,snap[k]); }); flash('Listo, se restauró.'); });
+  };
+  // Gastos fijos: una vez por sesión, cuando ya cargaron los datos.
+  useEffect(()=>{ const k=(uidNow||'local')+(cloud); if((cloud==='ok'||cloud==='local')&&recRan.current!==k){ recRan.current=k; runRecurring(db,put); } },[cloud,uidNow]);
+  const exportBackup = () => {
+    const data={app:'ritual.',version:1,exportedAt:new Date().toISOString(),biz,icon,profile,data:db};
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));
+    a.download=`ritual-respaldo-${todayKey()}.json`; document.body.appendChild(a); a.click(); a.remove();
+  };
+  const importBackup = obj => {
+    if(!obj||obj.app!=='ritual.'||!obj.data){ flash('Ese archivo no es un respaldo de ritual.'); return; }
+    ask('¿Restaurar este respaldo?',()=>{
+      KEYS.forEach(k=>{ if(Array.isArray(obj.data[k])) put(k,obj.data[k]); });
+      if(typeof obj.biz==='string') setBiz(obj.biz); if(typeof obj.icon==='string') setIcon(obj.icon); if(obj.profile&&typeof obj.profile==='object') setProfile(obj.profile);
+      flash('Respaldo restaurado.');
+    },`Reemplaza tus datos actuales por los del ${obj.exportedAt?fmtLong(obj.exportedAt.slice(0,10)):'respaldo'}.`);
   };
   const saveState = !SUPA_KEY ? {t:'Guardado en este navegador',c:'var(--ink-3)'}
     : nFailed ? {t:'Sin conexión · Reintentar',c:'var(--bad)',click:retry}
@@ -1749,12 +1930,12 @@ const App = () => {
       </div><//>`;
   }
 
-  const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,clients:PageClients,docs:PageDocs,projects:PageProjects,cal:PageCalendar};
+  const pages = {home:PageHome,finance:PageFinance,appts:PageAppts,clients:PageClients,docs:PageDocs,services:PageServices,projects:PageProjects,cal:PageCalendar};
   const Page  = pages[tab]||PageHome;
 
   return html`
     <div style="min-height:100vh">
-      <nav class="sidebar">
+      <nav class=${"sidebar"+(menu?" open":"")}>
         <div style="display:flex;align-items:center;gap:10px;padding:6px 10px 4px">
           <img src="icon.svg" width="24" height="24" alt="" style="border-radius:6px"/>
           <div style="min-width:0">
@@ -1765,7 +1946,7 @@ const App = () => {
         <p class="side-label">Negocio</p>
         <div style="display:flex;flex-direction:column;gap:2px;flex:1">
           ${TABS.map(t=>html`
-            <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>setTab(t.id)}>
+            <button class=${'nav-item'+(tab===t.id?' active':'')} onClick=${()=>go(t.id)}>
               <${Ic} n=${t.icon} s=${16}/>${t.label}
             </button>
           `)}
@@ -1774,25 +1955,23 @@ const App = () => {
           <span class="dot" style=${{width:6,height:6,background:saveState.c}}/>${saveState.t}
         </button>
         ${session&&html`<p class="tiny ellip" style="padding:0 10px 4px;font-size:11px">${session.user.email}</p>`}
-        <button class="nav-item" onClick=${()=>setShowSet(true)}>
+        <button class="nav-item" onClick=${()=>{setMenu(false);setShowSet(true);}}>
           <${Ic} n="settings" s=${16}/>Ajustes
         </button>
       </nav>
 
       <main class="main-content">
-        <${Page} key=${tab} db=${db} put=${put} setTab=${setTab} biz=${biz} icon=${icon} openSettings=${()=>setShowSet(true)}/>
+        <${Page} key=${tab} db=${db} put=${put} setTab=${go} biz=${biz} icon=${icon} profile=${profile} setProfile=${setProfile} openSettings=${()=>setShowSet(true)}/>
       </main>
 
-      <nav class="bottom-nav">
-        ${TABS.map(t=>html`
-          <button class=${'bnav-item'+(tab===t.id?' active':'')} onClick=${()=>setTab(t.id)}>
-            <${Ic} n=${t.icon} s=${20}/>
-            <span>${t.id==='home'?'Inicio':t.label}</span>
-          </button>
-        `)}
-      </nav>
+      <header class="topbar">
+        <button class="icon-btn" aria-label="Abrir menú" onClick=${()=>setMenu(true)}><${Ic} n="menu" s=${22} c="var(--ink)"/></button>
+        <span class="logo-word ellip" style="flex:1;text-align:center">${(TABS.find(t=>t.id===tab)||{}).label||'ritual.'}</span>
+        <button class="icon-btn" aria-label="Ajustes" onClick=${()=>setShowSet(true)}><${Ic} n="settings" s=${20} c="var(--ink)"/></button>
+      </header>
+      ${menu&&html`<div class="drawer-bg" onClick=${()=>setMenu(false)}/>`}
 
-      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} icon=${icon} setIcon=${setIcon} profile=${profile} setProfile=${setProfile} session=${session} theme=${theme} setTheme=${setTheme}/>`}
+      ${showSet&&html`<${Settings} open=${true} onClose=${()=>setShowSet(false)} biz=${biz} setBiz=${setBiz} icon=${icon} setIcon=${setIcon} profile=${profile} setProfile=${setProfile} session=${session} theme=${theme} setTheme=${setTheme} exportBackup=${exportBackup} importBackup=${importBackup}/>`}
       ${conf&&html`
         <div class="modal-bg" style="z-index:70" onClick=${()=>setConf(null)}>
           <div class="modal-box fade-up" style="max-width:360px" onClick=${e=>e.stopPropagation()}>
@@ -1827,6 +2006,7 @@ const App = () => {
 };
 
 render(html`<${App}/>`, document.getElementById('root'));
+if('serviceWorker' in navigator && location.hostname!=='localhost') navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
