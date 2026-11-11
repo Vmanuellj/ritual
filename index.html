@@ -31,6 +31,11 @@
       --warn:#D4A72C; --warn-soft:rgba(212,167,44,0.12);
       --shadow:0 0 0 rgba(0,0,0,0);
       --pop:0 16px 48px rgba(0,0,0,0.5);
+      --grain-op:0.05; --grain-inv:0;
+      --glow-a:rgb(255 255 255 / 0.075); --glow-b:rgb(255 255 255 / 0.04);
+      --sheen:rgb(255 255 255 / 0.035); --edge-hi:rgb(255 255 255 / 0.06);
+      --btn-bg:linear-gradient(180deg,#FFFFFF 0%,#D6D6DB 100%);
+      --btn-glow:inset 0 1px 0 rgb(255 255 255 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.08), 0 6px 20px rgb(255 255 255 / 0.07);
     }
     :root[data-theme="rosa"]{
       color-scheme:light;
@@ -48,6 +53,11 @@
       --warn:#9A6700; --warn-soft:#FBF1D9;
       --shadow:0 1px 2px rgba(60,30,40,0.05);
       --pop:0 16px 48px rgba(60,30,40,0.18);
+      --grain-op:0.035; --grain-inv:1;
+      --glow-a:rgb(255 255 255 / 0.9); --glow-b:rgb(214 51 108 / 0.04);
+      --sheen:rgb(255 255 255 / 0); --edge-hi:rgb(255 255 255 / 0.9);
+      --btn-bg:var(--pink-deep);
+      --btn-glow:0 1px 2px rgb(60 30 40 / 0.12);
     }
     *{box-sizing:border-box;margin:0;padding:0;}
     html{-webkit-text-size-adjust:100%;}
@@ -169,6 +179,22 @@
     .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:80;background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;
       font-size:13px;font-weight:500;box-shadow:var(--pop);max-width:calc(100vw - 32px);text-align:center;}
 
+    /* ══ Textura y luz ══ */
+    body{background:
+      radial-gradient(1100px 520px at 28% -12%, var(--glow-a), transparent 62%),
+      radial-gradient(700px 420px at 105% -5%, var(--glow-b), transparent 60%),
+      var(--bg);background-attachment:fixed;}
+    body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:200;background-image:url(grain.svg);background-size:180px;
+      opacity:var(--grain-op);filter:invert(var(--grain-inv));}
+    .card,.modal-box,.auth-card{background:linear-gradient(180deg,var(--sheen),transparent 140px),var(--surface);
+      box-shadow:inset 0 1px 0 var(--edge-hi),var(--shadow);}
+    .modal-box,.auth-card{box-shadow:inset 0 1px 0 var(--edge-hi),var(--pop);}
+    .sidebar{background:linear-gradient(180deg,var(--sheen),transparent 320px),var(--side);}
+    .nav-item.active{box-shadow:inset 0 1px 0 var(--edge-hi);}
+    .btn-p,.fab{background:var(--btn-bg);box-shadow:var(--btn-glow);}
+    .cal-day.today .cal-num{box-shadow:0 0 14px rgb(255 255 255 / 0.18);}
+    .prog-fill{box-shadow:0 0 10px rgb(var(--acc) / 0.18);}
+
     /* ══ Botón + ══ */
     .fab-wrap{position:fixed;right:24px;bottom:24px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
     .fab{width:48px;height:48px;border-radius:50%;border:0;background:var(--pink-deep);display:flex;align-items:center;justify-content:center;cursor:pointer;
@@ -288,6 +314,7 @@ const ICON = {
   right:'<polyline points="9 18 15 12 9 6"/>',
   clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
   pin:  '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
+  cam:  '<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>',
   user: '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>',
 };
@@ -497,14 +524,53 @@ const TxnForm = ({db,put}) => {
   const saveF = () => { if(!Number(f.amount))return; put('txns',upsert(txns,{...f,amount:Number(f.amount)})); setF(null); };
   const del = id => put('txns',txns.filter(x=>x.id!==id));
   const cats = f ? [...new Set([...FCATS[f.type],f.category])] : [];
-  act.newTxn = type => setF(blank(type));
+  act.newTxn = type => { setScan(null); setF(blank(type)); };
+  // Foto de ticket → se reduce en el navegador, Claude la lee en /api/scan-receipt y no se guarda.
+  const fileRef = useRef(null);
+  const [scan,setScan] = useState(null);   // null | {busy} | {ok,msg} | {err}
+  act.scanExpense = () => { setScan(null); setF(blank('expense')); fileRef.current&&fileRef.current.click(); };
+  const shrink = async file => {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 1600/Math.max(bmp.width,bmp.height));
+    const c = document.createElement('canvas'); c.width=Math.round(bmp.width*k); c.height=Math.round(bmp.height*k);
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    return c.toDataURL('image/jpeg',0.82).split(',')[1];
+  };
+  const onPhoto = async e => {
+    const file = e.target.files&&e.target.files[0]; e.target.value='';
+    if(!file) return;
+    if(!sb){ setScan({err:'El escaneo necesita que inicies sesión en la app.'}); return; }
+    setScan({busy:true});
+    try{
+      const {data} = await sb.auth.getSession();
+      if(!data.session){ setScan({err:'Inicia sesión para escanear tickets.'}); return; }
+      const image = await shrink(file);
+      const r = await fetch('/api/scan-receipt',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+data.session.access_token},body:JSON.stringify({image,media_type:'image/jpeg'})});
+      if(r.status===404||r.status===405&&location.hostname==='localhost'){ setScan({err:'El escaneo solo funciona en el sitio publicado en Vercel.'}); return; }
+      const out = await r.json().catch(()=>({error:'Respuesta inválida.'}));
+      if(!r.ok){ setScan({err:out.error||'No se pudo leer el ticket.'}); return; }
+      setF(cur=>({...(cur||blank('expense')),type:'expense',
+        amount: out.amount?String(out.amount):(cur&&cur.amount)||'',
+        date: /^\d{4}-\d{2}-\d{2}$/.test(out.date)?out.date:(cur&&cur.date)||today,
+        category: FCATS.expense.includes(out.category)?out.category:'Otro gasto',
+        note: [out.merchant,out.concept].filter(Boolean).join(' — ')}));
+      setScan({ok:true,msg:'Listo. Revisa los datos antes de guardar.'});
+    }catch(err){ setScan({err:'No se pudo procesar la foto. Intenta con otra.'}); }
+  };
   act.editTxn = t => setF({projectId:'',...t,amount:String(t.amount)});
   return html`<div>
+      <input ref=${fileRef} type="file" accept="image/*" capture="environment" style="display:none" onChange=${onPhoto}/>
       <${Modal} open=${!!f} onClose=${()=>setF(null)} title=${f&&f.id?'Editar movimiento':'Nuevo movimiento'}>
         ${f&&html`<div class="stack" style="gap:12px">
           <div class="seg">
             ${[['income','Ingreso'],['expense','Gasto']].map(([tp,l])=>html`<button class=${f.type===tp?'on':''} onClick=${()=>setF({...f,type:tp,category:FCATS[tp][0]})}>${l}</button>`)}
           </div>
+          ${f.type==='expense'&&!f.id&&html`
+            <button class="btn-g" style="width:100%;min-height:38px" disabled=${scan&&scan.busy} onClick=${()=>fileRef.current&&fileRef.current.click()}>
+              <${Ic} n="cam" s=${15}/>${scan&&scan.busy?'Leyendo el ticket…':'Llenar con foto del ticket'}
+            </button>
+            ${scan&&scan.err&&html`<p class="tiny" style="color:var(--bad);margin-top:-4px">${scan.err}</p>`}
+            ${scan&&scan.ok&&html`<p class="tiny" style="color:var(--good);margin-top:-4px">${scan.msg}</p>`}`}
           <div><label class="lbl">Monto</label><input type="number" inputmode="decimal" min="0" value=${f.amount} onInput=${e=>setF({...f,amount:e.target.value})} placeholder="0" autoFocus/></div>
           <div class="grid2">
             <div><label class="lbl">Categoría</label><select value=${f.category} onChange=${e=>setF({...f,category:e.target.value})}>${cats.map(c=>html`<option value=${c}>${c}</option>`)}</select></div>
@@ -1406,7 +1472,7 @@ const App = () => {
       ${fab&&html`<div style="position:fixed;inset:0;z-index:39" onClick=${()=>setFab(false)}/>`}
       <div class="fab-wrap">
         ${fab&&html`<div class="fab-menu fade-up">
-          ${[['cal','Nueva cita',()=>act.newAppt()],['up','Ingreso',()=>act.newTxn('income')],['down','Gasto',()=>act.newTxn('expense')]].map(([ic,l,fn])=>html`
+          ${[['cal','Nueva cita',()=>act.newAppt()],['up','Ingreso',()=>act.newTxn('income')],['down','Gasto',()=>act.newTxn('expense')],['cam','Gasto con foto',()=>act.scanExpense()]].map(([ic,l,fn])=>html`
             <button class="nav-item" onClick=${()=>{setFab(false);fn();}}><${Ic} n=${ic} s=${15}/>${l}</button>`)}
         </div>`}
         <button class="fab" aria-label="Agregar" onClick=${()=>setFab(!fab)} style=${{transform:fab?'rotate(45deg)':'none'}}><${Ic} n="plus" s=${22} c="var(--on-acc)" sw=${2.2}/></button>
