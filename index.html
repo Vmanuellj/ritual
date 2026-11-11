@@ -206,6 +206,23 @@
     .cal-day.today .cal-num{box-shadow:0 0 14px rgb(255 255 255 / 0.18);}
     .prog-fill{box-shadow:0 0 10px rgb(var(--acc) / 0.18);}
 
+    /* ══ Ajustes ══ */
+    .set-wrap{display:grid;grid-template-columns:200px 1fr;gap:22px;min-height:440px;}
+    .set-tabs{display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--line);padding-right:12px;}
+    .set-save{position:sticky;bottom:-18px;margin:18px -18px -18px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+      background:var(--surface);border-top:1px solid var(--line);}
+    @media(max-width:767px){
+      .set-wrap{grid-template-columns:1fr;gap:14px;min-height:0;}
+      .set-tabs{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:0 0 8px;scrollbar-width:none;}
+      .set-tabs .nav-item{width:auto;flex-shrink:0;white-space:nowrap;height:34px;font-size:13px;}
+      .set-save{bottom:calc(-20px - env(safe-area-inset-bottom,0px));}
+    }
+    .switch{position:relative;width:42px;height:24px;border-radius:12px;border:0;cursor:pointer;flex-shrink:0;background:rgb(var(--acc) / 0.2);transition:background .15s;}
+    .switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .15s;}
+    .switch.on{background:var(--good);}
+    .switch.on::after{transform:translateX(18px);}
+    .switch:disabled{opacity:.45;cursor:default;}
+
     /* ══ Botón + ══ */
     .fab-wrap{position:fixed;right:24px;bottom:24px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
     .fab{width:48px;height:48px;border-radius:50%;border:0;background:var(--pink-deep);display:flex;align-items:center;justify-content:center;cursor:pointer;
@@ -704,7 +721,7 @@ const ApptForms = ({db,put,setTab}) => {
             ${curPays.map(t=>html`<div class="list-row" style="padding:7px 0"><span class="muted" style="flex:1;text-transform:capitalize">${fmtDate(t.date)} · ${t.category}</span><b class="num" style="font-size:13px">${fmtMoney(t.amount)}</b></div>`)}
           </div>`}
           ${cur.address&&html`<a class="muted rowx" style="gap:6px;text-decoration:none" href=${/^https?:/.test(cur.address)?cur.address:mapsLink(cur.address)} target="_blank" rel="noopener"><${Ic} n="pin" s=${14} c="var(--ink-3)"/><span style="text-decoration:underline">${cur.address}</span></a>`}
-          ${cur.assignee&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${14} c="var(--ink-3)"/>Asignada a <b style="color:var(--ink)">${(APP.members.find(m=>m.email===cur.assignee)||{}).name||cur.assignee}</b></span>`}
+          ${APP.members.length>0&&cur.assignee&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${14} c="var(--ink-3)"/>Asignada a <b style="color:var(--ink)">${(APP.members.find(m=>m.email===cur.assignee)||{}).name||cur.assignee}</b></span>`}
           ${cur.report&&html`<div style="padding:10px 12px;background:var(--surface-2);border-radius:8px"><p class="over" style="margin-bottom:4px">Nota del colaborador</p><p class="muted">${cur.report}</p></div>`}
           ${cur.note&&html`<p class="muted">${cur.note}</p>`}
           <${CalButtons} ev=${evOfAppt(db,cur)}/>
@@ -1346,7 +1363,7 @@ const PageAppts = ({db,put,setTab}) => {
                   <div class="stack" style="gap:4px;margin-top:8px">
                     <span class="muted rowx" style="gap:6px;text-transform:capitalize"><${Ic} n="clock" s=${13} c="var(--ink-3)"/>${fmtDate(a.date)}${a.time?` · ${a.time}`:''}</span>
                     ${clientName(db,a)&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${13} c="var(--ink-3)"/>${clientName(db,a)}</span>`}
-                    ${a.assignee&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${13} c="var(--ink-3)"/>Asignada a ${(APP.members.find(m=>m.email===a.assignee)||{}).name||a.assignee}</span>`}
+                    ${APP.members.length>0&&a.assignee&&html`<span class="muted rowx" style="gap:6px"><${Ic} n="user" s=${13} c="var(--ink-3)"/>Asignada a ${(APP.members.find(m=>m.email===a.assignee)||{}).name||a.assignee}</span>`}
                     ${a.note&&html`<p class="tiny" style="margin-top:4px">${a.note}</p>`}
                   </div>
                   ${(a.price>0||paid(a)>0)&&html`
@@ -1739,19 +1756,20 @@ const PageCalendar = ({db,setTab}) => {
 // ══════════════════════════════════════════════════════════════════════════
 // EQUIPO Y CALENDARIO
 // ══════════════════════════════════════════════════════════════════════════
-const TeamCal = ({owner,plan,members,addMember,removeMember,calTok,getCalLink}) => {
+const TeamCal = ({owner,only,plan,members,addMember,removeMember,calTok,getCalLink}) => {
+  const show = k => !only||only===k;
   const [nm,setNm] = useState(''), [em,setEm] = useState(''), [err,setErr] = useState(''), [busy,setBusy] = useState(false), [copied,setCopied] = useState(false);
   const https = calTok ? `${location.origin}/api/calendar?t=${calTok}` : '';
   const webcal = https.replace(/^https?:/,'webcal:');
   const add = async () => { setBusy(true); const e=await addMember(nm,em); setBusy(false); setErr(e||''); if(!e){ setNm(''); setEm(''); } };
   const sect = 'padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)';
   return html`
-    ${owner&&html`<div style=${sect}>
+    ${owner&&show('plan')&&html`<div style=${only?'':sect}>
       <div class="rowx" style="justify-content:space-between"><p class="h3">Tu plan</p><span class="badge b-pink">${(PLANS[plan]||PLANS.profesional).l}</span></div>
       <p class="tiny" style="margin-top:4px">${PLAN_TXT[plan]||PLAN_TXT.profesional}</p>
     </div>`}
-    ${owner&&html`<div style=${sect}>
-      <p class="h3" style="margin-bottom:4px">Equipo</p>
+    ${owner&&show('team')&&html`<div style=${only?'':sect}>
+      <p class="h3" style="margin-bottom:4px">Tu equipo</p>
       ${plan!=='profesional' ? html`<p class="tiny">Los colaboradores están incluidos en el plan Profesional.</p>` : html`
         <p class="tiny" style="margin-bottom:10px">Agrega a tus colaboradores con el correo con el que entrarán a la app (puede ser su Gmail). Verán solo los trabajos que les asignes: fecha, hora, dirección, cliente y notas. Nada de finanzas ni precios.</p>
         ${members.map(m=>html`<div class="list-row" style="padding:8px 0">
@@ -1761,7 +1779,7 @@ const TeamCal = ({owner,plan,members,addMember,removeMember,calTok,getCalLink}) 
         ${err&&html`<p class="tiny" style="color:var(--bad);margin-top:6px">${err}</p>`}
         <button class="btn-g" style="margin-top:8px" disabled=${busy||!em.trim()} onClick=${add}><${Ic} n="plus" s=${14}/>Agregar colaborador</button>`}
     </div>`}
-    <div style=${sect}>
+    ${show('cal')&&html`<div style=${only?'':sect}>
       <p class="h3" style="margin-bottom:4px">Sincronizar con tu calendario</p>
       <p class="tiny" style="margin-bottom:10px">${owner?'Tus citas':'Tus trabajos'} aparecen solos en el calendario de tu celular, y se actualizan cuando hay cambios.</p>
       ${!calTok ? html`<button class="btn-g" onClick=${getCalLink}><${Ic} n="cal" s=${14}/>Obtener mi link de calendario</button>` : html`
@@ -1771,7 +1789,7 @@ const TeamCal = ({owner,plan,members,addMember,removeMember,calTok,getCalLink}) 
           <button class="btn-g" onClick=${()=>{navigator.clipboard&&navigator.clipboard.writeText(https).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}}>${copied?'¡Copiado!':'Copiar link'}</button>
         </div>
         <p class="tiny" style="margin-top:8px">Google Calendar puede tardar unas horas en mostrar los cambios; en iPhone se actualiza más seguido. No compartas este link: quien lo tenga puede ver tu agenda.</p>`}
-    </div>`;
+    </div>`}`;
 };
 
 const CollabHome = ({collab,updateJob,email}) => {
@@ -1820,67 +1838,102 @@ const CollabHome = ({collab,updateJob,email}) => {
 
 // ══════════════════════════════════════════════════════════════════════════
 const BIZ_ICONS = ['','✦','⭐','🎀','🌸','💎','🔥','🌙','📸','🎨','💄','💅','✂️','💼','☕','🧁'];
+const SET_TABS = [
+  ['perfil','Datos personales','user'],
+  ['negocio','Negocio','proj'],
+  ['docs','Cotizaciones y notas','doc'],
+  ['equipo','Colaboradores','user'],
+  ['cal','Calendario','cal'],
+  ['respaldo','Respaldo','download'],
+  ['personal','Personalización','settings'],
+];
+const Switch = ({on,onChange,disabled,label}) => html`<button role="switch" aria-checked=${on} aria-label=${label} disabled=${disabled}
+  class=${'switch'+(on?' on':'')} onClick=${()=>!disabled&&onChange(!on)}/>`;
 const Settings = ({open,onClose,biz,setBiz,icon,setIcon,profile,setProfile,session,theme,setTheme,exportBackup,importBackup,team}) => {
+  const [sec,setSec] = useState('perfil');
   const [name,setName] = useState(biz);
   const [ic,setIc] = useState(icon);
-  const [pf,setPf] = useState({phone:'',instagram:'',email:'',address:'',terms:'',taxName:'IVA',taxRate:'',...(profile||{})});
+  const [pf,setPf] = useState({ownerName:'',phone:'',instagram:'',email:'',address:'',terms:'',taxName:'IVA',taxRate:'',...(profile||{})});
   const setP = (k,v) => setPf({...pf,[k]:v});
-  return html`
-    <${Modal} open=${open} onClose=${onClose} title="Ajustes">
-      <div class="stack" style="gap:14px">
-        <div><label class="lbl">Nombre del negocio</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo se llama tu negocio?"/></div>
-        <div>
-          <label class="lbl">Icono junto al nombre</label>
-          <div style="display:flex;flex-wrap:wrap;gap:6px">
-            ${BIZ_ICONS.map(e=>html`<button onClick=${()=>setIc(e)} style=${{minWidth:38,height:38,padding:'0 8px',borderRadius:12,cursor:'pointer',fontSize:e?18:11,color:'var(--ink-2)',
-              background:ic===e?'var(--sel)':'rgb(var(--glass) / 0.5)',border:ic===e?'1.5px solid var(--pink-deep)':'1px solid rgb(var(--acc) / 0.2)'}}>${e||'Sin icono'}</button>`)}
-          </div>
-        </div>
-        <div style="padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)">
-          <p class="h3" style="margin-bottom:4px">Datos de contacto del negocio</p>
-          <p class="tiny" style="margin-bottom:10px">Aparecen en tus cotizaciones y notas de venta.</p>
-          <div class="stack" style="gap:10px">
-            <div class="grid2">
-              <div><label class="lbl">WhatsApp del negocio</label><input type="tel" inputmode="tel" value=${pf.phone} onInput=${e=>setP('phone',e.target.value)} placeholder="10 dígitos"/></div>
-              <div><label class="lbl">Instagram</label><input value=${pf.instagram} onInput=${e=>setP('instagram',e.target.value)} placeholder="@tunegocio"/></div>
-            </div>
-            <div class="grid2">
-              <div><label class="lbl">Correo</label><input type="email" value=${pf.email} onInput=${e=>setP('email',e.target.value)} placeholder="opcional"/></div>
-              <div><label class="lbl">Dirección o ciudad</label><input value=${pf.address} onInput=${e=>setP('address',e.target.value)} placeholder="opcional"/></div>
-            </div>
-            <div class="grid2">
-              <div><label class="lbl">Nombre del impuesto</label><input value=${pf.taxName} onInput=${e=>setP('taxName',e.target.value)} placeholder="IVA, VAT, ITBMS…"/></div>
-              <div><label class="lbl">Porcentaje (%)</label><input type="number" inputmode="decimal" min="0" max="100" step="0.01" value=${pf.taxRate} onInput=${e=>setP('taxRate',e.target.value)} placeholder="Ej. 16 (0 = sin impuesto)"/></div>
-            </div>
-            <p class="tiny" style="margin-top:-4px">Se suma al total de tus cotizaciones y notas nuevas. Puedes quitarlo en cada documento.</p>
-            <div><label class="lbl">Condiciones por defecto en cotizaciones</label><textarea rows="2" style="resize:vertical" value=${pf.terms} onInput=${e=>setP('terms',e.target.value)} placeholder="Ej. Anticipo del 50% para apartar la fecha. Precios en MXN."/></div>
-            ${waLink(pf.phone)&&html`<a class="tiny" style="color:var(--ink-2)" href=${waLink(pf.phone)} target="_blank" rel="noopener">Probar que el número abre tu WhatsApp →</a>`}
-            <p class="tiny">Los mensajes a tus clientes se mandan desde el WhatsApp de tu celular o WhatsApp Web: la app abre el chat con el texto listo y tú lo envías.</p>
-          </div>
-        </div>
-        <button class="btn-p" style="width:100%;justify-content:center" onClick=${()=>{if(name.trim()!==biz)setBiz(name.trim());if(ic!==icon)setIcon(ic);if(JSON.stringify(pf)!==JSON.stringify(profile||{}))setProfile(pf);onClose();}}>Guardar ajustes</button>
-        ${team&&html`<${TeamCal} owner=${true} ...${team}/>`}
-        <div style="padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)">
-          <p class="h3" style="margin-bottom:4px">Respaldo</p>
-          <p class="tiny" style="margin-bottom:10px">Descarga todos tus datos en un archivo y guárdalo donde quieras (Drive, OneDrive, correo).</p>
-          <div class="rowx" style="flex-wrap:wrap">
-            <button class="btn-g" onClick=${exportBackup}><${Ic} n="download" s=${14}/>Descargar respaldo</button>
-            <label class="btn-g" style="cursor:pointer">Restaurar desde archivo<input type="file" accept="application/json,.json" style="display:none" onChange=${e=>{const fl=e.target.files&&e.target.files[0]; e.target.value=''; if(!fl)return; fl.text().then(t=>{let o=null; try{o=JSON.parse(t);}catch{} onClose(); importBackup(o);});}}/></label>
-          </div>
-        </div>
-        <div>
-          <label class="lbl">Tema de la app</label>
-          <div class="seg">
-            ${[['dark','Oscuro'],['rosa','Claro']].map(([k,l])=>html`<button class=${theme===k?'on':''} onClick=${()=>setTheme(k)}>${l}</button>`)}
-          </div>
-          <p class="tiny" style="margin-top:6px">El tema se guarda en este dispositivo.</p>
-        </div>
+  const dirty = name.trim()!==(biz||'') || ic!==icon || JSON.stringify(pf)!==JSON.stringify({ownerName:'',phone:'',instagram:'',email:'',address:'',terms:'',taxName:'IVA',taxRate:'',...(profile||{})});
+  const saveAll = () => { if(name.trim()!==(biz||'')) setBiz(name.trim()); if(ic!==icon) setIcon(ic); if(JSON.stringify(pf)!==JSON.stringify(profile||{})) setProfile(pf); onClose(); };
+  const teamOn = !!(profile&&profile.teamMode);
+  const setTeam = v => { setProfile({...(profile||{}),teamMode:v}); setPf({...pf,teamMode:v}); };
+  const hasTeamPlan = !team || team.plan==='profesional';
+  const H = (t,sub) => html`<div style="margin-bottom:14px"><p style="font-size:15px;font-weight:600">${t}</p>${sub&&html`<p class="tiny" style="margin-top:2px">${sub}</p>`}</div>`;
+  const body = {
+    perfil: html`${H('Datos personales','Tu información como dueño de la cuenta.')}
+      <div class="stack" style="gap:12px">
+        <div><label class="lbl">Tu nombre</label><input value=${pf.ownerName} onInput=${e=>setP('ownerName',e.target.value)} placeholder="¿Cómo te llamas?"/></div>
+        ${session&&html`<div><label class="lbl">Correo de la cuenta</label><input value=${session.user.email} disabled/></div>
+          <p class="tiny">Con este correo inicias sesión. Todo se guarda en tu cuenta en la nube.</p>
+          <button class="btn-g" style="align-self:flex-start" onClick=${()=>{onClose();sb.auth.signOut();}}>Cerrar sesión</button>`}
         ${!SUPA_KEY&&html`<p class="tiny">Tus registros se guardan solo en este navegador.</p>`}
-        ${session&&html`
-          <div style="padding-top:12px;border-top:1px solid rgb(var(--acc) / 0.12)">
-            <p class="muted" style="margin-bottom:10px">Sesión iniciada como <b style="color:var(--ink)">${session.user.email}</b>. Todo se guarda en tu cuenta.</p>
-            <button class="btn-g" style="width:100%;justify-content:center" onClick=${()=>{onClose();sb.auth.signOut();}}>Cerrar sesión</button>
-          </div>`}
+      </div>`,
+    negocio: html`${H('Negocio','Aparece en el menú y en tus cotizaciones y notas de venta.')}
+      <div class="stack" style="gap:12px">
+        <div><label class="lbl">Nombre del negocio</label><input value=${name} onInput=${e=>setName(e.target.value)} placeholder="¿Cómo se llama tu negocio?"/></div>
+        <div class="grid2">
+          <div><label class="lbl">WhatsApp del negocio</label><input type="tel" inputmode="tel" value=${pf.phone} onInput=${e=>setP('phone',e.target.value)} placeholder="10 dígitos"/></div>
+          <div><label class="lbl">Instagram</label><input value=${pf.instagram} onInput=${e=>setP('instagram',e.target.value)} placeholder="@tunegocio"/></div>
+        </div>
+        <div class="grid2">
+          <div><label class="lbl">Correo del negocio</label><input type="email" value=${pf.email} onInput=${e=>setP('email',e.target.value)} placeholder="opcional"/></div>
+          <div><label class="lbl">Dirección o ciudad</label><input value=${pf.address} onInput=${e=>setP('address',e.target.value)} placeholder="opcional"/></div>
+        </div>
+        ${waLink(pf.phone)&&html`<a class="tiny" style="color:var(--ink-2)" href=${waLink(pf.phone)} target="_blank" rel="noopener">Probar que el número abre tu WhatsApp →</a>`}
+        <p class="tiny">Los mensajes a tus clientes salen desde el WhatsApp de tu celular o WhatsApp Web: la app abre el chat con el texto listo y tú lo envías.</p>
+        ${team&&html`<div style="padding-top:12px;border-top:1px solid var(--line)"><${TeamCal} owner=${true} only="plan" ...${team}/></div>`}
+      </div>`,
+    docs: html`${H('Cotizaciones y notas','Valores que se usan al crear documentos nuevos.')}
+      <div class="stack" style="gap:12px">
+        <div class="grid2">
+          <div><label class="lbl">Nombre del impuesto</label><input value=${pf.taxName} onInput=${e=>setP('taxName',e.target.value)} placeholder="IVA, VAT, ITBMS…"/></div>
+          <div><label class="lbl">Porcentaje (%)</label><input type="number" inputmode="decimal" min="0" max="100" step="0.01" value=${pf.taxRate} onInput=${e=>setP('taxRate',e.target.value)} placeholder="Ej. 16 (0 = sin impuesto)"/></div>
+        </div>
+        <p class="tiny" style="margin-top:-4px">Se suma al total de tus cotizaciones y notas nuevas. Puedes quitarlo en cada documento.</p>
+        <div><label class="lbl">Condiciones por defecto</label><textarea rows="3" style="resize:vertical" value=${pf.terms} onInput=${e=>setP('terms',e.target.value)} placeholder="Ej. Anticipo del 50% para apartar la fecha. Precios en MXN."/></div>
+      </div>`,
+    equipo: html`${H('Colaboradores','Asigna citas a tu equipo para que cada quien vea sus trabajos en su celular.')}
+      <div class="stack" style="gap:12px">
+        <div class="rowx" style="justify-content:space-between;gap:14px;padding:12px;background:var(--surface-2);border-radius:8px">
+          <div><p class="h3">Usar modo colaboradores</p><p class="tiny" style="margin-top:2px">${teamOn?'Activo: puedes agregar colaboradores y asignarles citas.':'Apagado: la app no muestra ninguna opción de equipo.'}</p></div>
+          <${Switch} on=${teamOn} onChange=${setTeam} disabled=${!hasTeamPlan&&!teamOn} label="Usar modo colaboradores"/>
+        </div>
+        ${!hasTeamPlan&&html`<p class="tiny">Los colaboradores están incluidos en el plan Profesional.</p>`}
+        ${teamOn&&hasTeamPlan&&team&&html`<${TeamCal} owner=${true} only="team" ...${team}/>`}
+        ${teamOn&&!team&&html`<p class="tiny">Para usar colaboradores necesitas iniciar sesión con tu cuenta.</p>`}
+      </div>`,
+    cal: html`${H('Calendario','Lleva tus citas al calendario de Google o de tu iPhone.')}
+      ${team?html`<${TeamCal} owner=${true} only="cal" ...${team}/>`:html`<p class="tiny">Inicia sesión para obtener tu link de calendario.</p>`}`,
+    respaldo: html`${H('Respaldo','Descarga todos tus datos en un archivo y guárdalo donde quieras (Drive, OneDrive, correo).')}
+      <div class="rowx" style="flex-wrap:wrap">
+        <button class="btn-g" onClick=${exportBackup}><${Ic} n="download" s=${14}/>Descargar respaldo</button>
+        <label class="btn-g" style="cursor:pointer">Restaurar desde archivo<input type="file" accept="application/json,.json" style="display:none" onChange=${e=>{const fl=e.target.files&&e.target.files[0]; e.target.value=''; if(!fl)return; fl.text().then(t=>{let o=null; try{o=JSON.parse(t);}catch{} onClose(); importBackup(o);});}}/></label>
+      </div>
+      <p class="tiny" style="margin-top:10px">Restaurar reemplaza tus datos actuales por los del archivo; antes te pide confirmación.</p>`,
+    personal: html`${H('Personalización','Cómo se ve la app.')}
+      <div class="stack" style="gap:16px">
+        <div><label class="lbl">Tema de la app</label>
+          <div class="seg">${[['dark','Oscuro'],['rosa','Claro']].map(([k,l])=>html`<button class=${theme===k?'on':''} onClick=${()=>setTheme(k)}>${l}</button>`)}</div>
+          <p class="tiny" style="margin-top:6px">El tema se guarda en este dispositivo.</p></div>
+        <div><label class="lbl">Icono junto al nombre del negocio</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${BIZ_ICONS.map(e=>html`<button onClick=${()=>setIc(e)} style=${{minWidth:38,height:38,padding:'0 8px',borderRadius:10,cursor:'pointer',fontSize:e?18:11,color:'var(--ink-2)',
+              background:ic===e?'var(--sel)':'transparent',border:ic===e?'1.5px solid var(--pink-deep)':'1px solid var(--line)'}}>${e||'Sin icono'}</button>`)}
+          </div></div>
+      </div>`,
+  };
+  return html`
+    <${Modal} open=${open} onClose=${onClose} title="Ajustes" wide=${true}>
+      <div class="set-wrap">
+        <nav class="set-tabs">
+          ${SET_TABS.map(([k,l,ic2])=>html`<button class=${'nav-item'+(sec===k?' active':'')} onClick=${()=>setSec(k)}><${Ic} n=${ic2} s=${15}/>${l}</button>`)}
+        </nav>
+        <div style="min-width:0">
+          ${body[sec]}
+          ${dirty&&html`<div class="set-save"><span class="tiny">Tienes cambios sin guardar</span><button class="btn-p" onClick=${saveAll}>Guardar cambios</button></div>`}
+        </div>
       </div>
     <//>
   `;
@@ -1988,7 +2041,7 @@ const App = () => {
   const [collab,setCollab] = useState([]);
   const [calTok,setCalTok] = useState('');
   const lastPush = useRef({});
-  APP.plan = plan; APP.members = (PLANS[plan]||PLANS.profesional).feat.includes('team') ? members : [];
+  APP.plan = plan; APP.members = (PLANS[plan]||PLANS.profesional).feat.includes('team') && profile && profile.teamMode ? members : [];
 
   // Cada guardado se rastrea: "Guardando…", "Guardado" o "Sin conexión" con reintento.
   const pushCloud = async (k,v) => {
